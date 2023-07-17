@@ -1,0 +1,334 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>cremerlab.growth &mdash; cremerlab-utils 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="cremerlab.bayes" href="bayes.html" />
+    <link rel="prev" title="cremerlab.hplc" href="hplc.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #8c1515" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> cremerlab-utils
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/hplc_processing.html">HPLC Processing &amp; Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/growth_analysis.html">Analyzing Growth Curves</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="hplc.html"><cite>cremerlab.hplc</cite></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><cite>cremerlab.growth</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayes.html"><cite>cremerlab.bayes</cite></a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">cremerlab-utils</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li><cite>cremerlab.growth</cite></li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/growth.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-cremerlab.growth">
+<span id="cremerlab-growth"></span><h1><cite>cremerlab.growth</cite><a class="headerlink" href="#module-cremerlab.growth" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="cremerlab.growth.infer_growth_rate">
+<code class="sig-prename descclassname">cremerlab.growth.</code><code class="sig-name descname">infer_growth_rate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">od_bounds</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">convert_time</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">groupby</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">viz</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cols</span><span class="o">=</span><span class="default_value">{'od': 'od_600nm', 'time': 'clock_time'}</span></em>, <em class="sig-param"><span class="n">return_opts</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">print_params</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cremerlab.growth.infer_growth_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Infers the maximal a posteriori (MAP) parameter set for the steady state growth
+rate given measurements of optical density. This is performed via optimization
+by minimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pandas DataFrame</em>) – A tidy long-form pandas DataFrame with columns corresponding to the
+measurement time and optical density.</p></li>
+<li><p><strong>od_bounds</strong> (<em>list of floats</em>) – The lower and upper bounds of the optical density range to be considered.
+The default bounds assumed are [0.04, 0.41] inclusive.</p></li>
+<li><p><strong>convert_time</strong> (<em>bool</em>) – If <cite>True</cite>, the provided time column needs to be converted to elapsed
+time. In this case, the provided time column is assumed to be
+the clock time of the measurement and is converted to minutes elapsed.</p></li>
+<li><p><strong>groupby</strong> (<em>list of str</em><em>, </em><em>optional</em>) – The column names for the groupby operation to operate upon. For example,
+if there are multiple strains measured in the data set, a groupby of
+<cite>[‘strain’]</cite> will yield a growth rate estimate for each strain in
+the data. A groupby of <cite>[‘strain’, ‘replicate’]</cite> will return a growth
+rate estimate for each strain and biological replicate.</p></li>
+<li><p><strong>viz</strong> (<em>bool</em>) – If <cite>True</cite>, a vizualization of the inference will be produced and a
+figure and axis object will also be returned.</p></li>
+<li><p><strong>cols</strong> (<em>dict</em><em>, </em><em>keys 'time'</em><em>, </em><em>and 'od'</em>) – The column names of the time and optical density measurements in the
+DataFrame.</p></li>
+<li><p><strong>return_opts</strong> (<em>bool</em>) – If <cite>True</cite>, the approximated covariance matrix, optimal parameters, and
+approximate hessian matrix for each grouping is returned as a dictionary.</p></li>
+<li><p><strong>print_params</strong> (<em>bool</em>) – If <cite>True</cite>, the estimated parameters will be printed to the screen when
+the estimation is finished.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>data_df</strong> (<em>pandas DataFrame</em>) – A pandas DataFrame with the converted time measurements cropped to the
+provided optical density bounds.</p></li>
+<li><p><strong>param_df</strong> (<em>pandas DataFrame</em>) – A pandas DataFrame containing the parameters, values, and their 95% credible
+intervals for each obejct in the provided groupby.</p></li>
+<li><p><strong>opts</strong> (<em>dict</em>) – If <cite>return_opts = True</cite>, the estimated covariance matrix, optimal parameters,
+and approximate Hessian matrix is returned.</p></li>
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>) – Matplotlib figure object for the inference. Returned only if <cite>viz = True</cite>.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib AxesSubplot</em>) – The axes of the matplotlib figure. Returned only if <cite>viz = True</cite>.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function infers the “maximal a posteriori” parameter set using a
+Bayesian definition of probability. This function  calls the posterior
+defined by <cite>cremerlab.bayes.steady_state_log_posterior</cite> which contains
+more information about the construction of the statistical model.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cremerlab.growth.viz_growth_rate_inference">
+<code class="sig-prename descclassname">cremerlab.growth.</code><code class="sig-name descname">viz_growth_rate_inference</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">opts</span></em>, <em class="sig-param"><span class="n">levels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cols</span><span class="o">=</span><span class="default_value">{'od': 'od_600nm', 'time': 'elapsed_time_hr'}</span></em>, <em class="sig-param"><span class="n">time_units</span><span class="o">=</span><span class="default_value">'hr'</span></em>, <em class="sig-param"><span class="n">show_viz</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cremerlab.growth.viz_growth_rate_inference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a vizualization of the best-fit for the growth rate as well as
+the contours of the approximate marginal posterior for the growth rate λ and
+initial od.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pandas DataFrame</em>) – The data from which the parameters are inferred. This is generally the
+output from <cite>cremerlab.growth.infer_growth_rate_MAP</cite>.</p></li>
+<li><p><strong>opts</strong> (<em>dict</em>) – A dictionary of the output from the inference with the covariance matrix,
+optimal parameters, and approximate Hessian for each inferred dataset.</p></li>
+<li><p><strong>levels</strong> (<em>list</em><em>, </em><em>optional</em>) – The levels to show in the contour plot. If <cite>None</cite>, default are the limits
+of the 1-σ, 2-σ, 3-σ, 4-σ levels of a 2D gaussian distribution.</p></li>
+<li><p><strong>cols</strong> (<em>dict</em><em>, </em><em>optional</em>) – The column names for the time (<cite>time</cite>) and optical density (<cite>od</cite>) dimensions
+of the data.</p></li>
+<li><p><strong>time_unts</strong> (<em>str</em><em>, </em><em>optional</em>) – The units of the time dimension to be shown on the resulting plots</p></li>
+<li><p><strong>show_viz</strong> (<em>bool</em>) – If <cite>True</cite>, the plot will be displayed to the screen. Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib.figure.Figure</em>) – Matplotlib figure object for the chromatograms</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib AxesSubplot</em>) – The axes of the matplotlib figure</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The countour plots generated by this function show only the Normal approximation
+of the posterior around the maximal a posterior parameter set. This is
+typically OK, but may not accurately reflect the whole posterior. A more
+formal analysis of the growth rate should use Markov Chain Monte Carlo to
+sample the posterior distribution, but this is outside the scope of the
+function.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="bayes.html" class="btn btn-neutral float-right" title="cremerlab.bayes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="hplc.html" class="btn btn-neutral float-left" title="cremerlab.hplc" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Cremer Lab.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,944 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Analyzing Growth Curves &mdash; cremerlab-utils 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cremerlab.hplc" href="../hplc.html" />
+    <link rel="prev" title="HPLC Processing &amp; Analysis" href="hplc_processing.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #8c1515" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> cremerlab-utils
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="hplc_processing.html">HPLC Processing &amp; Analysis</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analyzing Growth Curves</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Tabulating-your-data">Tabulating your data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Estimating-Parameters">Estimating Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Visualing-the-Inference">Visualing the Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Appendix:-Statistical-Model-for-Growth-Rate-Inference">Appendix: Statistical Model for Growth Rate Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Assembling-the-Posterior-Distribution">Assembling the Posterior Distribution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#The-Likelihood-Function">The Likelihood Function</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#The-Prior-Distributions">The Prior Distributions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Estimating-the-Parameters">Estimating the Parameters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hplc.html"><cite>cremerlab.hplc</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../growth.html"><cite>cremerlab.growth</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bayes.html"><cite>cremerlab.bayes</cite></a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">cremerlab-utils</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Analyzing Growth Curves</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/getting_started/growth_analysis.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Analyzing-Growth-Curves">
+<h1>Analyzing Growth Curves<a class="headerlink" href="#Analyzing-Growth-Curves" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="Overview">
+<h2>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h2>
+<p>A key feature of bacterial physiology is the growth rate – a quantitative trait that relates the accumulation of biomass to the number of actively translating ribosomes. This parameter, often denoted mathematically as <span class="math notranslate nohighlight">\(\lambda\)</span>, corresponds to the so-called regime of steady-state exponential growth where the accumulation of biomass is, well, exponential with time. In the lab, we measure the optical density (typically at a wavelength of 600 nm) of a culture <span class="math notranslate nohighlight">\(OD\)</span> which is proportional
+to the biomass. Thus, given trustworthy measurements of the <span class="math notranslate nohighlight">\(OD\)</span>, we can relate these measurements to the growth rate <span class="math notranslate nohighlight">\(\lambda\)</span> as a function of time as</p>
+<div class="math notranslate nohighlight">
+\[OD(t) = OD_0\exp\left[\lambda t\right], \tag{1}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(OD_0\)</span> is the optical density of the culture at time <span class="math notranslate nohighlight">\(t=0\)</span>. The functions of the <code class="docutils literal notranslate"><span class="pre">cremerlab.growth</span></code> module described here provide utilities for the reading and cleaning of raw optical density measurements taken at the spectrophotometer as well as a function for a robust Bayesian inference of the key parameters of Equation 1.</p>
+</div>
+<div class="section" id="Tabulating-your-data">
+<h2>Tabulating your data<a class="headerlink" href="#Tabulating-your-data" title="Permalink to this headline">¶</a></h2>
+<p>Optical density measurements in the lab are typically taken as either by hand using a spectrophotometer or using a plate reader. We will discuss how to parse and analyze data from the plate reader in a separate tutorial (2021/04/01 - Module still in development) and will focus here on processing readings from a spectrophotometer.</p>
+<p>While a digital instrument, the data from a spectrophotometer is often recorded by hand on paper as there’s not a way to record and export the data in a simple and expedient manner. Thus, the data must then go through the arcane step of being manually entered into a spreadsheet to create a digital record of the data, from which we can start to estimate parameters.</p>
+<p>While it is tempting to use Microsoft Excel (or similar software) to make complicated spreadsheets that perform linear regressions, make plots, and summarize parameters, the resulting data then becomes a bloated file difficult to parse by eye. Instead, it is preferable to record the data in a neat and simple format and do all of the analysis and vizualization programmatically. The functions of <code class="docutils literal notranslate"><span class="pre">cremerlab.growth</span></code> do just that.</p>
+<p>To keep the data simple, you should record in your notebook as few facts about the measurement as possible while keeping extraneous details (such as sample preparation) to your end-of-experiment write up. The image below shows a sample table of growth curve measurements that includes just enough information to do the analysis – the time of the meausurement (the “Clock Time”), the particular sample ID (“Preculture”), and the optical density (“OD”).</p>
+<p><img alt="image1" src="../_images/growth_curve_notebook.png" /></p>
+<div class="admonition note">
+<p>Here we’ve recorded the clock time in 24 hour format. This is highly advisable versus 12-hour time format as you don’t need to specify AM or PM in your measurements.</p>
+</div>
+<p>This table is in a “tidy long-form” format where each row is a single observation and each column is a dimension. Note that the identity of the preculture (or later termed the <em>replicate</em>) is considered in one of the columns, rather than having a separate column for each preculture measurement. The table is not very human readable – which is just fine. We are reading it with our computer anyway!</p>
+<p>After finishing the experiment, the data is tabulated into a spreadsheet exactly as is shown in the above photo and saved as a “comma separated value” file with the extension <code class="docutils literal notranslate"><span class="pre">.csv</span></code>. Using the <cite>Python library ``pandas`</cite> &lt;<a class="reference external" href="https://pandas.pydata.org/docs/index.html">https://pandas.pydata.org/docs/index.html</a>&gt;`__, we can read in the data and easily display it as a table.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Load the pandas module and read in the data.</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">raw_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/growth_data.csv&#39;</span><span class="p">)</span>
+
+<span class="c1"># Show the first couple of rows of the data.</span>
+<span class="n">raw_data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>clock_time</th>
+      <th>od_600nm</th>
+      <th>replicate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>12:12</td>
+      <td>0.018</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>12:13</td>
+      <td>0.016</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>12:31</td>
+      <td>0.019</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>12:31</td>
+      <td>0.031</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>12:44</td>
+      <td>0.020</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Note that here wew have renamed the “Preculture” column as <code class="docutils literal notranslate"><span class="pre">replicate</span></code> as that better captures the meaning of that identifier. We have also renamed “OD” to the more descriptive name <code class="docutils literal notranslate"><span class="pre">od_600nm</span></code> which specifies the important information of the measurement wavelength.</p>
+</div>
+<div class="section" id="Estimating-Parameters">
+<h2>Estimating Parameters<a class="headerlink" href="#Estimating-Parameters" title="Permalink to this headline">¶</a></h2>
+<p>There are a few steps we need to take to convert this data table to an inferred growth rate.</p>
+<ol class="arabic simple">
+<li><p><strong>Convert the ``clock_time`` to ``elapsed_time``.</strong> While the clock time is easy to record, it takes a bit of math to figure out how much time has elapsed from one measurement to the next.</p></li>
+<li><p><strong>Restrict the optical density measurements to the linear regime of the spectrophotometer.</strong> The spectrophotometers are not linear across an infinte range of optical density measurements. For the spectrophotometers we use in lab, the linear regime is between approximately 0.04 and 0.4 at 600 nm.</p></li>
+<li><p><strong>Separate the replicates for independent parameter estimates.</strong> These data correspond to different biological replicates which whould be treated as independent experiments</p></li>
+</ol>
+<p>Rather than making a bunch of different CSV files, we can do all of this with a single function, <code class="docutils literal notranslate"><span class="pre">cremerlab.growth.infer_growth_rate</span></code> which takes as an argument the raw data (as a pandas DataFrame), the range of OD values to consider (as <code class="docutils literal notranslate"><span class="pre">od_bounds</span></code>) and the column(s) we want to group by.</p>
+<p>We direct the reader to the Appendix section of this tutorial for an explanation of the actual parameter inference. In short, the <code class="docutils literal notranslate"><span class="pre">cremerlab.growth.infer_growth_rate</span></code> function uses optimization by minimization to find the <em>maximal a posteriori</em> parameter set which maximizes the posterior probability distribution over the growth rate λ, the initial optical density <span class="math notranslate nohighlight">\(OD_0\)</span>, and a homoscedastic error σ.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Load the module and infer the growth rate</span>
+<span class="kn">import</span> <span class="nn">cremerlab.growth</span>
+<span class="n">data</span><span class="p">,</span> <span class="n">parameters</span> <span class="o">=</span> <span class="n">cremerlab</span><span class="o">.</span><span class="n">growth</span><span class="o">.</span><span class="n">infer_growth_rate</span><span class="p">(</span><span class="n">raw_data</span><span class="p">,</span>
+                                                      <span class="n">od_bounds</span><span class="o">=</span><span class="p">[</span><span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span>
+                                                      <span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;replicate&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Estimating parameters...:   0%|          | 0/2 [00:00&lt;?, ?it/s]/opt/anaconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py:2116: RuntimeWarning: invalid value encountered in double_scalars
+  tmp2 = (x - v) * (fx - fw)
+/opt/anaconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py:2117: RuntimeWarning: invalid value encountered in double_scalars
+  p = (x - v) * tmp2 - (x - w) * tmp1
+/opt/anaconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py:2118: RuntimeWarning: invalid value encountered in double_scalars
+  tmp2 = 2.0 * (tmp2 - tmp1)
+Estimating parameters...: 100%|██████████| 2/2 [00:00&lt;00:00,  5.63it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+
+============================================================
+Parameter Estimate Summary
+============================================================
+
+
+Parameter Estimates for grouping [&#39;replicate&#39;]: 1
+------------------------------------------------------------
+growth rate,  λ = 0.91 ± 0.014 [per unit time]
+initial OD, OD_0 = 0.04 ± 0.014 [a.u.]
+homoscedastic error, σ = 0.00 ± 0.001 [a.u.]
+
+
+Parameter Estimates for grouping [&#39;replicate&#39;]: 2
+------------------------------------------------------------
+growth rate,  λ = 0.86 ± 0.024 [per unit time]
+initial OD, OD_0 = 0.04 ± 0.024 [a.u.]
+homoscedastic error, σ = 0.01 ± 0.002 [a.u.]
+
+
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>The above code cell produces a few outputs worth noting.</p>
+<ol class="arabic simple">
+<li><p>It reports a <code class="docutils literal notranslate"><span class="pre">RuntimeWarning</span></code> indicating that the parameter ran into a calcualtion error. This is a common error and can typically be ignored.</p></li>
+<li><p>It prints a progress bar indicating how long its taking to do the estimate.</p></li>
+<li><p>It prints out a summary of the the resulting parameters. This reports the <em>maximum a posterior</em> value of each parameter (the MAP) as well as the 95% Bayesian credible interval for the parameters (which you can think of as the uncertainty, but <em>not</em> a standard deviation). This feature can be turned off by passing the argument <code class="docutils literal notranslate"><span class="pre">print_params=False</span></code> to the function.</p></li>
+</ol>
+<p>These three features provide a sense of how the parameter estimation went, what the problems were, and what the resulting parameters are.</p>
+<p>Aside from printing out the parameter summaries, the function returns two pandas DataFrames, <code class="docutils literal notranslate"><span class="pre">data</span></code>, and <code class="docutils literal notranslate"><span class="pre">parameters</span></code>. The DataFrame <code class="docutils literal notranslate"><span class="pre">data</span></code> looks as follows</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>elapsed_time_hr</th>
+      <th>od_600nm</th>
+      <th>replicate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.000000</td>
+      <td>0.044</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.216667</td>
+      <td>0.052</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.416667</td>
+      <td>0.064</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.600000</td>
+      <td>0.072</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.750000</td>
+      <td>0.080</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>This DataFrame is almost the same as what we originally passed into <code class="docutils literal notranslate"><span class="pre">cremerlab.growth.infer_growth_rate</span></code>, but reflects the changes that were made to the DataFrame to conduct the inference. The <code class="docutils literal notranslate"><span class="pre">clock_time</span></code> column is gone, replaced with <code class="docutils literal notranslate"><span class="pre">elapsed_time_hr</span></code> and the optical density column <code class="docutils literal notranslate"><span class="pre">od_600nm</span></code> has only the values which were within our specified <code class="docutils literal notranslate"><span class="pre">od_bounds</span></code>.</p>
+<p>The DataFrame <code class="docutils literal notranslate"><span class="pre">parameters</span></code> looks like this:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">parameters</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>cred_int</th>
+      <th>map_val</th>
+      <th>parameter</th>
+      <th>replicate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.013520</td>
+      <td>0.909128</td>
+      <td>growth_rate</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.001142</td>
+      <td>0.040896</td>
+      <td>od_init</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.000870</td>
+      <td>0.002742</td>
+      <td>sigma</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>0.024006</td>
+      <td>0.862343</td>
+      <td>growth_rate</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.002290</td>
+      <td>0.042587</td>
+      <td>od_init</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>This contains the parameter estimates as well as their credible intervals (CI’s). This is also a long-form tidy DataFrame with each row corresponding to a single estimate.</p>
+</div>
+<div class="section" id="Visualing-the-Inference">
+<h2>Visualing the Inference<a class="headerlink" href="#Visualing-the-Inference" title="Permalink to this headline">¶</a></h2>
+<p>Doing the estimate is only half of the battle. You should always plot your data along with the information about the inference to see if the results pass the eye test.</p>
+<p>Creating a visualization of these data can be included as an argument in the <code class="docutils literal notranslate"><span class="pre">cremerlab.growth.infer_growth_rate</span></code> function, which makes a plot of the measurements, line of best fit, and approximate posterior distribution marginalized over the homoscedastic error σ. To generate this fiz, we just have to pass the <code class="docutils literal notranslate"><span class="pre">viz=True</span></code> argument to the inference.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Run the inference, generating a vizualization.</span>
+<span class="n">data</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">plot</span> <span class="o">=</span> <span class="n">cremerlab</span><span class="o">.</span><span class="n">growth</span><span class="o">.</span><span class="n">infer_growth_rate</span><span class="p">(</span><span class="n">raw_data</span><span class="p">,</span>
+                                                      <span class="n">od_bounds</span><span class="o">=</span><span class="p">[</span><span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span>
+                                                      <span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;replicate&#39;</span><span class="p">],</span>
+                                                      <span class="n">viz</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                      <span class="n">print_params</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Estimating parameters...:   0%|          | 0/2 [00:00&lt;?, ?it/s]/opt/anaconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py:2116: RuntimeWarning: invalid value encountered in double_scalars
+  tmp2 = (x - v) * (fx - fw)
+/opt/anaconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py:2117: RuntimeWarning: invalid value encountered in double_scalars
+  p = (x - v) * tmp2 - (x - w) * tmp1
+/opt/anaconda3/lib/python3.8/site-packages/scipy/optimize/optimize.py:2118: RuntimeWarning: invalid value encountered in double_scalars
+  tmp2 = 2.0 * (tmp2 - tmp1)
+Estimating parameters...: 100%|██████████| 2/2 [00:00&lt;00:00,  4.06it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Generating plot...
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_growth_analysis_12_2.png" src="../_images/getting_started_growth_analysis_12_2.png" />
+</div>
+</div>
+<p>The above performs the inference and returns a plot summarizing the inference all in one go. The plots on the left-hand side show the data (points) superimposed with the line of best fit given the inferred parameters. The plots on the right-hand side show the approximation of the marginal posterior distribution over the parameters. The contours represent the 1st (smallest) through 4th (largest) standard deviations of the posterior. The red point indicates the MAP, which is used to generate the
+fits on the left-hand plots.</p>
+<p>In passing <code class="docutils literal notranslate"><span class="pre">viz</span> <span class="pre">=</span> <span class="pre">True</span></code> as an argument, the function now returns a <code class="docutils literal notranslate"><span class="pre">plot</span></code> object which is a matplotlib Figure canvas and the corresponding axes. With this, we can continue to manipulate the plots as we see fit and can even save it as a PDF as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Unpack the plot objects and save the plot to disk.</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;./inference_plot.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Figure size 432x288 with 0 Axes&gt;
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Appendix:-Statistical-Model-for-Growth-Rate-Inference">
+<h2>Appendix: Statistical Model for Growth Rate Inference<a class="headerlink" href="#Appendix:-Statistical-Model-for-Growth-Rate-Inference" title="Permalink to this headline">¶</a></h2>
+<p>The function <code class="docutils literal notranslate"><span class="pre">cremerlab.growth.infer_growth_rate</span></code> uses a Bayesian definition of probability to estimate the parameter values. We will leave the details of Bayesian statistics to other resources (such as this <a class="reference external" href="https://bebi103b.caltech.edu">excellent course by Justin Bois at Caltech</a> and here introduce the statistical model employed by <code class="docutils literal notranslate"><span class="pre">cremerlab.growth.infer_growth_rate</span></code>.</p>
+<div class="section" id="Assembling-the-Posterior-Distribution">
+<h3>Assembling the Posterior Distribution<a class="headerlink" href="#Assembling-the-Posterior-Distribution" title="Permalink to this headline">¶</a></h3>
+<p>We are interested in estimating values for the growth rate <span class="math notranslate nohighlight">\(\lambda\)</span> and the initial optical density <span class="math notranslate nohighlight">\(OD_0\)</span>. By Bayes’ theorem, the posterior distribution of these parameters given our data (composed of time <span class="math notranslate nohighlight">\(t\)</span> and optical density measurements <span class="math notranslate nohighlight">\(OD\)</span>) can be stated as</p>
+<div class="math notranslate nohighlight">
+\[g(\lambda\,OD_0\,\vert\, t, OD) = \frac{f(OD\,\vert\, t, \lambda, OD_0)g(OD_0, \lambda)}{f(OD)}, \tag{A.1}\]</div>
+<p>where we use <span class="math notranslate nohighlight">\(g\)</span> and <span class="math notranslate nohighlight">\(f\)</span> to denote probability densities over parameters and data, respectively. The numerator is the product of the <em>likelihood</em> (<span class="math notranslate nohighlight">\(f(OD\,\vert\, t, \lambda, OD_0)\)</span>) and the <em>prior</em> (<span class="math notranslate nohighlight">\(g(\lambda, OD_0)\)</span>) distributions. The denominator is the likelihood marginalized over the parameters and, for our purposes, will just be treated as a normalization constant.</p>
+<div class="section" id="The-Likelihood-Function">
+<h4>The Likelihood Function<a class="headerlink" href="#The-Likelihood-Function" title="Permalink to this headline">¶</a></h4>
+<p>The likelihood captures the probability of observing our data (<span class="math notranslate nohighlight">\(OD\)</span>) at the given times <span class="math notranslate nohighlight">\(t\)</span> given any combination of parameter values for <span class="math notranslate nohighlight">\(\lambda\)</span> and <span class="math notranslate nohighlight">\(OD_0\)</span>. We assume that this is described by a Gaussian distribution with a a mean <span class="math notranslate nohighlight">\(\mu\)</span> and a standard deviation <span class="math notranslate nohighlight">\(\sigma\)</span> of</p>
+<div class="math notranslate nohighlight">
+\[f(OD\,\vert\,t\lambda, OD_0) = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\left[-\frac{(OD - \mu)^2}{2\sigma^2}\right]. \tag{A.2}\]</div>
+<p>The mean <span class="math notranslate nohighlight">\(\mu\)</span> is defined by Equation 1 for any combination of <span class="math notranslate nohighlight">\(\lambda\)</span> and <span class="math notranslate nohighlight">\(OD_0\)</span>.</p>
+</div>
+<div class="section" id="The-Prior-Distributions">
+<h4>The Prior Distributions<a class="headerlink" href="#The-Prior-Distributions" title="Permalink to this headline">¶</a></h4>
+<p>The prior distributions capture all knowledge we have of the parameters before we <em>ever</em> look at our data. In using a normal distribution for the likelihoood, we have introduced a new parameter <span class="math notranslate nohighlight">\(\sigma\)</span> which much also be included in our prior distributions.</p>
+<p>Picking prior distributions often requires a lot of careful thought about the system. While we leave the details of defining priors and their effects to other resources, we can state that we know all of our parameters must be positive. Furthermore, we know that they will be relatively small as growth ratees don’t typically extend past 2hr^{-1} and are often less than 1 hr<span class="math notranslate nohighlight">\(^{-1}\)</span> for the lab strains and conditions we use. Similarly, we know that the initial optical density <span class="math notranslate nohighlight">\(OD_0\)</span> by
+design is small and close to 0.04, as that is the lower obund we consider for the spectrophometers we typically use. Finally, we trust our experiments enough to say that the homoscedastic error <span class="math notranslate nohighlight">\(\sigma\)</span> is going to be sufficiently small such that its well below 1, as we typically see clear exponential growth in these types of experiments.</p>
+<p>With the constraints in mind that all the parameters (below denoted generically as <span class="math notranslate nohighlight">\(\theta\)</span>) must be greater than zero and less than one, we choose a Gamma function as a prior distribution,</p>
+<div class="math notranslate nohighlight">
+\[g(\theta\,\vert\,\alpha, \beta) = \frac{1}{\Gamma(\alpha)}\frac{(\beta\theta)^\alpha}{\theta}\exp\left[-\beta\theta\right]. \tag{A.3}\]</div>
+<p>with <span class="math notranslate nohighlight">\(\alpha = 2.2\)</span> and <span class="math notranslate nohighlight">\(\beta = 5\)</span>. These values result in distributions where 95% of the probability density is below a parameter value of 1.</p>
+</div>
+</div>
+<div class="section" id="Estimating-the-Parameters">
+<h3>Estimating the Parameters<a class="headerlink" href="#Estimating-the-Parameters" title="Permalink to this headline">¶</a></h3>
+<p>It is typical practice to evaluate the posterior distribution using Markov chain Monte Carlo which is a pretty easy task given modern computational power. However, as this problem is very well defined, we’ve opted to evaluate this posterior distribution by using optimization by minimization. Doing so allows us to evaluate the <em>maximum a posterior</em> parameter set (colloquially termed the MAP) which represents the parameter values which maximize the posterior distribution. Given these values, we
+can estimate the uncertainty in each parameter by approximating the posterior distribution as a multivariate normal distribution.</p>
+<p>Future editions of this tutorial will go into this in more depth, but we direct the reader to <a class="reference external" href="https://bebi103b.github.io/lessons/06/normal_optimization.html">this excellent treatment of the problem</a> in the context of biological data.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../hplc.html" class="btn btn-neutral float-right" title="cremerlab.hplc" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="hplc_processing.html" class="btn btn-neutral float-left" title="HPLC Processing &amp; Analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Cremer Lab.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
