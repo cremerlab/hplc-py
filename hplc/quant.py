@@ -442,6 +442,49 @@ class Chromatogram(object):
                 iter += 1
         self.mix_array = out
         return peak_df
+    
+    def _bg_subtract(self, time_window=1, return_df=False):
+        """
+        Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
+        and subtract background in chromatogram.
+
+        Parameters
+        ----------
+        time_window : int
+            The  
+        return_df : bool
+            If `True`, then chromatograms (before and after background correction) are returned
+        Returns
+        -------
+        corrected_df : pandas DataFrame
+            If `return_df = True`, then the original and the corrected chromatogram are returned.
+        """
+        df = self.df
+        try:
+            intensity = self.df[self.int_col+"_nobackgroundcorrection"].values
+        except:
+             intensity = self.df[self.int_col].values
+            
+        
+        intensity_old=intensity.copy()
+        intensity = intensity*np.heaviside(intensity,0)
+        #transform to log scale
+        intensity_transf=np.log(np.log(np.sqrt(intensity+1)+1)+1)
+        #start itteration
+        for il in range(0,num_iterations):
+            intensity_transf_new=intensity_transf.copy()
+            for i in range(il,intensity_transf.shape[0]-il):
+                intensity_transf_new[i]=min(intensity_transf[i],0.5*(intensity_transf[i+il]+intensity_transf[i-il]))
+            intensity_transf=intensity_transf_new
+        #transform back
+        intensity=np.power(np.exp(np.exp(intensity_transf)-1.)-1.,2.)-1.
+        self.df[self.int_col]= intensity_old-intensity
+        self.df[self.int_col+'_nobackgroundcorrection']=intensity_old
+        self.df[self.int_col+'_background']=intensity
+        
+        
+        if return_df:
+            return self.df
 
     def show(self):
         """
