@@ -17,6 +17,8 @@ class Chromatogram(object):
     Base class for the processing and quantification of HPLC chromatograms
     """
     def __init__(self, file=None, time_window=None,
+                    bg_subtract=True,
+                    peak_width=10,
                     cols={'time':'time_min', 'intensity':'intensity_mV'},
                     csv_comment='#'):
         """
@@ -35,6 +37,13 @@ class Chromatogram(object):
         time_window: list [start, end], optional
             The retention time window of the chromatogram to consider for analysis.
             If None, the entire time range of the chromatogram will be considered.
+        bg_subtract: bool, optional
+            If True, sensitive nonlinear iterative peak (SNIP) clipping is used 
+            to estimate and subtract the signal baseline.
+        peak_width: float, optional
+            The approximate full-width half-maximum (FWHM) of the peaks of interest. 
+            This is used to set the number of iterations needed for the background
+            subtraction.
         cols: dict, keys of 'time', and 'intensity', optional
             A dictionary of the retention time and intensity measurements 
             of the chromatogram. Default is 
@@ -72,10 +81,9 @@ class Chromatogram(object):
         else: 
             self.df = dataframe
 
-         # Correct for a negative baseline 
-        df = self.df
-        min_int = df[self.int_col].min() 
-        intensity = df[self.int_col] - min_int
+        # Correct for a negative baseline 
+        if bg_subtract:
+            self._bg_subtract(window=peak_width)
 
         # Blank out vars that are used elsewhere
         self.window_df = None
@@ -109,7 +117,7 @@ class Chromatogram(object):
         if return_df:
             return self.df
 
-    def _assign_peak_windows(self, prominence, rel_height, buffer):
+    def _assign_peak_windows(self, prominence=0.01, rel_height=0.95, buffer=100):
         """
         Breaks the provided chromatogram down to windows of likely peaks. 
 
@@ -363,7 +371,7 @@ class Chromatogram(object):
         return peak_props
 
     def quantify(self, time_window=None, prominence=1E-3, rel_height=1.0, 
-                 buffer=100, verbose=True):
+                 buffer=100, verbose=True, **kwargs):
         R"""
         Quantifies peaks present in the chromatogram
 
@@ -426,7 +434,7 @@ class Chromatogram(object):
                          'area': params['area'],
                          'peak_idx': iter + 1}     
                 iter += 1
-                peak_df = peak_df.append(_dict, ignore_index=True)
+                peak_df = pd.concat([peak_df, pd.DataFrame(_dict, index=[0])])
                 peak_df['peak_idx'] = peak_df['peak_idx'].astype(int)
         self.peak_df = peak_df
 
@@ -434,8 +442,8 @@ class Chromatogram(object):
         time = self.df[self.time_col].values
         out = np.zeros((len(time), len(peak_df)))
         iter = 0
-        for _k , _v in self.peak_props.items():
-            for k, v in _v.items():
+        for _ , _v in self.peak_props.items():
+            for _, v in _v.items():
                 params = [v['amplitude'], v['retention_time'], 
                           v['std_dev'], v['alpha']]
                 out[:, iter] = self._compute_skewnorm(time, *params)
@@ -443,48 +451,63 @@ class Chromatogram(object):
         self.mix_array = out
         return peak_df
     
-    def _bg_subtract(self, time_window=1, return_df=False):
-        """
+    def _bg_subtract(self, window=1, return_df=False):
+        R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
 
         Parameters
         ----------
-        time_window : int
-            The  
+        window : int
+            The approximate size of signal objects in the chromatogram in dimensions
+            of time. This is related to the number of iterations undertaken by 
+            the SNIP algorithm.
         return_df : bool
             If `True`, then chromatograms (before and after background correction) are returned
+
         Returns
         -------
         corrected_df : pandas DataFrame
             If `return_df = True`, then the original and the corrected chromatogram are returned.
+
+        Notes
+        -----
+        This implements the SNIP algorithm as presented and summarized in `Morhác
+        and Matousek 2008 <https://doi.org/10.1366/000370208783412762>`_.
         """
+
+        # Unpack and copy dataframe and intensity profile
         df = self.df
-        try:
-            intensity = self.df[self.int_col+"_nobackgroundcorrection"].values
-        except:
-             intensity = self.df[self.int_col].values
-            
-        
-        intensity_old=intensity.copy()
-        intensity = intensity*np.heaviside(intensity,0)
-        #transform to log scale
-        intensity_transf=np.log(np.log(np.sqrt(intensity+1)+1)+1)
-        #start itteration
-        for il in range(0,num_iterations):
-            intensity_transf_new=intensity_transf.copy()
-            for i in range(il,intensity_transf.shape[0]-il):
-                intensity_transf_new[i]=min(intensity_transf[i],0.5*(intensity_transf[i+il]+intensity_transf[i-il]))
-            intensity_transf=intensity_transf_new
-        #transform back
-        intensity=np.power(np.exp(np.exp(intensity_transf)-1.)-1.,2.)-1.
-        self.df[self.int_col]= intensity_old-intensity
-        self.df[self.int_col+'_nobackgroundcorrection']=intensity_old
-        self.df[self.int_col+'_background']=intensity
-        
-        
+        signal = df[self.int_col].copy()
+
+        # Ensure positivity of signal
+        signal *= signal >= 0
+
+        # Compute the LLS operator
+        tform = np.log(np.log(np.sqrt(signal + 1) + 1) + 1)
+
+        # Compute the number of iterations given the window size.
+        dt = np.mean(np.diff(df[self.time_col].values))
+        iter = int(window / dt)
+
+        # Iteratively filter the signal
+        for i in range(0,iter):
+            tform_new = np.zeros_like(tform)
+            for j in range(i, len(tform) - i):
+                tform_new[j] = min(tform[j], 0.5 * (tform[j+i] + tform[j-i])) 
+            tform = tform_new
+
+        # Perform the inverse of the LLS transformation
+        inv_tform = (np.exp(np.exp(tform) - 1) - 1)**2 - 1 
+
+        # Add a new column to the dataframe which contains the background 
+        # subtracted intensity and update the intensity column name in the 
+        # object.
+        df[self.int_col] = signal - inv_tform
+        df[f'estimated_background'] = inv_tform 
+        self.df = df  
         if return_df:
-            return self.df
+            return df
 
     def show(self):
         """
@@ -498,6 +521,7 @@ class Chromatogram(object):
         ax.set_ylabel(self.int_col)
 
         # Plot the raw chromatogram
+        print(self.int_col)
         ax.plot(self.df[self.time_col], self.df[self.int_col], 'k-', lw=2,
                 label='raw chromatogram') 
 
@@ -505,7 +529,8 @@ class Chromatogram(object):
         if self.peak_df is not None:
             time = self.df[self.time_col].values
             # Plot the mix
-            convolved = np.sum(self.mix_array, axis=1)
+            convolved = np.sum(self.mix_array, axis=1) + self.df.estimated_background
+
             ax.plot(time, convolved, 'r--', label='inferred mixture') 
             for i in range(len(self.peak_df)):
                 ax.fill_between(time, self.mix_array[:, i], label=f'peak {i+1}', 
