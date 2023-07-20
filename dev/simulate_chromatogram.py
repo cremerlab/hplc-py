@@ -24,11 +24,11 @@ for i in range(len(locs)):
     signal += peak
 
 # Generate a drifting baseline
-# bg = np.zeros_like(time)
-bg = 600 - 20 * time
-# for i in range(100):
-    # bg += np.random.uniform(1, 30) * scipy.stats.norm(np.random.uniform(5, 30), np.sqrt(np.random.normal(1, 0.5)**2)).pdf(time)
-# bg += 200 * np.sin(time/ 50)
+# bg = 600 - 20 * time
+bg = np.zeros_like(time)
+for i in range(100):
+    bg += np.random.uniform(1, 30) * scipy.stats.norm(np.random.uniform(5, 30), np.sqrt(np.random.normal(1, 0.5)**2)).pdf(time)
+bg += 200 * np.sin(time/ 20)
 # Generate a noise profile
 noise = np.random.normal(0, 2, len(time))
 

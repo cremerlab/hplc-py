@@ -1,13 +1,9 @@
 import pandas as pd 
 import numpy as np
-from io import StringIO
-import shutil
 import scipy.signal
 import scipy.optimize
 import scipy.special
 import tqdm
-import os 
-from datetime import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -18,7 +14,7 @@ class Chromatogram(object):
     """
     def __init__(self, file=None, time_window=None,
                     bg_subtract=True,
-                    peak_width=10,
+                    peak_width=3,
                     cols={'time':'time_min', 'intensity':'intensity_mV'},
                     csv_comment='#'):
         """
@@ -370,7 +366,7 @@ class Chromatogram(object):
         self.peak_props = peak_props
         return peak_props
 
-    def quantify(self, time_window=None, prominence=1E-3, rel_height=1.0, 
+    def quantify(self, time_window=None, prominence=1E-2, rel_height=1.0, 
                  buffer=100, verbose=True, **kwargs):
         R"""
         Quantifies peaks present in the chromatogram
@@ -451,7 +447,7 @@ class Chromatogram(object):
         self.mix_array = out
         return peak_df
     
-    def _bg_subtract(self, window=1, return_df=False):
+    def _bg_subtract(self, window=3, return_df=False):
         R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
@@ -481,20 +477,20 @@ class Chromatogram(object):
         signal = df[self.int_col].copy()
 
         # Ensure positivity of signal
-        signal *= signal >= 0
+        signal *= np.heaviside(signal, 0)
 
         # Compute the LLS operator
         tform = np.log(np.log(np.sqrt(signal + 1) + 1) + 1)
 
         # Compute the number of iterations given the window size.
         dt = np.mean(np.diff(df[self.time_col].values))
-        iter = int(window / dt)
+        iter = int(((window / dt) - 1) / 2)
 
         # Iteratively filter the signal
         for i in range(0,iter):
-            tform_new = np.zeros_like(tform)
+            tform_new = tform.copy()
             for j in range(i, len(tform) - i):
-                tform_new[j] = min(tform[j], 0.5 * (tform[j+i] + tform[j-i])) 
+                tform_new[j] = min(tform_new[j], 0.5 * (tform_new[j+i] + tform_new[j-i])) 
             tform = tform_new
 
         # Perform the inverse of the LLS transformation
@@ -529,7 +525,7 @@ class Chromatogram(object):
         if self.peak_df is not None:
             time = self.df[self.time_col].values
             # Plot the mix
-            convolved = np.sum(self.mix_array, axis=1) + self.df.estimated_background
+            convolved = np.sum(self.mix_array, axis=1)
 
             ax.plot(time, convolved, 'r--', label='inferred mixture') 
             for i in range(len(self.peak_df)):
