@@ -375,10 +375,12 @@ class Chromatogram(object):
             iterator = tqdm.tqdm(self.window_props.items(), desc='Fitting peak windows...')  
         else:
             iterator = self.window_props.items()
-
+        if (len(param_bounds)) > 0 & (param_bounds.keys() not in ['amplitude', 'location', 'scale', 'skew']):
+            raise ValueError(f"`param_bounds` must have keys of `amplitude`, `location`, `scale`, and `skew`. Provided keys are {param_bounds.keys()}")
         peak_props = {}
         for k, v in iterator:
             window_dict = {}
+
             # Set up the initial guess
             p0 = [] 
             bounds = [[],  []] 
