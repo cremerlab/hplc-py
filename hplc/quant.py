@@ -147,6 +147,97 @@ class Chromatogram(object):
         if return_df:
             return self.df
 
+    def quantify(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
+                 buffer=100, param_bounds={}, verbose=True):
+        R"""
+        Quantifies peaks present in the chromatogram
+
+        Parameters
+        ----------
+        locations: `list`, optional
+            Initial guesses for the retention times of desired peaks. If not
+            provided, peaks will be automatically detected.
+        time_window: `list`, [start, end], optional
+            The retention time window of the chromatogram to consider for analysis.
+            If None, the entire time range of the chromatogram will be considered.
+        prominence : `float`,  [0, 1]
+            The promimence threshold for identifying peaks. Prominence is the 
+            relative height of the normalized signal relative to the local
+            background. Default is 1%. If `locations` is provided, this is 
+            not used.
+        rel_height : `float`, [0, 1]
+            The relative height of the peak where the baseline is determined. 
+            Default is 100%. If `locations` is provided, this is not used.
+        buffer : positive `int`
+            The padding of peak windows in units of number of time steps. Default 
+            is 100 points on each side of the identified peak window. If `locations` 
+            is provided, this is not used.
+        verbose : `bool`
+            If True, a progress bar will be printed during the inference. 
+        param_bounds: `dict`, optional
+            Parameter boundary modifications to be used to constrain fitting. 
+            See docstring of :func:`~hplc.quant.Chromatogram.estimate_peak_params`
+            for more information.
+
+        Returns
+        -------
+        peak_df : `pandas.core.frame.DataFrame`
+            A dataframe containing information for each detected peak.
+
+
+        Notes
+        -----
+        This function infers the parameters defining skew-norma distributions 
+        for each peak in the chromatogram. The fitted distribution has the form 
+            
+        .. math:: 
+            I = 2I_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
+
+        where :math:`I_\text{max}` is the maximum intensity of the peak, 
+        :math:`t` is the time, :math:`r_t` is the retention time, :math:`\sigma`
+        is the scale parameter, and :math:`\alpha` is the skew parameter.
+
+        """
+        if time_window is not None:
+            dataframe = self.df
+            self.df = dataframe[(dataframe[self.time_col] >= time_window[0]) & 
+                              (dataframe[self.time_col] <= time_window[1])].copy(deep=True) 
+        # Assign the window bounds
+        _ = self._assign_peak_windows(locations, prominence, rel_height, buffer)
+
+        # Infer the distributions for the peaks
+        peak_props = self.estimate_peak_params(verbose=verbose, param_bounds=param_bounds)
+
+        # Set up a dataframe of the peak properties
+        peak_df = pd.DataFrame([])
+        iter = 0 
+        for _, peaks in peak_props.items():
+            for _, params in peaks.items():
+                _dict = {'retention_time': params['retention_time'],
+                         'scale': params['scale'],
+                         'skew': params['alpha'],
+                         'amplitude': params['amplitude'],
+                         'area': params['area'],
+                         'peak_idx': iter + 1}     
+                iter += 1
+                peak_df = pd.concat([peak_df, pd.DataFrame(_dict, index=[0])])
+                peak_df['peak_idx'] = peak_df['peak_idx'].astype(int)
+        self.peak_df = peak_df
+
+        # Compute the mixture
+        time = self.df[self.time_col].values
+        out = np.zeros((len(time), len(peak_df)))
+        iter = 0
+        for _ , _v in self._peak_props.items():
+            for _, v in _v.items():
+                params = [v['amplitude'], v['retention_time'], 
+                          v['scale'], v['alpha']]
+                out[:, iter] = self._compute_skewnorm(time, *params)
+                iter += 1
+        self.mix_array = out
+        return peak_df
+    
+ 
     def _assign_peak_windows(self, locations=[], prominence=0.01, rel_height=0.95, buffer=100):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
@@ -467,97 +558,7 @@ class Chromatogram(object):
         self._peak_props = peak_props
         return peak_props
 
-    def quantify(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
-                 buffer=100, param_bounds={}, verbose=True):
-        R"""
-        Quantifies peaks present in the chromatogram
-
-        Parameters
-        ----------
-        locations: `list`, optional
-            Initial guesses for the retention times of desired peaks. If not
-            provided, peaks will be automatically detected.
-        time_window: `list`, [start, end], optional
-            The retention time window of the chromatogram to consider for analysis.
-            If None, the entire time range of the chromatogram will be considered.
-        prominence : `float`,  [0, 1]
-            The promimence threshold for identifying peaks. Prominence is the 
-            relative height of the normalized signal relative to the local
-            background. Default is 1%. If `locations` is provided, this is 
-            not used.
-        rel_height : `float`, [0, 1]
-            The relative height of the peak where the baseline is determined. 
-            Default is 100%. If `locations` is provided, this is not used.
-        buffer : positive `int`
-            The padding of peak windows in units of number of time steps. Default 
-            is 100 points on each side of the identified peak window. If `locations` 
-            is provided, this is not used.
-        verbose : `bool`
-            If True, a progress bar will be printed during the inference. 
-        param_bounds: `dict`, optional
-            Parameter boundary modifications to be used to constrain fitting. 
-            See docstring of :func:`~hplc.quant.Chromatogram.estimate_peak_params`
-            for more information.
-
-        Returns
-        -------
-        peak_df : `pandas.core.frame.DataFrame`
-            A dataframe containing information for each detected peak.
-
-
-        Notes
-        -----
-        This function infers the parameters defining skew-norma distributions 
-        for each peak in the chromatogram. The fitted distribution has the form 
-            
-        .. math:: 
-            I = 2I_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
-
-        where :math:`I_\text{max}` is the maximum intensity of the peak, 
-        :math:`t` is the time, :math:`r_t` is the retention time, :math:`\sigma`
-        is the scale parameter, and :math:`\alpha` is the skew parameter.
-
-        """
-        if time_window is not None:
-            dataframe = self.df
-            self.df = dataframe[(dataframe[self.time_col] >= time_window[0]) & 
-                              (dataframe[self.time_col] <= time_window[1])].copy(deep=True) 
-        # Assign the window bounds
-        _ = self._assign_peak_windows(locations, prominence, rel_height, buffer)
-
-        # Infer the distributions for the peaks
-        peak_props = self.estimate_peak_params(verbose=verbose, param_bounds=param_bounds)
-
-        # Set up a dataframe of the peak properties
-        peak_df = pd.DataFrame([])
-        iter = 0 
-        for _, peaks in peak_props.items():
-            for _, params in peaks.items():
-                _dict = {'retention_time': params['retention_time'],
-                         'scale': params['scale'],
-                         'skew': params['alpha'],
-                         'amplitude': params['amplitude'],
-                         'area': params['area'],
-                         'peak_idx': iter + 1}     
-                iter += 1
-                peak_df = pd.concat([peak_df, pd.DataFrame(_dict, index=[0])])
-                peak_df['peak_idx'] = peak_df['peak_idx'].astype(int)
-        self.peak_df = peak_df
-
-        # Compute the mixture
-        time = self.df[self.time_col].values
-        out = np.zeros((len(time), len(peak_df)))
-        iter = 0
-        for _ , _v in self._peak_props.items():
-            for _, v in _v.items():
-                params = [v['amplitude'], v['retention_time'], 
-                          v['scale'], v['alpha']]
-                out[:, iter] = self._compute_skewnorm(time, *params)
-                iter += 1
-        self.mix_array = out
-        return peak_df
-    
-    def _bg_subtract(self, window=3, return_df=False):
+   def _bg_subtract(self, window=3, return_df=False):
         R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
