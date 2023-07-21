@@ -4,3 +4,5 @@
 *.log
 *.pyc*
 *.DS_*tore
+.vscode
+*.pdf
