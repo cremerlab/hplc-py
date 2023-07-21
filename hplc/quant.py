@@ -10,7 +10,39 @@ import seaborn as sns
 
 class Chromatogram(object):
     """
-    Base class for the processing and quantification of HPLC chromatograms
+    Base class for the processing and quantification of an HPLC chromatogram.
+
+    Attributes
+    ----------
+    df : `pandas.core.frame.DataFrame`    
+        A Pandas DataFrame containing the chromatogram, minimally with columns 
+        of time and intensity. 
+    window_props : `dict` of `dict`s
+       A dictionary of each peak window, labeled as increasing integers in 
+       linear order. Each key has its own dictionary with the following keys:
+            time_range: `numpy.ndarray` 
+                The sliced time array contained within the peak window.
+            intensity: `numpy.ndarray`
+                The sliced intensity array of the chromatogram within the peak 
+                window.
+            num_peaks: `int`
+                The number of putative peaks contained within the window.
+            amplitude: `list` of `float`s
+                The amplitude of each peak within the window.
+            location: `list` of `float`s
+                The time location of the amplitude values  for each  peak 
+                within the window.
+            width : `list` of `float`s      
+                The full-width of the peak at the half-maximum for each peak.
+     peak_df : `pandas.core.frame.DataFrame` 
+        A Pandas DataFrame containing the inferred properties of each peak 
+        including the retention time, scale, skew, amplitude, and total
+        area under the peak across the entire chromatogram.
+    mix_array : `numpy.ndarray`
+        A where each row corresponds to a time point and each column corresponds
+        to the value of the probability density for each individual peak. This 
+        is used primarily for plotting in the `show` method. 
+
     """
     def __init__(self, file, time_window=None,
                     bg_subtract=True,
@@ -23,11 +55,11 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        file: `str` or pandas.core.DataFrame`
+        file: `str` or pandas.core.frame.DataFrame`
             The path to the csv file of the chromatogram to analyze or 
             the pandas DataFrame of the chromatogram. If None, a pandas DataFrame 
             of the chromatogram must be passed.
-        dataframe : `pandas.core.DataFrame`
+        dataframe : `pandas.core.frame.DataFrame`
             a Pandas Dataframe of the chromatogram to analyze. If None, 
             a path to the csv file must be passed
         time_window: `list` [start, end], optional
@@ -62,7 +94,6 @@ class Chromatogram(object):
         self.time_col = cols['time']
         self.int_col = cols['intensity']
 
-
         # Load the chromatogram and necessary components to self. 
         if type(file) is str:
             dataframe = pd.read_csv(file, comment=csv_comment)
@@ -72,7 +103,7 @@ class Chromatogram(object):
 
         # Define the average timestep in the chromatogram. This computes a mean
         # but values will typically be identical.
-        self.dt = np.mean(np.diff(dataframe[self.time_col].values))
+        self._dt = np.mean(np.diff(dataframe[self.time_col].values))
 
         # Prune to time window
         if time_window is not None:
@@ -85,11 +116,10 @@ class Chromatogram(object):
             self._bg_subtract(window=peak_width)
 
         # Blank out vars that are used elsewhere
-        self.window_df = None
         self.window_props = None
-        self.peaks = None
+        self._peaks = None
         self.peak_df = None
-        self.guesses = None
+        self._guesses = None
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -136,7 +166,7 @@ class Chromatogram(object):
 
         Returns
         -------
-        windows : `pandas.core.frame.DataFrame`
+        window_df : `pandas.core.frame.DataFrame`
             A Pandas DataFrame with each measurement assigned to an identified 
             peak or overlapping peak set. This returns a copy of the chromatogram
             DataFrame with  a column  for the local baseline and one column for 
@@ -163,26 +193,26 @@ class Chromatogram(object):
         if len(locations) == 0:
             # Identify the peaks and get the widths and baselines
             peaks, _ = scipy.signal.find_peaks(norm_int, prominence=prominence)
-            self.peaks = peaks
-            widths, _, _, _ = scipy.signal.peak_widths(intensity, self.peaks, 
+            self._peaks = peaks
+            widths, _, _, _ = scipy.signal.peak_widths(intensity, self._peaks, 
                                        rel_height=0.5)
             # Compute the peak widths  
-            out = scipy.signal.peak_widths(intensity, self.peaks, 
+            out = scipy.signal.peak_widths(intensity, self._peaks, 
                                        rel_height=rel_height)
 
         else: 
             # Compute the indices in the time series that are closest to the 
             # user provided values
-            self.guesses = locations
-            self.peaks = np.int_(locations / self.dt)
-            widths = buffer * np.ones_like(self.peaks)
+            self._guesses = locations
+            self._peaks = np.int_(locations / self._dt)
+            widths = buffer * np.ones_like(self._peaks)
 
             # Unless perfectly positioned, manual positionings will raise a 
             # warning about peak prominence. This is automatically silenced.
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', 
                                       category=scipy.signal._peak_finding_utils.PeakPropertyWarning)
-                out = scipy.signal.peak_widths(intensity, self.peaks, rel_height=rel_height)
+                out = scipy.signal.peak_widths(intensity, self._peaks, rel_height=rel_height)
         
         _, _, left, right = out
         # Set up the ranges
@@ -222,16 +252,16 @@ class Chromatogram(object):
         # Convert this to a dictionary for easy parsing
         window_dict = {}
         for g, d in window_df.groupby('window_idx'):
-            _peaks = [p for p in self.peaks if p in d['time_idx'].values]
-            peak_inds = [x for _p in _peaks for x in np.where(self.peaks == _p)[0]]
+            _peaks = [p for p in self._peaks if p in d['time_idx'].values]
+            peak_inds = [x for _p in _peaks for x in np.where(self._peaks == _p)[0]]
             _dict = {'time_range':d[self.time_col].values,
                      'intensity': d[self.int_col].values,
                      'num_peaks': len(_peaks),
                      'amplitude': [d[d['time_idx']==p][self.int_col].values[0] for p in _peaks],
                      'location' : [d[d['time_idx']==p][self.time_col].values[0] for p in _peaks],
-                     'width' :    [widths[ind] * self.dt for ind in peak_inds]
+                     'width' :    [widths[ind] * self._dt for ind in peak_inds]
                      }
-            window_dict[g] = _dict
+            window_dict[int(g)] = _dict
         self.window_props = window_dict
         return window_df  
 
@@ -395,7 +425,7 @@ class Chromatogram(object):
                     # Lower bounds
                     bounds[0].append(0.1 * v['amplitude'][i]) 
                     bounds[0].append(v['time_range'].min()) 
-                    bounds[0].append(self.dt) 
+                    bounds[0].append(self._dt) 
                     bounds[0].append(-np.inf) 
                     # Upper bounds
                     bounds[1].append(10 * v['amplitude'][i])
@@ -434,7 +464,7 @@ class Chromatogram(object):
                 peak_props[k] = window_dict
             except RuntimeError:
                 print('Warning: Parameters could not be inferred for a peak!')
-        self.peak_props = peak_props
+        self._peak_props = peak_props
         return peak_props
 
     def quantify(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
@@ -518,7 +548,7 @@ class Chromatogram(object):
         time = self.df[self.time_col].values
         out = np.zeros((len(time), len(peak_df)))
         iter = 0
-        for _ , _v in self.peak_props.items():
+        for _ , _v in self._peak_props.items():
             for _, v in _v.items():
                 params = [v['amplitude'], v['retention_time'], 
                           v['scale'], v['alpha']]
@@ -563,7 +593,7 @@ class Chromatogram(object):
         tform = np.log(np.log(np.sqrt(signal + 1) + 1) + 1)
 
         # Compute the number of iterations given the window size.
-        iter = int(((window / self.dt) - 1) / 2)
+        iter = int(((window / self._dt) - 1) / 2)
 
         # Iteratively filter the signal
         for i in range(0,iter):
@@ -612,10 +642,10 @@ class Chromatogram(object):
             for i in range(len(self.peak_df)):
                 ax.fill_between(time, self.mix_array[:, i], label=f'peak {i+1}', 
                                 alpha=0.5)
-        if self.guesses is not None:
-            ax.plot(self.guesses, ymax * np.ones(len(self.guesses)), 'v', color='dodgerblue', label='supplied locations')
+        if self._guesses is not None:
+            ax.plot(self._guesses, ymax * np.ones(len(self._guesses)), 'v', color='dodgerblue', label='supplied locations')
 
-            for l in self.guesses:
+            for l in self._guesses:
                 ax.vlines(l, 0, ymax, color='dodgerblue')
             ax.legend(bbox_to_anchor=(1,1))
         fig.patch.set_facecolor((0, 0, 0, 0))
