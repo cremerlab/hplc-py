@@ -10,7 +10,7 @@ locs = np.linspace(5, 20, n_peaks)
 locs[-2:] += 8
 stdevs = np.random.uniform(0.3, 0.8, n_peaks)
 # stdevs[-1] = 0.9
-skews = np.random.normal(0, 1, n_peaks)
+skews = np.random.normal(0, 4, n_peaks)
 amps = 10**np.random.normal(3.5, 0.5, n_peaks)
 dt = 0.015 # In minutes 
 time = np.arange(0, 50, dt)
@@ -33,7 +33,7 @@ bg += 200 * np.sin(time/ 20)
 noise = np.random.normal(0, 2, len(time))
 
 # Generate the simulated data
-shift = 50
+shift = 100
 chrom_sim = bg + noise + signal + shift
 # chrom_sim -= np.min(chrom_sim)
 df = pd.DataFrame(np.array([time, chrom_sim, bg + noise + shift, signal]).T, columns=['time_min', 'intensity_mV', 'bg_truth', 'signal_truth'])

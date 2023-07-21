@@ -1,11 +1,13 @@
 #%%
+
 import pandas as pd
 import numpy as np 
 import hplc.quant
 import matplotlib.pyplot as plt 
 import seaborn as sns
-from findpeaks import findpeaks
 sns.set()
+import imp
+imp.reload(hplc.quant)
 # Load the simulated data and ground truth
 data = pd.read_csv('./simulated_chromatogram.csv')
 peaks = pd.read_csv('./simulated_chromatogram_peaks.csv') 
@@ -13,10 +15,25 @@ plt.plot(data['time_min'],  data['intensity_mV'], label='observed chrom')
 plt.plot(data['time_min'], data['bg_truth'], label='bg')
 plt.legend()
 
+chrom = hplc.quant.Chromatogram('./simulated_chromatogram.csv', bg_subtract=True)
+locs = peaks['retention_time'].values
+df = chrom.quantify([locs[0]])
+
 #%%
-chrom = hplc.quant.Chromatogram(data)
-x = chrom.quantify()
 chrom.show()
+# %%
+
+# %%
+
+# %%
+
+# %%
+chrom.show(locations=True)
+
+chrom.show()
+#%%
+x = chrom.quantify()
+_ = chrom.show()
 
 #%%
 signal = data.intensity_mV.copy()
