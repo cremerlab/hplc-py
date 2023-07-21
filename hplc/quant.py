@@ -8,12 +8,11 @@ import matplotlib.pyplot as plt
 import warnings
 import seaborn as sns
 
-
 class Chromatogram(object):
     """
     Base class for the processing and quantification of HPLC chromatograms
     """
-    def __init__(self, file=None, time_window=None,
+    def __init__(self, file, time_window=None,
                     bg_subtract=True,
                     peak_width=3,
                     cols={'time':'time_min', 'intensity':'intensity_mV'},
@@ -24,35 +23,33 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        file: str or pandas DataFrame, optional
+        file: `str` or pandas.core.DataFrame`
             The path to the csv file of the chromatogram to analyze or 
             the pandas DataFrame of the chromatogram. If None, a pandas DataFrame 
             of the chromatogram must be passed.
-        dataframe : pandas DataFrame, optional
+        dataframe : `pandas.core.DataFrame`
             a Pandas Dataframe of the chromatogram to analyze. If None, 
             a path to the csv file must be passed
-        time_window: list [start, end], optional
+        time_window: `list` [start, end], optional
             The retention time window of the chromatogram to consider for analysis.
             If None, the entire time range of the chromatogram will be considered.
-        bg_subtract: bool, optional
+        bg_subtract: `bool`, optional
             If True, sensitive nonlinear iterative peak (SNIP) clipping is used 
             to estimate and subtract the signal baseline.
-        peak_width: float, optional
+        peak_width: `float`, optional
             The approximate full-width half-maximum (FWHM) of the peaks of interest. 
             This is used to set the number of iterations needed for the background
             subtraction.
-        cols: dict, keys of 'time', and 'intensity', optional
+        cols: `dict`, keys of 'time', and 'intensity', optional
             A dictionary of the retention time and intensity measurements 
             of the chromatogram. Default is 
             `{'time':'time_min', 'intensity':'intensity_mV'}`.
-        csv_comment: str, optional
+        csv_comment: `str`, optional
             Comment delimiter in the csv file if chromatogram is being read 
             from disk.
         """
 
         # Peform type checks and throw exceptions where necessary. 
-        if file is None:
-            raise RuntimeError(f'File path or dataframe must be provided')
         if (type(file) is not str) & (type(file) is not pd.core.frame.DataFrame):
             raise RuntimeError(f'Argument must be either a filepath or pandas DataFrame. Argument is of type {type(file)}')
         if (time_window is not None):
@@ -94,17 +91,16 @@ class Chromatogram(object):
         self.peak_df = None
         self.guesses = None
 
-
     def crop(self, time_window=None, return_df=False):
-        """
-        Restricts the time dimension of the DataFrame
+        R"""
+        Restricts the time dimension of the DataFrame in place.
 
         Parameters
         ----------
-        time_window : list [start, end], optional
+        time_window : `list` [start, end], optional
             The retention time window of the chromatogram to consider for analysis.
             If None, the entire time range of the chromatogram will be considered.
-        return_df : bool
+        return_df : `bool`
             If `True`, the cropped DataFrame is 
 
         Returns
@@ -122,25 +118,25 @@ class Chromatogram(object):
             return self.df
 
     def _assign_peak_windows(self, locations=[], prominence=0.01, rel_height=0.95, buffer=100):
-        """
+        R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
 
         Parameters
         ----------
-        prominence : float,  [0, 1]
+        prominence : `float`,  [0, 1]
             The promimence threshold for identifying peaks. Prominence is the 
             relative height of the normalized signal relative to the local
             background. Default is 1%.
-        rel_height : float, [0, 1]
+        rel_height : `float`, [0, 1]
             The relative height of the peak where the baseline is determined. 
             Default is 95%.
-        buffer : positive int
+        buffer : positive `int`
             The padding of peak windows in units of number of time steps. Default 
             is 100 points on each side of the identified peak window.
 
         Returns
         -------
-        windows : pandas DataFrame
+        windows : `pandas.core.frame.DataFrame`
             A Pandas DataFrame with each measurement assigned to an identified 
             peak or overlapping peak set. This returns a copy of the chromatogram
             DataFrame with  a column  for the local baseline and one column for 
@@ -246,23 +242,23 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        x : float or numpy array
+        x : `float` or `numpy.ndarray`
             The time dimension of the skewnorm 
-        params : list, [amplitude, loc, scale, alpha]
+        params : `list`, [`amplitude`, `loc`, `scale`, `alpha`]
             Parameters for the shape and scale parameters of the skewnorm 
             distribution.
-                amplitude : float; > 0
+                `amplitude` : positive `float`
                     Height of the peak.
-                loc : float; > 0
+                `loc` : positive `float`
                     The location parameter of the distribution.
-                scale : float; > 0
+                `scale` : positive `float`
                     The scale parameter of the distribution.
-                alpha : float; > 
-                    THe skew shape parater of the distribution.
+                `alpha` : positive `float`
+                    The skew shape parater of the distribution.
 
         Returns
         -------
-        scaled_pdf : float or numpy array, same shape as `x`
+        scaled_pdf : `float or numpy array, same shape as `x`
             The PDF of the skew-normal distribution scaled with the supplied 
             amplitude.
 
@@ -292,24 +288,24 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        x : float
+        x : `float`
             The time dimension of the skewnorm 
         params : list of length 4 x number of peaks, [amplitude, loc, scale, alpha]
             Parameters for the shape and scale parameters of the skewnorm 
             distribution. Must be provided in following order, repeating
             for each distribution.
-                amplitude : float; > 0
+                `amplitude` : float; > 0
                     Height of the peak.
-                loc : float; > 0
+                `loc` : float; > 0
                     The location parameter of the distribution.
-                scale : float; > 0
+                `scale` : float; > 0
                     The scale parameter of the distribution.
-                alpha : float; > 
-                    THe skew shape parater of the distribution.
+                `alpha` : float; > 
+                    The skew shape parater of the distribution.
 
         Returns
         -------
-        out : float
+        out : `float`
             The evaluated distribution at the given time x. This is the summed
             value for all distributions modeled to construct the peak in the 
             chromatogram.
@@ -333,24 +329,24 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        verbose : bool
+        verbose : `bool`
             If `True`, a progress bar will be printed during the inference.
 
-        param_bounds : dict, optional
+        param_bounds : `dict`, optional
             Modifications to the default parameter bounds (see Notes below) as 
             a dictionary for each parameter. A dict entry should be of the 
-             form `parameter: [lower, upper]`. Modifications have the following effects:
+            form `parameter: [lower, upper]`. Modifications have the following effects:
 
-            + Modifications to `amplitude` bounds are multiplicative of the 
-            observed magnitude at the peak position. 
-            + Modifications to `location` are values that are subtracted or 
-            added from the peak position for lower and upper bounds, respectively.
-            + Modifications to `std_dev` replace the default values. 
-            + Modifications to `skew` replace the default values. 
+                + Modifications to `amplitude` bounds are multiplicative of the 
+                observed magnitude at the peak position. 
+                + Modifications to `location` are values that are subtracted or 
+                added from the peak position for lower and upper bounds, respectively.
+                + Modifications to `scale` replace the default values. 
+                + Modifications to `skew` replace the default values. 
 
         Returns 
         --------
-        peak_props: dict
+        peak_props: `dict`
             A dataframe containing properties of the peak fitting procedure. 
 
         Notes
@@ -366,7 +362,7 @@ class Chromatogram(object):
             + `location`: The lower and upper location bounds correspond to the 
             minimum and maximum time values of the chromatogram.
 
-            + `std_dev`: The lower and upper bounds of the peak standard deviation
+            + `scale`: The lower and upper bounds of the peak standard deviation
             defaults to the chromatogram time-step and one-half of the chromatogram
             duration, respectively.  
 
@@ -407,12 +403,12 @@ class Chromatogram(object):
                 else:
                     bounds[0].append(param_bounds['amplitude'][0] * v['amplitude'][i]) 
                     bounds[0].append(v['location'] - param_bounds['location'][0]) 
-                    bounds[0].append(param_bounds['std_dev'][0]) 
+                    bounds[0].append(param_bounds['scale'][0]) 
                     bounds[0].append(param_bounds['skew'][0]) 
                     # Upper bounds
                     bounds[1].append(param_bounds['amplitude'][1] * v['amplitude'][i])
                     bounds[1].append(v['location'] + param_bounds['location'][1])
-                    bounds[1].append(param_bounds['std_dev'][1])
+                    bounds[1].append(param_bounds['scale'][1])
                     bounds[1].append(param_bounds['skew'][1]) 
 
             # Perform the inference
@@ -430,7 +426,7 @@ class Chromatogram(object):
                     window_dict[f'peak_{i + 1}'] = {
                                 'amplitude': p[0],
                                 'retention_time': p[1],
-                                'std_dev': p[2],
+                                'scale': p[2],
                                 'alpha': p[3],
                                 'area':self._compute_skewnorm(v['time_range'], *p).sum()}
                 peak_props[k] = window_dict
@@ -446,37 +442,34 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        locations: list, optional
+        locations: `list`, optional
             Initial guesses for the retention times of desired peaks. If not
             provided, peaks will be automatically detected.
-        time_window: list [start, end], optional
+        time_window: `list`, [start, end], optional
             The retention time window of the chromatogram to consider for analysis.
             If None, the entire time range of the chromatogram will be considered.
-        prominence : float,  [0, 1]
+        prominence : `float`,  [0, 1]
             The promimence threshold for identifying peaks. Prominence is the 
             relative height of the normalized signal relative to the local
             background. Default is 1%. If `locations` is provided, this is 
             not used.
-        rel_height : float, [0, 1]
+        rel_height : `float`, [0, 1]
             The relative height of the peak where the baseline is determined. 
             Default is 100%. If `locations` is provided, this is not used.
-
-        buffer : positive int
+        buffer : positive `int`
             The padding of peak windows in units of number of time steps. Default 
             is 100 points on each side of the identified peak window. If `locations` 
             is provided, this is not used.
-
-        verbose : bool
+        verbose : `bool`
             If True, a progress bar will be printed during the inference. 
-
-        param_bounds: dict, optional
+        param_bounds: `dict`, optional
             Parameter boundary modifications to be used to constrain fitting. 
             See docstring of :func:`~hplc.quant.Chromatogram.estimate_peak_params`
             for more information.
 
         Returns
         -------
-        peak_df : pandas DataFrame
+        peak_df : `pandas.core.frame.DataFrame`
             A dataframe containing information for each detected peak.
 
 
@@ -509,7 +502,7 @@ class Chromatogram(object):
         for _, peaks in peak_props.items():
             for _, params in peaks.items():
                 _dict = {'retention_time': params['retention_time'],
-                         'scale': params['std_dev'],
+                         'scale': params['scale'],
                          'skew': params['alpha'],
                          'amplitude': params['amplitude'],
                          'area': params['area'],
@@ -526,7 +519,7 @@ class Chromatogram(object):
         for _ , _v in self.peak_props.items():
             for _, v in _v.items():
                 params = [v['amplitude'], v['retention_time'], 
-                          v['std_dev'], v['alpha']]
+                          v['scale'], v['alpha']]
                 out[:, iter] = self._compute_skewnorm(time, *params)
                 iter += 1
         self.mix_array = out
@@ -539,16 +532,16 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        window : int
+        window : `int`
             The approximate size of signal objects in the chromatogram in dimensions
             of time. This is related to the number of iterations undertaken by 
             the SNIP algorithm.
-        return_df : bool
+        return_df : `bool`
             If `True`, then chromatograms (before and after background correction) are returned
 
         Returns
         -------
-        corrected_df : pandas DataFrame
+        corrected_df : `pandas.core.frame.DataFrame`
             If `return_df = True`, then the original and the corrected chromatogram are returned.
 
         Notes
@@ -577,12 +570,8 @@ class Chromatogram(object):
                 tform_new[j] = min(tform_new[j], 0.5 * (tform_new[j+i] + tform_new[j-i])) 
             tform = tform_new
 
-        # Perform the inverse of the LLS transformation
+        # Perform the inverse of the LLS transformation and subtract
         inv_tform = (np.exp(np.exp(tform) - 1) - 1)**2 - 1 
-
-        # Add a new column to the dataframe which contains the background 
-        # subtracted intensity and update the intensity column name in the 
-        # object.
         df[self.int_col] = signal - inv_tform
         df[f'estimated_background'] = inv_tform 
         self.df = df  
@@ -592,8 +581,14 @@ class Chromatogram(object):
     def show(self):
         """
         Displays the chromatogram with mapped peaks if available.
-        """
-        
+
+        Returns
+        -------
+        fig : `matplotlib.figure.Figure`
+            The matplotlib figure object.
+        ax : `matplotlib.axes._axes.Axes`
+            The matplotlib axis object.
+        """ 
         sns.set()
 
         # Set up the figure    
