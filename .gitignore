@@ -6,3 +6,5 @@
 *.DS_*tore
 .vscode
 *.pdf
+*.svg
+docs/
