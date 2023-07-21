@@ -14,7 +14,7 @@ def compare(a, b, tol):
     tru[_zeros] = np.sign(val[_zeros]) * tol 
     assert np.isclose(val, tru, rtol=tol).all()
 
-def fit_peaks(test_data, truth, colnames={'time':'x', 'intensity':'y'}, tol=1E-2):
+def fit_peaks(test_data, truth, colnames={'time':'x', 'signal':'y'}, tol=1E-2):
     """
     Uses the `hplc.quant.Chromatogram.quantify` method to fit peaks in a chromatogram
     and compares teh value with the ground truth.
@@ -60,4 +60,17 @@ def test_peak_unmixing():
         fit_peaks(d, truth)
 
 
-test_peak_unmixing()
+def test_bg_estimation():
+    """
+    Tests that a background signal with a known profile can be correctly estimated 
+    within 1% of the ground truth with a fixed window size.
+    """
+    tol = 1E-2
+    data = pd.read_csv('./test_SNIP_chrom.csv')
+    chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'},
+                                    peak_width=0.5)
+    window = int(0.5 / np.mean(np.diff(data['x'].values)))
+    assert np.isclose(chrom.df['estimated_background'].values[window:-window],
+                      data['bg'].values[window:-window], rtol=tol).all()
+
+test_bg_estimation()

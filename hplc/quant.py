@@ -47,7 +47,7 @@ class Chromatogram(object):
     def __init__(self, file, time_window=None,
                     bg_subtract=True,
                     peak_width=3,
-                    cols={'time':'time_min', 'intensity':'intensity_mV'},
+                    cols={'time':'time', 'signal':'signal'},
                     csv_comment='#'):
         """
         Instantiates a chromatogram object on which peak detection and quantification
@@ -72,10 +72,10 @@ class Chromatogram(object):
             The approximate full-width half-maximum (FWHM) of the peaks of interest. 
             This is used to set the number of iterations needed for the background
             subtraction.
-        cols: `dict`, keys of 'time', and 'intensity', optional
+        cols: `dict`, keys of 'time', and 'signal', optional
             A dictionary of the retention time and intensity measurements 
             of the chromatogram. Default is 
-            `{'time':'time_min', 'intensity':'intensity_mV'}`.
+            `{'time':'time', 'signal':'signal'}`.
         csv_comment: `str`, optional
             Comment delimiter in the csv file if chromatogram is being read 
             from disk.
@@ -92,7 +92,7 @@ class Chromatogram(object):
 
         # Assign class variables 
         self.time_col = cols['time']
-        self.int_col = cols['intensity']
+        self.int_col = cols['signal']
 
         # Load the chromatogram and necessary components to self. 
         if type(file) is str:
@@ -255,7 +255,7 @@ class Chromatogram(object):
             _peaks = [p for p in self._peaks if p in d['time_idx'].values]
             peak_inds = [x for _p in _peaks for x in np.where(self._peaks == _p)[0]]
             _dict = {'time_range':d[self.time_col].values,
-                     'intensity': d[self.int_col].values,
+                     'signal': d[self.int_col].values,
                      'num_peaks': len(_peaks),
                      'amplitude': [d[d['time_idx']==p][self.int_col].values[0] for p in _peaks],
                      'location' : [d[d['time_idx']==p][self.time_col].values[0] for p in _peaks],
@@ -446,7 +446,7 @@ class Chromatogram(object):
             # Perform the inference
             try:
                 popt, _ = scipy.optimize.curve_fit(self._fit_skewnorms, v['time_range'],
-                                               v['intensity'], p0=p0, bounds=bounds,
+                                               v['signal'], p0=p0, bounds=bounds,
                                                maxfev=int(1E4))
 
                 # Assemble the dictionary of output 

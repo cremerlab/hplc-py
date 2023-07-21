@@ -40,8 +40,8 @@ for i, sig in enumerate(scales):
         peaks = pd.concat([peaks, _peaks], sort=False)
         chroms = pd.concat([chroms, _chrom], sort=False)
         _iter += 1  
-peaks.to_csv('../tests/test_fitting_peaks.csv', index=False) 
-chroms.to_csv('../tests/test_fitting_chrom.csv', index=False) 
+peaks.to_csv('./test_fitting_peaks.csv', index=False) 
+chroms.to_csv('./test_fitting_chrom.csv', index=False) 
 
 #%%
 # Generate test data for peak unmixing
@@ -70,5 +70,36 @@ for n in range(n_mixes):
                                          'amplitude', 'area', 'peak_idx', 'iter'])
     peaks = pd.concat([peaks, _df])
 
-chroms.to_csv('../tests/test_unmix_chrom.csv', index=False)
-peaks.to_csv('../tests/test_unmix_peaks.csv', index=False)
+chroms.to_csv('./test_unmix_chrom.csv', index=False)
+peaks.to_csv('./test_unmix_peaks.csv', index=False)
+
+#%%
+# Generate a noisy background to test the background subtraction algorithm
+np.random.seed(666)
+n_peaks = 10 
+x = np.arange(0, 40, dt)
+sig = np.zeros_like(x)
+amps = np.abs(np.random.normal(100, 30, n_peaks))
+loc = np.abs(np.random.uniform(-10, 40, n_peaks))
+scale = np.abs(np.random.normal(10, 2, n_peaks))
+for i in range(n_peaks):
+    sig += amps[i] * scipy.stats.norm(loc[i], scale[i]).pdf(x) 
+
+# Add strong candidate signal
+noise = np.random.exponential(size=len(x))
+df = pd.DataFrame(np.array([x, sig, sig + noise]).T, columns=['x', 'bg', 'y'])
+df.to_csv('./test_SNIP_chrom.csv', index=False)
+
+#%%
+import hplc.quant
+c = hplc.quant.Chromatogram(df, bg_subtract=False, cols={'time':'x', 'intensity':'y'})
+bg_df = c._bg_subtract(return_df=True, window=0.5)
+#%%
+plt.plot(bg_df['estimated_background'].values)
+plt.plot(sig)
+
+#%%
+np.isclose(bg_df['estimated_background'].values[50:-50], sig[50:-50], rtol=0.01).all()
+
+
+# bg_df[50:-50]
