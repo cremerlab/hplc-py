@@ -325,15 +325,53 @@ class Chromatogram(object):
         return out
 
 
-    def _estimate_peak_params(self, verbose=True, buffer=100):
+    def estimate_peak_params(self, verbose=True, param_bounds=None):
         R"""
         For each peak window, estimate the parameters of skew-normal distributions 
-        which makeup the peak(s) in the window.  
+        which makeup the peak(s) in the window. See "Notes" for information on
+        default parameter bounds.
 
         Parameters
         ----------
         verbose : bool
             If `True`, a progress bar will be printed during the inference.
+
+        param_bounds : dict, optional
+            Modifications to the default parameter bounds (see Notes below) as 
+            a dictionary for each parameter. A dict entry should be of the 
+             form `parameter: [lower, upper]`. Modifications have the following effects:
+
+            + Modifications to `amplitude` bounds are multiplicative of the 
+            observed magnitude at the peak position. 
+            + Modifications to `location` are values that are subtracted or 
+            added from the peak position for lower and upper bounds, respectively.
+            + Modifications to `std_dev` replace the default values. 
+            + Modifications to `skew` replace the default values. 
+
+        Returns 
+        --------
+        peak_props: dict
+            A dataframe containing properties of the peak fitting procedure. 
+
+        Notes
+        -----
+        The parameter boundaries are set automatically to prevent run-away estimation 
+        into non-realistic regimes that can seriously slow down the inference. The 
+        default parameter boundaries for each peak are as follows.
+
+            + `amplitude`: The lower and upper peak amplitude boundaries correspond 
+            to one-tenth and ten-times the value of the peak at the peak location 
+            in the chromatogram.
+
+            + `location`: The lower and upper location bounds correspond to the 
+            minimum and maximum time values of the chromatogram.
+
+            + `std_dev`: The lower and upper bounds of the peak standard deviation
+            defaults to the chromatogram time-step and one-half of the chromatogram
+            duration, respectively.  
+
+            + `skew`: The skew parameter by default is allowed to take any value
+            (-inf, inf).
         """ 
         if self.window_props is None:
             raise RuntimeError('Function `_assign_peak_windows` must be run first. Go do that.')
@@ -355,15 +393,27 @@ class Chromatogram(object):
                 p0.append(v['width'][i] / 2) # scale parameter
                 p0.append(0) # Skew parameter, starts with assuming Gaussian
 
-                #TODO: Allow user supplied bounds 
-                bounds[0].append(0.1 * v['amplitude'][i])
-                bounds[0].append(v['time_range'].min())
-                bounds[0].append(self.dt)
-                bounds[0].append(-np.inf)
-                bounds[1].append(10 * v['amplitude'][i])
-                bounds[1].append(v['time_range'].max())
-                bounds[1].append((v['time_range'].max() - v['time_range'].min())/2)
-                bounds[1].append(np.inf)
+                if param_bounds is None:
+                    # Lower bounds
+                    bounds[0].append(0.1 * v['amplitude'][i]) 
+                    bounds[0].append(v['time_range'].min()) 
+                    bounds[0].append(self.dt) 
+                    bounds[0].append(-np.inf) 
+                    # Upper bounds
+                    bounds[1].append(10 * v['amplitude'][i])
+                    bounds[1].append(v['time_range'].max())
+                    bounds[1].append((v['time_range'].max() - v['time_range'].min())/2)
+                    bounds[1].append(np.inf)
+                else:
+                    bounds[0].append(param_bounds['amplitude'][0] * v['amplitude'][i]) 
+                    bounds[0].append(v['location'] - param_bounds['location'][0]) 
+                    bounds[0].append(param_bounds['std_dev'][0]) 
+                    bounds[0].append(param_bounds['skew'][0]) 
+                    # Upper bounds
+                    bounds[1].append(param_bounds['amplitude'][1] * v['amplitude'][i])
+                    bounds[1].append(v['location'] + param_bounds['location'][1])
+                    bounds[1].append(param_bounds['std_dev'][1])
+                    bounds[1].append(param_bounds['skew'][1]) 
 
             # Perform the inference
             try:
@@ -390,7 +440,7 @@ class Chromatogram(object):
         return peak_props
 
     def quantify(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
-                 buffer=100, verbose=True):
+                 buffer=100, param_bounds={}, verbose=True):
         R"""
         Quantifies peaks present in the chromatogram
 
@@ -398,7 +448,7 @@ class Chromatogram(object):
         ----------
         locations: list, optional
             Initial guesses for the retention times of desired peaks. If not
-            provided, peaks will be automatically detected. 
+            provided, peaks will be automatically detected.
         time_window: list [start, end], optional
             The retention time window of the chromatogram to consider for analysis.
             If None, the entire time range of the chromatogram will be considered.
@@ -418,6 +468,11 @@ class Chromatogram(object):
 
         verbose : bool
             If True, a progress bar will be printed during the inference. 
+
+        param_bounds: dict, optional
+            Parameter boundary modifications to be used to constrain fitting. 
+            See docstring of :func:`~hplc.quant.Chromatogram.estimate_peak_params`
+            for more information.
 
         Returns
         -------
@@ -446,7 +501,7 @@ class Chromatogram(object):
         _ = self._assign_peak_windows(locations, prominence, rel_height, buffer)
 
         # Infer the distributions for the peaks
-        peak_props = self._estimate_peak_params(verbose, buffer=buffer)
+        peak_props = self.estimate_peak_params(verbose, buffer=buffer)
 
         # Set up a dataframe of the peak properties
         peak_df = pd.DataFrame([])
