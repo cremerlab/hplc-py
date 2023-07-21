@@ -5,6 +5,7 @@ import scipy.optimize
 import scipy.special
 import tqdm
 import matplotlib.pyplot as plt
+import warnings
 import seaborn as sns
 
 
@@ -67,7 +68,7 @@ class Chromatogram(object):
 
         # Load the chromatogram and necessary components to self. 
         if type(file) is str:
-            dataframe = pd.read_csv(file, comment='#')
+            dataframe = pd.read_csv(file, comment=csv_comment)
         else:
             dataframe = file.copy()
         self.df = dataframe
@@ -166,21 +167,28 @@ class Chromatogram(object):
         if len(locations) == 0:
             # Identify the peaks and get the widths and baselines
             peaks, _ = scipy.signal.find_peaks(norm_int, prominence=prominence)
-            print(peaks)
             self.peaks = peaks
+            widths, _, _, _ = scipy.signal.peak_widths(intensity, self.peaks, 
+                                       rel_height=0.5)
+            # Compute the peak widths  
+            out = scipy.signal.peak_widths(intensity, self.peaks, 
+                                       rel_height=rel_height)
+
         else: 
             # Compute the indices in the time series that are closest to the 
             # user provided values
             self.guesses = locations
             self.peaks = np.int_(locations / self.dt)
-        
-        # COmpute the peak widths
-        out = scipy.signal.peak_widths(intensity, self.peaks, 
-                                       rel_height=rel_height)
-        _, heights, left, right = out
-        widths, _, _, _ = scipy.signal.peak_widths(intensity, self.peaks, 
-                                       rel_height=0.5)
+            widths = buffer * np.ones_like(self.peaks)
 
+            # Unless perfectly positioned, manual positionings will raise a 
+            # warning about peak prominence. This is automatically silenced.
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', 
+                                      category=scipy.signal._peak_finding_utils.PeakPropertyWarning)
+                out = scipy.signal.peak_widths(intensity, self.peaks, rel_height=rel_height)
+        
+        _, _, left, right = out
         # Set up the ranges
         ranges = []
         for l, r in zip(left, right):
@@ -201,10 +209,9 @@ class Chromatogram(object):
                 if i != j:
                     if set(r2).issubset(r1):
                         valid[j] = False
-        
+
         # Keep only valid ranges and baselines
         ranges = [r for i, r in enumerate(ranges) if valid[i] is True]
-        baselines = [h for i, h in enumerate(heights) if valid[i] is True]
 
         # Copy the dataframe and return the windows
         window_df = df.copy(deep=True)
@@ -213,22 +220,20 @@ class Chromatogram(object):
         for i, r in enumerate(ranges):
             window_df.loc[window_df['time_idx'].isin(r), 
                                     'window_idx'] = int(i + 1)
-            window_df.loc[window_df['time_idx'].isin(r), 
-                                    'baseline'] = baselines[i]
+
         window_df.dropna(inplace=True) 
 
         # Convert this to a dictionary for easy parsing
         window_dict = {}
-        time_step = np.mean(np.diff(self.df[self.time_col].values))
         for g, d in window_df.groupby('window_idx'):
             _peaks = [p for p in self.peaks if p in d['time_idx'].values]
             peak_inds = [x for _p in _peaks for x in np.where(self.peaks == _p)[0]]
             _dict = {'time_range':d[self.time_col].values,
-                     'intensity': d[self.int_col] - baselines[i],
+                     'intensity': d[self.int_col].values,
                      'num_peaks': len(_peaks),
-                     'amplitude': [d[d['time_idx']==p][self.int_col].values[0] - baselines[i] for p in _peaks],
+                     'amplitude': [d[d['time_idx']==p][self.int_col].values[0] for p in _peaks],
                      'location' : [d[d['time_idx']==p][self.time_col].values[0] for p in _peaks],
-                     'width' :    [widths[ind] * time_step for ind in peak_inds]
+                     'width' :    [widths[ind] * self.dt for ind in peak_inds]
                      }
             window_dict[g] = _dict
         self.window_props = window_dict
@@ -319,8 +324,8 @@ class Chromatogram(object):
             out += self._compute_skewnorm(x, *params[i])
         return out
 
-    # FIXME: Catch ValueError `x0 is infeasible` and adjust bounds.    
-    def _estimate_peak_params(self, verbose=True):
+
+    def _estimate_peak_params(self, verbose=True, buffer=100):
         R"""
         For each peak window, estimate the parameters of skew-normal distributions 
         which makeup the peak(s) in the window.  
@@ -350,32 +355,16 @@ class Chromatogram(object):
                 p0.append(v['width'][i] / 2) # scale parameter
                 p0.append(0) # Skew parameter, starts with assuming Gaussian
 
-                # Set the bounds 
-                # TODO: Turn this into a function that applies automatic bound 
-                # detection using the supplied buffer for window identification
-                # if v['width'][i] == 0:
-                #     w_min = self.dt
-                #     w_max = v['time_range'].max()/2
-                # else:
-                #     w_min = 0.1 * v['width'][i]/2
-                #     w_max = 5 * v['width'][i]
-                # if v['location'][i] <= 100 * self.dt:
-                #     loc_min = 100 * self.dt
-                # else:
-                #     loc_min = v['location'][i] -  100 * self.dt
-                # if v['location'][i] >= (v['time_range'].max() - 100 * self.dt):
-                #     loc_max = v['time_range'].max()
-                # else:
-                #     loc_max = v['location'][i] + 100 * self.dt
-                bounds[0].append(0)
+                #TODO: Allow user supplied bounds 
+                bounds[0].append(0.1 * v['amplitude'][i])
                 bounds[0].append(v['time_range'].min())
                 bounds[0].append(self.dt)
                 bounds[0].append(-np.inf)
-                bounds[1].append(2 * v['amplitude'][i])
+                bounds[1].append(10 * v['amplitude'][i])
                 bounds[1].append(v['time_range'].max())
+                bounds[1].append((v['time_range'].max() - v['time_range'].min())/2)
                 bounds[1].append(np.inf)
-                bounds[1].append(np.inf)
-                print(bounds)
+
             # Perform the inference
             try:
                 popt, _ = scipy.optimize.curve_fit(self._fit_skewnorms, v['time_range'],
@@ -396,12 +385,12 @@ class Chromatogram(object):
                                 'area':self._compute_skewnorm(v['time_range'], *p).sum()}
                 peak_props[k] = window_dict
             except RuntimeError:
-                print('Warning: Parameters could not be inferred for one peak')
+                print('Warning: Parameters could not be inferred for a peak!')
         self.peak_props = peak_props
         return peak_props
 
     def quantify(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
-                 buffer=100, verbose=True, **kwargs):
+                 buffer=100, verbose=True):
         R"""
         Quantifies peaks present in the chromatogram
 
@@ -457,7 +446,7 @@ class Chromatogram(object):
         _ = self._assign_peak_windows(locations, prominence, rel_height, buffer)
 
         # Infer the distributions for the peaks
-        peak_props = self._estimate_peak_params(verbose)
+        peak_props = self._estimate_peak_params(verbose, buffer=buffer)
 
         # Set up a dataframe of the peak properties
         peak_df = pd.DataFrame([])
@@ -573,7 +562,7 @@ class Chromatogram(object):
                                 alpha=0.5)
         if self.guesses is not None:
             ax.plot(self.guesses, ymax * np.ones(len(self.guesses)), 'v', color='dodgerblue', label='supplied locations')
-            print(self.guesses)
+
             for l in self.guesses:
                 ax.vlines(l, 0, ymax, color='dodgerblue')
             ax.legend(bbox_to_anchor=(1,1))

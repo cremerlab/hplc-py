@@ -8,6 +8,8 @@ import seaborn as sns
 sns.set()
 import imp
 imp.reload(hplc.quant)
+
+
 # Load the simulated data and ground truth
 data = pd.read_csv('./simulated_chromatogram.csv')
 peaks = pd.read_csv('./simulated_chromatogram_peaks.csv') 
@@ -17,10 +19,12 @@ plt.legend()
 
 chrom = hplc.quant.Chromatogram('./simulated_chromatogram.csv', bg_subtract=True)
 locs = peaks['retention_time'].values
-df = chrom.quantify([locs[0]])
+df = chrom.quantify(locs[:2])
+
 
 #%%
 chrom.show()
+
 # %%
 
 # %%
