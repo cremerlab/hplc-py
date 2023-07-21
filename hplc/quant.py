@@ -321,7 +321,7 @@ class Chromatogram(object):
         return out
 
 
-    def estimate_peak_params(self, verbose=True, param_bounds=None):
+    def estimate_peak_params(self, verbose=True, param_bounds={}):
         R"""
         For each peak window, estimate the parameters of skew-normal distributions 
         which makeup the peak(s) in the window. See "Notes" for information on
@@ -391,7 +391,7 @@ class Chromatogram(object):
                 p0.append(v['width'][i] / 2) # scale parameter
                 p0.append(0) # Skew parameter, starts with assuming Gaussian
 
-                if param_bounds is None:
+                if len(param_bounds) == 0:
                     # Lower bounds
                     bounds[0].append(0.1 * v['amplitude'][i]) 
                     bounds[0].append(v['time_range'].min()) 
@@ -496,7 +496,7 @@ class Chromatogram(object):
         _ = self._assign_peak_windows(locations, prominence, rel_height, buffer)
 
         # Infer the distributions for the peaks
-        peak_props = self.estimate_peak_params(verbose, buffer=buffer)
+        peak_props = self.estimate_peak_params(verbose=verbose, param_bounds=param_bounds)
 
         # Set up a dataframe of the peak properties
         peak_df = pd.DataFrame([])
