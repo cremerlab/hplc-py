@@ -16,9 +16,7 @@ chroms = pd.DataFrame([])
 peaks = pd.DataFrame([])
 _iter = 0
 for i, sig in enumerate(scales):
-    _iter += 1
     for j, skew in enumerate(skews):
-        _iter += 1
         signal = np.zeros_like(x)
         _areas = []
         _scales = []
@@ -33,11 +31,13 @@ for i, sig in enumerate(scales):
             _amps.append(amps[ell])
         # Generate the peak table
         _peaks = pd.DataFrame(np.array([locs, _areas, _scales, _skews, _amps, np.arange(len(locs)) + 1]).T,
-                              columns=['loc', 'area', 'scale', 'skew', 'amp', 'peak'])
+                              columns=['retention_time', 'area', 'scale', 'skew', 'amplitude', 'peak_idx'])
         _peaks['iter'] = _iter
+        _peaks['peak_idx'] = np.int_(_peaks['peak_idx'])
         _chrom = pd.DataFrame(np.array([x, signal]).T, columns=['x', 'y'])
         _chrom['iter'] = _iter
         peaks = pd.concat([peaks, _peaks], sort=False)
         chroms = pd.concat([chroms, _chrom], sort=False)
+        _iter += 1  
 peaks.to_csv('../tests/test_peak_table.csv', index=False) 
 chroms.to_csv('../tests/test_chrom.csv', index=False) 
