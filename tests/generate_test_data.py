@@ -3,6 +3,7 @@ import numpy as np
 import scipy.stats 
 import pandas as pd
 
+# Generate test data for peak fitting
 n_peaks = 5
 t_bounds = [0, 160]
 x_bounds = [0.1 * t_bounds[1], 0.9 * t_bounds[1]]
@@ -39,5 +40,35 @@ for i, sig in enumerate(scales):
         peaks = pd.concat([peaks, _peaks], sort=False)
         chroms = pd.concat([chroms, _chrom], sort=False)
         _iter += 1  
-peaks.to_csv('../tests/test_peak_table.csv', index=False) 
-chroms.to_csv('../tests/test_chrom.csv', index=False) 
+peaks.to_csv('../tests/test_fitting_peaks.csv', index=False) 
+chroms.to_csv('../tests/test_fitting_chrom.csv', index=False) 
+
+#%%
+# Generate test data for peak unmixing
+x = np.arange(0, 25, dt)
+n_mixes = 20
+nudge=0.2
+peak1 = 100 * scipy.stats.norm(8, 1).pdf(x)
+chroms = pd.DataFrame([])
+peaks = pd.DataFrame([])
+for n in range(n_mixes):
+    sig = peak1.copy()
+    peak2 = 70 * scipy.stats.norm(10.5+ n * 0.2, 1).pdf(x)
+    sig += peak2
+
+    # Save chromatogram
+    _df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
+    _df['iter'] = n
+    chroms = pd.concat([chroms, _df])
+
+
+    # Save the peak info
+    _df = pd.DataFrame(np.array([[8, 10.5 + n * 0.2], [1, 1], [0, 0], 
+                                [100, 70], [peak1.sum(), peak2.sum()],
+                                [1, 2], [n, n]]).T, 
+                                columns=['retention_time', 'scale', 'skew', 
+                                         'amplitude', 'area', 'peak_idx', 'iter'])
+    peaks = pd.concat([peaks, _df])
+
+chroms.to_csv('../tests/test_unmix_chrom.csv', index=False)
+peaks.to_csv('../tests/test_unmix_peaks.csv', index=False)
