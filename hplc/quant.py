@@ -82,7 +82,7 @@ class Chromatogram(object):
 
         # Load the chromatogram and necessary components to self. 
         if type(file) is str:
-            dataframe = pd.read_csv(file, comment=csv_comment)
+            dataframe = 
         else:
             dataframe = file.copy()
         self.df = dataframe
