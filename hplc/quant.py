@@ -30,9 +30,7 @@ class Chromatogram(object):
         is used primarily for plotting in the `show` method. 
 
     """
-    def __init__(self, file, time_window=None,
-                    bg_subtract=True,
-                    peak_width=3,
+    def __init__(self, file, time_window=None, 
                     cols={'time':'time', 'signal':'signal'},
                     csv_comment='#'):
         """
@@ -51,20 +49,10 @@ class Chromatogram(object):
         time_window: `list` [start, end], optional
             The retention time window of the chromatogram to consider for analysis.
             If None, the entire time range of the chromatogram will be considered.
-        bg_subtract: `bool`, optional
-            If True, sensitive nonlinear iterative peak (SNIP) clipping is used 
-            to estimate and subtract the signal baseline.
-        peak_width: `float`, optional
-            The approximate full-width half-maximum (FWHM) of the peaks of interest. 
-            This is used to set the number of iterations needed for the background
-            subtraction.
         cols: `dict`, keys of 'time', and 'signal', optional
             A dictionary of the retention time and intensity measurements 
             of the chromatogram. Default is 
-            `{'time':'time', 'signal':'signal'}`.
-        csv_comment: `str`, optional
-            Comment delimiter in the csv file if chromatogram is being read 
-            from disk.
+            `{'time':'time', 'signal':'signal'}`. 
         """
 
         # Peform type checks and throw exceptions where necessary. 
@@ -81,10 +69,7 @@ class Chromatogram(object):
         self.int_col = cols['signal']
 
         # Load the chromatogram and necessary components to self. 
-        if type(file) is str:
-            dataframe = 
-        else:
-            dataframe = file.copy()
+        dataframe = file.copy()
         self.df = dataframe
 
         # Define the average timestep in the chromatogram. This computes a mean
@@ -97,15 +82,12 @@ class Chromatogram(object):
         else: 
             self.df = dataframe
 
-        # Perform the background subtraction if desired.
-        if bg_subtract:
-            self._bg_subtract(window=peak_width)
-
         # Blank out vars that are used elsewhere
         self.window_props = None
         self._peaks = None
         self.peak_df = None
         self._guesses = None
+        self._bg_corrected = False
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -337,11 +319,11 @@ class Chromatogram(object):
         return out
 
 
-    def estimate_peak_params(self, verbose=True, param_bounds={}):
+    def deconvolve_mixture(self, verbose=True, param_bounds={}):
         R"""
         .. note::
            In most cases, this function should not be called directly. Instead, 
-           it should called through the :func:`~hplc.quant.Chromatogram.quantify`
+           it should called through the :func:`~hplc.quant.Chromatogram.fit_peaks`
 
         For each peak window, estimate the parameters of skew-normal distributions 
         which makeup the peak(s) in the window. See "Notes" for information on
@@ -386,7 +368,7 @@ class Chromatogram(object):
             duration, respectively.  
 
             + `skew`: The skew parameter by default is allowed to take any value
-            (-inf, inf).
+            between (-5, 5).
         """ 
         if self.window_props is None:
             raise RuntimeError('Function `_assign_peak_windows` must be run first. Go do that.')
@@ -415,12 +397,12 @@ class Chromatogram(object):
                     bounds[0].append(0.1 * v['amplitude'][i]) 
                     bounds[0].append(v['time_range'].min()) 
                     bounds[0].append(self._dt) 
-                    bounds[0].append(-np.inf) 
+                    bounds[0].append(-5) 
                     # Upper bounds
                     bounds[1].append(10 * v['amplitude'][i])
                     bounds[1].append(v['time_range'].max())
                     bounds[1].append((v['time_range'].max() - v['time_range'].min())/2)
-                    bounds[1].append(np.inf)
+                    bounds[1].append(5)
                 else:
                     bounds[0].append(param_bounds['amplitude'][0] * v['amplitude'][i]) 
                     bounds[0].append(v['location'] - param_bounds['location'][0]) 
@@ -456,10 +438,11 @@ class Chromatogram(object):
         self._peak_props = peak_props
         return peak_props
 
-    def detect_peaks(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
-                 buffer=100, param_bounds={}, verbose=True, return_peaks=True):
+    def fit_peaks(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
+                  approx_peak_width=3, buffer=100, param_bounds={}, verbose=True, return_peaks=True, 
+                 correct_baseline=True):
         R"""
-        Quantifies peaks present in the chromatogram
+        Detects and fits peaks present in the chromatogram
 
         Parameters
         ----------
@@ -477,6 +460,10 @@ class Chromatogram(object):
         rel_height : `float`, [0, 1]
             The relative height of the peak where the baseline is determined. 
             Default is 100%. If `locations` is provided, this is not used.
+        approx_peak_width: `float`, optional
+            The approximate width of the signal you want to quantify. This is 
+            used as filtering window for automatic baseline correction. If `correct_baseline==False`,
+            this has no effect. 
         buffer : positive `int`
             The padding of peak windows in units of number of time steps. Default 
             is 100 points on each side of the identified peak window. If `locations` 
@@ -485,11 +472,15 @@ class Chromatogram(object):
             If True, a progress bar will be printed during the inference. 
         param_bounds: `dict`, optional
             Parameter boundary modifications to be used to constrain fitting. 
-            See docstring of :func:`~hplc.quant.Chromatogram.estimate_peak_params`
+            See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_mixture`
             for more information.
         return_peaks : `bool`, optional
             If True, a dataframe containing the peaks will be returned. Default
             is True.
+        correct_baseline : `bool`, optional
+            If True, the baseline of the chromatogram will be automatically 
+            corrected using the SNIP algorithm. See :func:`~hplc.quant.Chromatogram.correct_baseline`
+            for more information.
 
         Returns
         -------
@@ -516,11 +507,14 @@ class Chromatogram(object):
             dataframe = self.df
             self.df = dataframe[(dataframe[self.time_col] >= time_window[0]) & 
                               (dataframe[self.time_col] <= time_window[1])].copy(deep=True) 
+        if correct_baseline and not self._bg_corrected:
+            self.correct_baseline(window=approx_peak_width, verbose=verbose)
+
         # Assign the window bounds
         _ = self._assign_peak_windows(locations, prominence, rel_height, buffer)
 
         # Infer the distributions for the peaks
-        peak_props = self.estimate_peak_params(verbose=verbose, param_bounds=param_bounds)
+        peak_props = self.deconvolve_mixture(verbose=verbose, param_bounds=param_bounds)
 
         # Set up a dataframe of the peak properties
         peak_df = pd.DataFrame([])
@@ -552,7 +546,7 @@ class Chromatogram(object):
         if return_peaks:
             return peak_df
     
-    def _bg_subtract(self, window=3, return_df=False):
+    def correct_baseline(self, window=3, return_df=False, verbose=True):
         R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
@@ -585,13 +579,17 @@ class Chromatogram(object):
         signal *= np.heaviside(signal, 0)
 
         # Compute the LLS operator
-        tform = np.log(np.log(np.sqrt(signal + 1) + 1) + 1)
+        tform = np.log(np.log(np.sqrt(signal.values + 1) + 1) + 1)
 
         # Compute the number of iterations given the window size.
-        iter = int(((window / self._dt) - 1) / 2)
+        n_iter = int(((window / self._dt) - 1) / 2)
 
         # Iteratively filter the signal
-        for i in range(0,iter):
+        if verbose:
+            iter = tqdm.tqdm(range(1, n_iter), desc="Performing baseline correction")
+        else:
+            iter = range(1, n_iter)
+        for i in iter:
             tform_new = tform.copy()
             for j in range(i, len(tform) - i):
                 tform_new[j] = min(tform_new[j], 0.5 * (tform_new[j+i] + tform_new[j-i])) 
@@ -644,6 +642,6 @@ class Chromatogram(object):
 
             for l in self._guesses:
                 ax.vlines(l, 0, ymax, color='dodgerblue')
-            ax.legend(bbox_to_anchor=(1,1))
+        ax.legend(bbox_to_anchor=(1,1))
         fig.patch.set_facecolor((0, 0, 0, 0))
         return [fig, ax]

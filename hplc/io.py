@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pd
 
-def scrape_chromatogram(fname, colnames=[], delimiter=',', dropna=False):
+def load_chromatogram(fname, colnames=[], delimiter=',', dropna=False):
     R"""
     Parses a file containing a chromatogram and returns it as a Pandas DataFrame.
 
@@ -24,7 +24,7 @@ def scrape_chromatogram(fname, colnames=[], delimiter=',', dropna=False):
     df : `pandas.core.frame.DataFrame`
         The chromatogram loaded as a Pandas DataFrame with the desired columns.
     """
-    if type(colnames) != dict:
+    if type(colnames) == dict:
         _colnames = list(colnames.keys())
     else:
         _colnames = colnames
