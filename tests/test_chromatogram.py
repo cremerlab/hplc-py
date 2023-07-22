@@ -24,7 +24,7 @@ def fit_peaks(test_data, truth, colnames={'time':'x', 'signal':'y'}, tol=1E-2):
 
     # Execute analysis
     chrom = hplc.quant.Chromatogram(test_data, bg_subtract=False, cols=colnames)
-    peaks = chrom.quantify(prominence=1E-3, verbose=False)
+    peaks = chrom.detect_peaks(prominence=1E-3, verbose=False)
 
     # Enforce that the correct number of peaks have been identified    
     assert len(peaks) == truth['peak_idx'].max()

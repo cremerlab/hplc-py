@@ -16,25 +16,11 @@ class Chromatogram(object):
     ----------
     df : `pandas.core.frame.DataFrame`    
         A Pandas DataFrame containing the chromatogram, minimally with columns 
-        of time and intensity. 
-    window_props : `dict` of `dict`s
+        of time and signal intensity. 
+    window_props : `dict`
        A dictionary of each peak window, labeled as increasing integers in 
        linear order. Each key has its own dictionary with the following keys:
-            time_range: `numpy.ndarray` 
-                The sliced time array contained within the peak window.
-            intensity: `numpy.ndarray`
-                The sliced intensity array of the chromatogram within the peak 
-                window.
-            num_peaks: `int`
-                The number of putative peaks contained within the window.
-            amplitude: `list` of `float`s
-                The amplitude of each peak within the window.
-            location: `list` of `float`s
-                The time location of the amplitude values  for each  peak 
-                within the window.
-            width : `list` of `float`s      
-                The full-width of the peak at the half-maximum for each peak.
-     peak_df : `pandas.core.frame.DataFrame` 
+    peak_df : `pandas.core.frame.DataFrame` 
         A Pandas DataFrame containing the inferred properties of each peak 
         including the retention time, scale, skew, amplitude, and total
         area under the peak across the entire chromatogram.
@@ -353,6 +339,10 @@ class Chromatogram(object):
 
     def estimate_peak_params(self, verbose=True, param_bounds={}):
         R"""
+        .. note::
+           In most cases, this function should not be called directly. Instead, 
+           it should called through the :func:`~hplc.quant.Chromatogram.quantify`
+
         For each peak window, estimate the parameters of skew-normal distributions 
         which makeup the peak(s) in the window. See "Notes" for information on
         default parameter bounds.
@@ -366,13 +356,12 @@ class Chromatogram(object):
             Modifications to the default parameter bounds (see Notes below) as 
             a dictionary for each parameter. A dict entry should be of the 
             form `parameter: [lower, upper]`. Modifications have the following effects:
-
-                + Modifications to `amplitude` bounds are multiplicative of the 
-                observed magnitude at the peak position. 
-                + Modifications to `location` are values that are subtracted or 
-                added from the peak position for lower and upper bounds, respectively.
-                + Modifications to `scale` replace the default values. 
-                + Modifications to `skew` replace the default values. 
+            + Modifications to `amplitude` bounds are multiplicative of the 
+              observed magnitude at the peak position. 
+            + Modifications to `location` are values that are subtracted or 
+              added from the peak position for lower and upper bounds, respectively.
+            + Modifications to `scale` replace the default values. 
+            + Modifications to `skew` replace the default values. 
 
         Returns 
         --------
@@ -467,8 +456,8 @@ class Chromatogram(object):
         self._peak_props = peak_props
         return peak_props
 
-    def quantify(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
-                 buffer=100, param_bounds={}, verbose=True):
+    def detect_peaks(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
+                 buffer=100, param_bounds={}, verbose=True, return_peaks=True):
         R"""
         Quantifies peaks present in the chromatogram
 
@@ -498,11 +487,16 @@ class Chromatogram(object):
             Parameter boundary modifications to be used to constrain fitting. 
             See docstring of :func:`~hplc.quant.Chromatogram.estimate_peak_params`
             for more information.
+        return_peaks : `bool`, optional
+            If True, a dataframe containing the peaks will be returned. Default
+            is True.
 
         Returns
         -------
         peak_df : `pandas.core.frame.DataFrame`
-            A dataframe containing information for each detected peak.
+            A dataframe containing information for each detected peak. This is
+            only returned if `return_peaks == True`. The peaks are always 
+            stored as an attribute `peak_df`.
 
 
         Notes
@@ -555,7 +549,8 @@ class Chromatogram(object):
                 out[:, iter] = self._compute_skewnorm(time, *params)
                 iter += 1
         self.mix_array = out
-        return peak_df
+        if return_peaks:
+            return peak_df
     
     def _bg_subtract(self, window=3, return_df=False):
         R"""
@@ -642,6 +637,8 @@ class Chromatogram(object):
             for i in range(len(self.peak_df)):
                 ax.fill_between(time, self.mix_array[:, i], label=f'peak {i+1}', 
                                 alpha=0.5)
+        if 'estimated_background' in self.df.keys():
+            ax.plot(self.df[self.time_col], self.df['estimated_background'], '--', color='dodgerblue', label='estimated background')
         if self._guesses is not None:
             ax.plot(self._guesses, ymax * np.ones(len(self._guesses)), 'v', color='dodgerblue', label='supplied locations')
 
