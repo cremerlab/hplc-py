@@ -603,9 +603,17 @@ class Chromatogram(object):
         if return_df:
             return df
 
-    def show(self):
+    def show(self, time_range=[]):
         """
         Displays the chromatogram with mapped peaks if available.
+
+        Parameters
+        ----------
+        time_range : `List`
+            Adjust the limits to show a restricted time range. Should 
+            be provided as two floats in the range of [`lower`, `upper`]. Note
+            that this does not affect the chromatogram directly as in `crop`. 
+
 
         Returns
         -------
@@ -624,24 +632,37 @@ class Chromatogram(object):
         # Plot the raw chromatogram
         ax.plot(self.df[self.time_col], self.df[self.int_col], 'k-',
                 label='raw chromatogram') 
-        ymax = ax.get_ylim()[1]
+
         # Compute the skewnorm mix 
-        if self.peak_df is not None:
+        if self.peaks is not None:
             time = self.df[self.time_col].values
             # Plot the mix
-            convolved = np.sum(self.mix_array, axis=1)
-
+            convolved = np.sum(self.deconvolved_peaks, axis=1)
             ax.plot(time, convolved, 'r--', label='inferred mixture') 
-            for i in range(len(self.peak_df)):
-                ax.fill_between(time, self.mix_array[:, i], label=f'peak {i+1}', 
+            for g, d in self.peaks.groupby('peak_id'):
+                label = f'peak {int(g)}'
+                if self._mapped_compounds is not None: 
+                    if g in self._mapped_compounds.keys():
+                        d = self.quantified_peaks[self.quantified_peaks['compound']==self._mapped_compounds[g]]
+                        label = f"{self._mapped_compounds[g]}\n[{d.concentration.values[0]:0.3g}"
+                        if 'unit' in d.keys():
+                            label += f" {d['unit'].values[0]}]"
+                        else:
+                            label += ']'
+                            
+                    else:
+                        label = f'peak {int(g)}'
+
+                ax.fill_between(time, self.deconvolved_peaks[:, int(g) - 1], label=label, 
                                 alpha=0.5)
         if 'estimated_background' in self.df.keys():
             ax.plot(self.df[self.time_col], self.df['estimated_background'], '--', color='dodgerblue', label='estimated background')
-        if self._guesses is not None:
-            ax.plot(self._guesses, ymax * np.ones(len(self._guesses)), 'v', color='dodgerblue', label='supplied locations')
-
-            for l in self._guesses:
-                ax.vlines(l, 0, ymax, color='dodgerblue')
-        ax.legend(bbox_to_anchor=(1,1))
+        ax.legend(bbox_to_anchor=(1.5,1))
         fig.patch.set_facecolor((0, 0, 0, 0))
+        if len(time_range) == 2:
+          ax.set_xlim(time_range)
+          # Determine the max min and max value of the chromatogram within range.
+          _y = self.df[(self.df[self.time_col] >= time_range[0]) & (self.df[self.time_col] <= time_range[1])][self.int_col].values
+          ax.set_ylim([_y.min() - 0.02 * _y.min(), 1.1 * _y.max()])
+
         return [fig, ax]
