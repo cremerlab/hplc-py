@@ -20,33 +20,19 @@ class Chromatogram(object):
     window_props : `dict`
        A dictionary of each peak window, labeled as increasing integers in 
        linear order. Each key has its own dictionary with the following keys:
-    peaks : `pandas.core.frame.DataFrame` 
+    peak_df : `pandas.core.frame.DataFrame` 
         A Pandas DataFrame containing the inferred properties of each peak 
         including the retention time, scale, skew, amplitude, and total
         area under the peak across the entire chromatogram.
-    deconvolved_peaks : `numpy.ndarray`
-        A matrix where each row corresponds to a time point and each column corresponds
+    mix_array : `numpy.ndarray`
+        A where each row corresponds to a time point and each column corresponds
         to the value of the probability density for each individual peak. This 
         is used primarily for plotting in the `show` method. 
-    quantified_peaks : `pandas.core.frame.DataFrame`
-        A Pandas Dataframe with peak areas converted to 
-    param_opt : `numpy.ndarray`
-        An array of the parameter estimates in order of amplitude, location, scale, 
-        and skew for each peak in temporal order. 
-    param_pcov: 2-D `numpy.ndarray`
-        The estimated approximate covariance matrix of the parameters. Uncertainty
-        for each parameter can be calculated as `numpy.sqrt(numpy.diag(param_pcov))`,
-        with the following big caveat:
 
-        .. attention::
-            `param.pcov` is only an *estimate* of the *approximate* covariance
-            matrix and computation of the error is only valid if the linear 
-            approximation to the model about the optimum is valid. Use this 
-            attribute with caution.
- 
     """
     def __init__(self, file, time_window=None, 
-                    cols={'time':'time', 'signal':'signal'}):
+                    cols={'time':'time', 'signal':'signal'},
+                    csv_comment='#'):
         """
         Instantiates a chromatogram object on which peak detection and quantification
         is performed.
@@ -98,11 +84,10 @@ class Chromatogram(object):
 
         # Blank out vars that are used elsewhere
         self.window_props = None
-        self._peak_indices = None
-        self.peaks = None
+        self._peaks = None
+        self.peak_df = None
         self._guesses = None
         self._bg_corrected = False
-        self._mapped_compounds = None
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -127,7 +112,6 @@ class Chromatogram(object):
                 raise ValueError(f'`time_window` must be of length 2 (corresponding to start and end points). Provided list is of length {len(time_window)}.')
         self.df = self.df[(self.df[self.time_col] >= time_window[0]) & 
                           (self.df[self.time_col] <= time_window[1])]
-
         if return_df:
             return self.df
 
