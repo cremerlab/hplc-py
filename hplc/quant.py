@@ -116,12 +116,25 @@ class Chromatogram(object):
         if return_df:
             return self.df
 
-    def _assign_peak_windows(self, locations=[], prominence=0.01, rel_height=0.95, buffer=100):
+    def _assign_peak_windows(self, enforced_locations=[], enforced_widths=[], 
+                             enforcement_tolerance=0.5,
+                             prominence=0.01, rel_height=0.95, buffer=100):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
 
         Parameters
         ----------
+        enforced_locations : `list`
+            The approximate locations of the peaks. If this is not provided, 
+            peak locations will be automatically detected. 
+        enforced_widths : `list`
+            The approximate widths of the peaks. If this is not provided  but
+            `locations` is, approximate widths of one time unit (0.5 / dt)
+            will be assumed.
+        enforce_tolerance: `float`, optional
+            If an enforced peak location is within tolerance of an automatically 
+            identified peak, the automatically identified peak will be preferred. 
+            This parameter is in units of time. Default is one-half time unit.
         prominence : `float`,  [0, 1]
             The promimence threshold for identifying peaks. Prominence is the 
             relative height of the normalized signal relative to the local
@@ -134,7 +147,7 @@ class Chromatogram(object):
             is 100 points on each side of the identified peak window.
 
         Returns
-        -------
+        ------- 
         window_df : `pandas.core.frame.DataFrame`
             A Pandas DataFrame with each measurement assigned to an identified 
             peak or overlapping peak set. This returns a copy of the chromatogram
@@ -159,50 +172,22 @@ class Chromatogram(object):
         intensity = self.df[self.int_col].values
         norm_int = (intensity - intensity.min()) / (intensity.max() - intensity.min())
 
-        if len(locations) == 0:
-            # Identify the peaks and get the widths and baselines
-            peaks, _ = scipy.signal.find_peaks(norm_int, prominence=prominence)
-            self._peak_indices = peaks
-            widths, _, _, _ = scipy.signal.peak_widths(intensity, self._peak_indices, 
+        # Preform automated peak detection and set window ranges
+        peaks, _ = scipy.signal.find_peaks(norm_int, prominence=prominence)
+        self._peak_indices = peaks
+        _widths, _, _, _ = scipy.signal.peak_widths(intensity, self._peak_indices, 
                                        rel_height=0.5)
-            # Compute the peak widths  
-            _, _, left, right = scipy.signal.peak_widths(intensity, self._peak_indices, 
-                                       rel_height=rel_height)
+        # Compute the peak widths  
+        _, _, _left, _right = scipy.signal.peak_widths(intensity, self._peak_indices, 
+                                       rel_height=1) 
 
-        
-        else: 
-            # Compute the indices in the time series that are closest to the 
-            # user provided values
-            if type(locations) == list:
-                locations = np.array(locations)
-            self._guesses = locations
-            self._peak_indices = [(np.abs(loc - df[self.time_col].values)).argmin() for loc in locations]
-            widths = buffer * np.ones_like(self._peak_indices)
-            left = np.array(self._peak_indices) - 1 / self._dt 
-            right = np.array(self._peak_indices) + 1 / self._dt
-
-
-        #     # Unless perfectly positioned, manual positionings will raise a 
-        #     # warning about peak prominence. This is automatically silenced.
-        #     with warnings.catch_warnings():
-        #         warnings.simplefilter('ignore', 
-        #                               category=scipy.signal._peak_finding_utils.PeakPropertyWarning)
-        
-        # _, _, left, right = out
-        # print(left, right)
-        # Set up the ranges
+        # Set window ranges
         ranges = []
-        for l, r in zip(left, right):
-            if (l - buffer) < 0:
-                l = 0
-            else:
-                l -= buffer
-            if (r + buffer) > len(norm_int):
-                r = len(norm_int)
-            else:
-                r += buffer
-            ranges.append(np.arange(np.round(l), np.round(r), 1))
-
+        for l, r in zip(_left, _right):
+            _range = np.arange(int(l - buffer), int(r + buffer), 1)
+            _range = _range[(_range >= 0) & (_range <= len(norm_int))]
+            ranges.append(_range)
+        self._ranges = ranges
         # Identiy subset ranges and remove
         valid = [True] * len(ranges)
         for i, r1 in enumerate(ranges):
@@ -214,30 +199,77 @@ class Chromatogram(object):
         # Keep only valid ranges and baselines
         ranges = [r for i, r in enumerate(ranges) if valid[i] is True]
 
+        # If manual locations are provided, ensure that they are identified        
+        if len(enforced_locations) != 0:
+            enforced_location_inds = np.int_(np.array(enforced_locations) / self._dt)
+            lower_bounds = self._peak_indices - enforcement_tolerance / self._dt 
+            upper_bounds = self._peak_indices + enforcement_tolerance / self._dt
+
+            added_peaks = []
+            added_peak_inds = []
+            for i, l in enumerate(enforced_location_inds):
+                if (l not in lower_bounds) & (l not in upper_bounds):
+                    added_peaks.append(l) 
+                    added_peak_inds.append(i)
+            # Consider the edge case where all enforced locations have been automatically detected
+            if len(added_peaks) > 0:
+                self._peak_indices = np.append(self._peak_indices, added_peaks)                
+                if len(enforced_widths) == 0:
+                    _enforced_widths = np.ones_like(added_peaks) / self._dt
+                else:
+                    _enforced_widths = enforced_widths[added_peak_inds]  / self._dt
+                _widths = np.append(_widths, enforced_widths)
+
+                # Ensure that the newly added peak is within one of the identified 
+                # ranges
+                orphan_locs = []
+                orphan_widths = [] 
+                for i, p in enumerate(added_peaks):
+                    located = False 
+                    for j, r in enumerate(ranges):
+                        if p in r:
+                            located = True
+                            break
+                    if not located:
+                        orphan_locs.append(p)
+                        orphan_widths.append(_enforced_widths[i])
+                # If there are orphan peaks, create ranges                    
+                if len(orphan_locs) > 0:
+                    for i, o in enumerate(orphan_locs):
+                        _added_range = np.arange(o - orphan_widths[i] - buffer, o + orphan_widths[i] + buffer, 1)
+                        _added_range = _added_range[(_added_range >= 0) & (_added_range <= len(norm_int))]
+                        ranges.append(_added_range)
+            else:    
+                print(f'All manually provided peaks are within {enforcement_tolerance} of an automatically identified peak. If this location is desired, decrease value of `enforcement_tolerance`.')
+
         # Copy the dataframe and return the windows
         window_df = df.copy(deep=True)
         window_df.sort_values(by=self.time_col, inplace=True)
         window_df['time_idx'] = np.arange(len(window_df))
+        window_df['window_idx'] = 0
         for i, r in enumerate(ranges):
             window_df.loc[window_df['time_idx'].isin(r), 
                                     'window_idx'] = int(i + 1)
 
-        window_df.dropna(inplace=True) 
-        self.window_df = window_df
-
         # Convert this to a dictionary for easy parsing
         window_dict = {}
+        window_df = window_df[window_df['window_idx'] > 0]
         for g, d in window_df.groupby('window_idx'):
-            _peaks = [p for p in self._peak_indices if p in d['time_idx'].values]
-            peak_inds = [x for _p in _peaks for x in np.where(self._peak_indices == _p)[0]]
-            _dict = {'time_range':d[self.time_col].values,
-                     'signal': d[self.int_col].values,
-                     'num_peaks': len(_peaks),
-                     'amplitude': [d[d['time_idx']==p][self.int_col].values[0] for p in _peaks],
-                     'location' : [d[d['time_idx']==p][self.time_col].values[0] for p in _peaks],
-                     'width' :    [widths[ind] * self._dt for ind in peak_inds]
-                     }
-            window_dict[int(g)] = _dict
+                _peaks = [p for p in self._peak_indices if p in d['time_idx'].values]
+                peak_inds = [x for _p in _peaks for x in np.where(self._peak_indices == _p)[0]]
+                _dict = {'time_range':d[self.time_col].values,
+                         'signal': d[self.int_col].values,
+                         'num_peaks': len(_peaks),
+                         'amplitude': [d[d['time_idx']==p][self.int_col].values[0] for p in _peaks],
+                         'location' : [d[d['time_idx']==p][self.time_col].values[0] for p in _peaks],
+                         'width' :  [_widths[ind] * self._dt for ind in peak_inds]
+                             }
+                window_dict[int(g)] = _dict
+
+        # window_df.dropna(inplace=True) 
+        window_df = window_df[window_df['window_idx'] > 0]
+        self.window_df = window_df
+  
         self.window_props = window_dict
 
         return window_df  
@@ -446,7 +478,7 @@ class Chromatogram(object):
         self._peak_props = peak_props
         return peak_props
 
-    def fit_peaks(self, locations=[],  prominence=1E-2, rel_height=1.0, 
+    def fit_peaks(self, enforced_locations=[], enforced_widths=[], enforcement_tolerance=0.5, prominence=1E-2, rel_height=1.0, 
                   approx_peak_width=3, buffer=100, param_bounds={}, verbose=True, return_peaks=True, 
                  correct_baseline=True):
         R"""
@@ -454,9 +486,17 @@ class Chromatogram(object):
 
         Parameters
         ----------
-        locations: `list`, optional
-            Initial guesses for the retention times of desired peaks. If not
-            provided, peaks will be automatically detected.
+        enforced_locations : `list`
+            The approximate locations of the peaks. If this is not provided, 
+            peak locations will be automatically detected. 
+        enforced_widths : `list`
+            The approximate widths of the peaks. If this is not provided  but
+            `locations` is, approximate widths of one time unit (1 / dt)
+            will be assumed.
+        enforce_tolerance: `float`, optional
+            If an enforced peak location is within tolerance of an automatically 
+            identified peak, the automatically identified peak will be preferred. 
+            This parameter is in units of time. Default is one-half time unit.
         prominence : `float`,  [0, 1]
             The promimence threshold for identifying peaks. Prominence is the 
             relative height of the normalized signal relative to the local
@@ -512,7 +552,11 @@ class Chromatogram(object):
             self.correct_baseline(window=approx_peak_width, verbose=verbose, return_df=False)
 
         # Assign the window bounds
-        _ = self._assign_peak_windows(locations, prominence, rel_height, buffer)
+        _ = self._assign_peak_windows(enforced_locations=enforced_locations, 
+                                      enforced_widths=enforced_widths,
+                                      enforcement_tolerance=enforcement_tolerance,
+                                      prominence=prominence, rel_height=rel_height, 
+                                      buffer=buffer)
 
         # Infer the distributions for the peaks
         peak_props = self.deconvolve_mixture(verbose=verbose, param_bounds=param_bounds)
@@ -646,11 +690,6 @@ class Chromatogram(object):
                                 alpha=0.5)
         if 'estimated_background' in self.df.keys():
             ax.plot(self.df[self.time_col], self.df['estimated_background'], '--', color='dodgerblue', label='estimated background')
-        if self._guesses is not None:
-            ax.plot(self._guesses, ymax * np.ones(len(self._guesses)), 'v', color='dodgerblue', label='supplied locations')
-
-            for l in self._guesses:
-                ax.vlines(l, 0, ymax, color='dodgerblue')
         ax.legend(bbox_to_anchor=(1,1))
         fig.patch.set_facecolor((0, 0, 0, 0))
         if len(time_range) == 2:
