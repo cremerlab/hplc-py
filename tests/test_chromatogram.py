@@ -74,7 +74,7 @@ def test_bg_estimation():
     assert np.isclose(chrom.df['estimated_background'].values[window:-window],
                       data['bg'].values[window:-window], rtol=tol).all()
 
-def test_add_peak():
+def test_shouldered_peaks():
     """
     Tests that manually applied peaks can be properly deconvolved to within 1.5% 
     of the known parameter values.
@@ -93,3 +93,18 @@ def test_add_peak():
         assert len(peaks) == len(truth)
         for p in props:
             compare(peaks[p].values, truth[p].values, tol)
+
+def test_add_peak():
+    """
+    Tests that a peak that is not automatically detected that is not within 
+    an extant peak window can be identified and deconvolved to within 1.5% of
+    the known parameter values.    
+    """
+    data = pd.read_csv('./test_shallow_signal_chrom.csv')
+    props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
+    peak_df = pd.read_csv('./test_shallow_signal_peaks.csv')
+    chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
+    peaks = chrom.fit_peaks(enforced_locations=[25.0], correct_baseline=False, prominence=0.5)
+    for p in props:
+        compare(peaks[p].values, peak_df[p].values, 1.5E-2)
+

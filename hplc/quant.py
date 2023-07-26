@@ -202,15 +202,13 @@ class Chromatogram(object):
         # If manual locations are provided, ensure that they are identified        
         if len(enforced_locations) != 0:
             enforced_location_inds = np.int_(np.array(enforced_locations) / self._dt)
-            # lower_bounds = self._peak_indices - enforcement_tolerance / self._dt 
-            # upper_bounds = self._peak_indices + enforcement_tolerance / self._dt
 
             # Keep track of what locations and widths need to be added.
             added_peaks = []
             added_peak_inds = []
-            for i, l in enumerate(enforced_location_inds):
-                if np.sum(np.abs(self._peak_indices - l) > enforcement_tolerance/self._dt) == 0:
-                    added_peaks.append(l) 
+            for i, loc in enumerate(enforced_location_inds):
+                if np.sum(np.abs(self._peak_indices - loc) < enforcement_tolerance/self._dt) == 0:
+                    added_peaks.append(loc) 
                     added_peak_inds.append(i)
 
             # Consider the edge case where all enforced locations have been automatically detected
@@ -242,8 +240,7 @@ class Chromatogram(object):
                         _added_range = _added_range[(_added_range >= 0) & (_added_range <= len(norm_int))]
                         ranges.append(_added_range)
             else:    
-                print("FUCK YOU")
-                warnings.Warn(f'All manually provided peaks are within {enforcement_tolerance} of an automatically identified peak. If this location is desired, decrease value of `enforcement_tolerance`.')
+                warnings.warn(f'All manually provided peaks are within {enforcement_tolerance} of an automatically identified peak. If this location is desired, decrease value of `enforcement_tolerance`.')
 
         # Copy the dataframe and return the windows
         window_df = df.copy(deep=True)
@@ -593,7 +590,7 @@ class Chromatogram(object):
                 peak_df = pd.concat([peak_df, pd.DataFrame(_dict, index=[0])])
 
         peak_df.sort_values(by='retention_time', inplace=True)
-        peak_df['peak_id'] = np.arange(len(peak_df))
+        peak_df['peak_id'] = np.arange(len(peak_df)) + 1
         peak_df['peak_id'] = peak_df['peak_id'].astype(int)
         self.peaks = peak_df
 

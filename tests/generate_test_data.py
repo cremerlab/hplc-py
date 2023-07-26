@@ -123,3 +123,18 @@ for n in range(n_mixes):
     peaks = pd.concat([peaks, _df])
 chroms.to_csv('./test_manual_unmix_chrom.csv', index=False)
 peaks.to_csv('./test_manual_unmix_peaks.csv', index=False)
+
+#%%
+# Generate data with a very shallow peak that would not normally be detected
+# but can be identified if the manual position is included. 
+x = np.arange(0, 40, dt)
+sig1 = 100 * scipy.stats.norm(10, 1).pdf(x)
+sig2 = 10 * scipy.stats.norm(25, 3).pdf(x)
+sig = sig1 + sig2
+df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
+df.to_csv('./test_shallow_signal_chrom.csv', index=False)
+peak_df = pd.DataFrame(np.array([[10, 25], [1, 3], [0, 0], [100, 10], 
+                                 [sig1.sum(), sig2.sum()], [1, 2]]).T,
+                       columns = ['retention_time', 'scale', 'skew',
+                                  'amplitude', 'area', 'peak_idx'])
+peak_df.to_csv('./test_shallow_signal_peaks.csv', index=False)
