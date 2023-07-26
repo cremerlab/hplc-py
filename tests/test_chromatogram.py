@@ -85,7 +85,7 @@ def test_shouldered_peaks():
     for g, d in data.groupby('iter'):
         truth = peak_df[peak_df['iter']==g]
         chrom = hplc.quant.Chromatogram(d, cols={'time':'x', 'signal':'y'})
-        peaks = chrom.fit_peaks(enforced_locations=truth['retention_time'].values,
+        peaks = chrom.fit_peaks(enforced_locations=[11],# truth['retention_time'].values,
                                 correct_baseline=False,
                                 enforcement_tolerance=0.5)
 
@@ -107,3 +107,4 @@ def test_add_peak():
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
 
+test_shouldered_peaks()

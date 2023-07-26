@@ -138,3 +138,53 @@ peak_df = pd.DataFrame(np.array([[10, 25], [1, 3], [0, 0], [100, 10],
                        columns = ['retention_time', 'scale', 'skew',
                                   'amplitude', 'area', 'peak_idx'])
 peak_df.to_csv('./test_data/test_shallow_signal_peaks.csv', index=False)
+
+
+#%%
+
+# Generate test data for peak unmixing
+x = np.arange(0, 25, dt)
+n_mixes = 20
+nudge = 0.2
+peak1 = 100 * scipy.stats.norm(8, 1).pdf(x)
+chroms = pd.DataFrame([])
+peaks = pd.DataFrame([])
+amps = np.linspace(10, 100, n_mixes)
+for n in range(n_mixes):
+    sig = peak1.copy()
+    loc = 11
+    scale = 2
+    amp = 1.5 * amps[n]
+    peak2 = amp * scipy.stats.norm(loc, scale).pdf(x)
+    sig += peak2
+    # Save chromatogram
+    _df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
+    _df['iter'] = n
+    chroms = pd.concat([chroms, _df])
+
+
+    # Save the peak info
+    _df = pd.DataFrame(np.array([[8, loc], [1, scale], [0, 0], 
+                                [100, amp], [peak1.sum(), peak2.sum()],
+                                [1, 2], [n, n]]).T, 
+                                columns=['retention_time', 'scale', 'skew', 
+                                         'amplitude', 'area', 'peak_idx', 'iter'])
+    peaks = pd.concat([peaks, _df])
+chroms.to_csv('./test_data/test_manual_unmix_chrom.csv', index=False)
+peaks.to_csv('./test_data/test_manual_unmix_peaks.csv', index=False)
+
+#%%
+# Generate data with a very shallow peak that would not normally be detected
+# but can be identified if the manual position is included. 
+x = np.arange(0, 40, dt)
+sig1 = 100 * scipy.stats.norm(10, 1).pdf(x)
+sig2 = 10 * scipy.stats.norm(25, 3).pdf(x)
+sig = sig1 + sig2
+df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
+df.to_csv('./test_data/test_shallow_signal_chrom.csv', index=False)
+peak_df = pd.DataFrame(np.array([[10, 25], [1, 3], [0, 0], [100, 10], 
+                                 [sig1.sum(), sig2.sum()], [1, 2]]).T,
+                       columns = ['retention_time', 'scale', 'skew',
+                                  'amplitude', 'area', 'peak_idx'])
+peak_df.to_csv('./test_data/test_shallow_signal_peaks.csv', index=False)
+
