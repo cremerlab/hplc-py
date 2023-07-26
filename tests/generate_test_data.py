@@ -40,8 +40,8 @@ for i, sig in enumerate(scales):
         peaks = pd.concat([peaks, _peaks], sort=False)
         chroms = pd.concat([chroms, _chrom], sort=False)
         _iter += 1  
-peaks.to_csv('./test_fitting_peaks.csv', index=False) 
-chroms.to_csv('./test_fitting_chrom.csv', index=False) 
+peaks.to_csv('./test_data/test_fitting_peaks.csv', index=False) 
+chroms.to_csv('./test_data/test_fitting_chrom.csv', index=False) 
 
 
 # %%
@@ -70,8 +70,8 @@ for n in range(n_mixes):
                                 columns=['retention_time', 'scale', 'skew', 
                                          'amplitude', 'area', 'peak_idx', 'iter'])
     peaks = pd.concat([peaks, _df])
-chroms.to_csv('./test_unmix_chrom.csv', index=False)
-peaks.to_csv('./test_unmix_peaks.csv', index=False)
+chroms.to_csv('./test_data/test_unmix_chrom.csv', index=False)
+peaks.to_csv('./test_data/test_unmix_peaks.csv', index=False)
 
 
 #%%
@@ -89,7 +89,7 @@ for i in range(n_peaks):
 # Add strong candidate signal
 noise = np.random.exponential(size=len(x))
 df = pd.DataFrame(np.array([x, sig, sig + noise]).T, columns=['x', 'bg', 'y'])
-df.to_csv('./test_SNIP_chrom.csv', index=False)
+df.to_csv('./test_data/test_SNIP_chrom.csv', index=False)
 
 # %%
 
@@ -121,8 +121,8 @@ for n in range(n_mixes):
                                 columns=['retention_time', 'scale', 'skew', 
                                          'amplitude', 'area', 'peak_idx', 'iter'])
     peaks = pd.concat([peaks, _df])
-chroms.to_csv('./test_manual_unmix_chrom.csv', index=False)
-peaks.to_csv('./test_manual_unmix_peaks.csv', index=False)
+chroms.to_csv('./test_data/test_manual_unmix_chrom.csv', index=False)
+peaks.to_csv('./test_data/test_manual_unmix_peaks.csv', index=False)
 
 #%%
 # Generate data with a very shallow peak that would not normally be detected
@@ -132,9 +132,9 @@ sig1 = 100 * scipy.stats.norm(10, 1).pdf(x)
 sig2 = 10 * scipy.stats.norm(25, 3).pdf(x)
 sig = sig1 + sig2
 df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
-df.to_csv('./test_shallow_signal_chrom.csv', index=False)
+df.to_csv('./test_data/test_shallow_signal_chrom.csv', index=False)
 peak_df = pd.DataFrame(np.array([[10, 25], [1, 3], [0, 0], [100, 10], 
                                  [sig1.sum(), sig2.sum()], [1, 2]]).T,
                        columns = ['retention_time', 'scale', 'skew',
                                   'amplitude', 'area', 'peak_idx'])
-peak_df.to_csv('./test_shallow_signal_peaks.csv', index=False)
+peak_df.to_csv('./test_data/test_shallow_signal_peaks.csv', index=False)
