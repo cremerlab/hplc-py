@@ -810,7 +810,7 @@ class Chromatogram(object):
                 ax.fill_between(time, self.deconvolved_peaks[:, int(g) - 1], label=label, 
                                 alpha=0.5)
         if 'estimated_background' in self.df.keys():
-            ax.plot(self.df[self.time_col], self.df['estimated_background'],  color='dodgerblue', label='estimated background')
+            ax.plot(self.df[self.time_col], self.df['estimated_background'],  color='dodgerblue', label='estimated background', zorder=1)
         
         if self._added_peaks is not None:
             ymax = ax.get_ylim()[1]
