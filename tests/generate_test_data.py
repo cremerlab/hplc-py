@@ -4,7 +4,7 @@ import scipy.stats
 import pandas as pd
 
 # Generate test data for peak fitting
-n_peaks = 5
+n_peaks = 6
 t_bounds = [0, 160]
 x_bounds = [0.1 * t_bounds[1], 0.9 * t_bounds[1]]
 dt = 0.01
@@ -92,6 +92,7 @@ df = pd.DataFrame(np.array([x, sig, sig + noise]).T, columns=['x', 'bg', 'y'])
 df.to_csv('./test_SNIP_chrom.csv', index=False)
 
 # %%
+
 # Generate test data for peak unmixing
 x = np.arange(0, 25, dt)
 n_mixes = 20
@@ -102,7 +103,10 @@ peaks = pd.DataFrame([])
 amps = np.linspace(10, 100, n_mixes)
 for n in range(n_mixes):
     sig = peak1.copy()
-    peak2 = 1.5 * amps[n] * scipy.stats.norm(11, 2).pdf(x)
+    loc = 11
+    scale = 2
+    amp = 1.5 * amps[n]
+    peak2 = amp * scipy.stats.norm(loc, scale).pdf(x)
     sig += peak2
     # Save chromatogram
     _df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
@@ -111,18 +115,11 @@ for n in range(n_mixes):
 
 
     # Save the peak info
-    _df = pd.DataFrame(np.array([[8, 10.5 + n * 0.2], [1, 1], [0, 0], 
-                                [100, 70], [peak1.sum(), peak2.sum()],
+    _df = pd.DataFrame(np.array([[8, loc], [1, scale], [0, 0], 
+                                [100, amp], [peak1.sum(), peak2.sum()],
                                 [1, 2], [n, n]]).T, 
                                 columns=['retention_time', 'scale', 'skew', 
                                          'amplitude', 'area', 'peak_idx', 'iter'])
     peaks = pd.concat([peaks, _df])
 chroms.to_csv('./test_manual_unmix_chrom.csv', index=False)
 peaks.to_csv('./test_manual_unmix_peaks.csv', index=False)
-
-
-# # %%
-# import matplotlib.pyplot as plt
-# for g, d in chroms.groupby(['iter']):
-#     plt.plot(d['y'])
-# # %%

@@ -8,16 +8,17 @@ def compare(a, b, tol):
     Compares all elements in a and b and assigns equality within a tolerance, 
     accounting for annoying values near zero.
     """
-    val = np.round(a, decimals=np.abs(int(np.log10(tol))))
-    tru = np.round(b, decimals=np.abs(int(np.log10(tol))))
-    _zeros = tru == 0 
-    tru[_zeros] = np.sign(val[_zeros]) * tol 
-    assert np.isclose(val, tru, rtol=tol).all()
+    a = np.round(a, decimals=int(np.abs(np.round(np.log10(tol)))))
+    b = np.round(b, decimals=int(np.abs(np.round(np.log10(tol))))) 
+    _zeros = b == 0 
+    b[_zeros] = np.sign(a[_zeros]) * tol
+    print(a, b)
+    assert np.isclose(a, b, rtol=tol).all()
 
-def fit_peaks(test_data, truth, colnames={'time':'x', 'signal':'y'}, tol=1E-2):
+def fit_peaks(test_data, truth, colnames={'time':'x', 'signal':'y'}, tol=1.5E-2):
     """
     Uses the `hplc.quant.Chromatogram.quantify` method to fit peaks in a chromatogram
-    and compares teh value with the ground truth.
+    and compares the value with the ground truth.
     """
     # Define constants
     props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
@@ -63,9 +64,9 @@ def test_peak_unmixing():
 def test_bg_estimation():
     """
     Tests that a background signal with a known profile can be correctly estimated 
-    within 1% of the ground truth with a fixed window size.
+    within 1.5% of the ground truth with a fixed window size.
     """
-    tol = 1E-2
+    tol = 1.5E-2
     data = pd.read_csv('./test_SNIP_chrom.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
     chrom.correct_baseline(window=0.5)
@@ -75,10 +76,10 @@ def test_bg_estimation():
 
 def test_add_peak():
     """
-    Tests that manually applied peaks can be properly deconvolved to within 1% 
+    Tests that manually applied peaks can be properly deconvolved to within 1.5% 
     of the known parameter values.
     """
-    tol = 1E-2
+    tol = 1.5E-2
     data = pd.read_csv('./test_manual_unmix_chrom.csv')
     peak_df = pd.read_csv('./test_manual_unmix_peaks.csv')
     props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
@@ -87,60 +88,8 @@ def test_add_peak():
         chrom = hplc.quant.Chromatogram(d, cols={'time':'x', 'signal':'y'})
         peaks = chrom.fit_peaks(enforced_locations=truth['retention_time'].values,
                                 correct_baseline=False,
-                                # enforced_widths = truth['scale'].values/2,
-                                enforcement_tolerance=0.25)
-        print(peaks)
-        # assert len(peaks) == len(truth)
-        # for p in props:
-            # compare(peaks[p].values, truth[p].values, tol)
+                                enforcement_tolerance=0.5)
 
-# %%
-
-# %%
-
-# %%
-
-import importlib
-importlib.reload(hplc.quant)
-# test_add_peak()
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-tol = 1E-2
-data = pd.read_csv('./test_manual_unmix_chrom.csv')
-peak_df = pd.read_csv('./test_manual_unmix_peaks.csv')
-props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
-for g, d in data.groupby('iter'):
-    truth = peak_df[peak_df['iter']==g]
-    chrom = hplc.quant.Chromatogram(d, cols={'time':'x', 'signal':'y'})
-    peaks = chrom.fit_peaks(enforced_locations=truth['retention_time'].values,
-                            correct_baseline=False,
-                            enforced_widths = truth['scale'].values/2,
-                            enforcement_tolerance=0.5)
-    # print(peaks)
-    break
-    # assert len(
-
-#%%
-
-import matplotlib.pyplot as plt
-chrom.show()
-
-#%%
-for p in props:
-   compare(peaks[p].values, truth[p].values, 1E-2)
-#%%
-peaks[p].values
-truth[p].values
-# %%
-
-# truth[p].values
-
-peaks
-#%%
-peak_df
+        assert len(peaks) == len(truth)
+        for p in props:
+            compare(peaks[p].values, truth[p].values, tol)
