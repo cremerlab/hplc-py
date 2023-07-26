@@ -32,7 +32,7 @@ class Chromatogram(object):
     """
     def __init__(self, file, time_window=None, 
                     cols={'time':'time', 'signal':'signal'},
-                    csv_comment='#'):
+                    approx_peak_width=5):
         """
         Instantiates a chromatogram object on which peak detection and quantification
         is performed.
@@ -53,7 +53,7 @@ class Chromatogram(object):
             A dictionary of the retention time and intensity measurements 
             of the chromatogram. Default is 
             `{'time':'time', 'signal':'signal'}`. 
-        """
+       """
 
         # Peform type checks and throw exceptions where necessary. 
         if (type(file) is not str) & (type(file) is not pd.core.frame.DataFrame):
@@ -88,6 +88,7 @@ class Chromatogram(object):
         self.peak_df = None
         self._guesses = None
         self._bg_corrected = False
+        self._mapped_compounds = None
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -201,14 +202,14 @@ class Chromatogram(object):
         # If manual locations are provided, ensure that they are identified        
         if len(enforced_locations) != 0:
             enforced_location_inds = np.int_(np.array(enforced_locations) / self._dt)
-            lower_bounds = self._peak_indices - enforcement_tolerance / self._dt 
-            upper_bounds = self._peak_indices + enforcement_tolerance / self._dt
+            # lower_bounds = self._peak_indices - enforcement_tolerance / self._dt 
+            # upper_bounds = self._peak_indices + enforcement_tolerance / self._dt
 
             # Keep track of what locations and widths need to be added.
             added_peaks = []
             added_peak_inds = []
             for i, l in enumerate(enforced_location_inds):
-                if (l not in lower_bounds) & (l not in upper_bounds):
+                if np.sum(np.abs(self._peak_indices - l) > enforcement_tolerance/self._dt) == 0:
                     added_peaks.append(l) 
                     added_peak_inds.append(i)
 
@@ -219,7 +220,7 @@ class Chromatogram(object):
                     _enforced_widths = np.ones_like(added_peaks) / self._dt
                 else:
                     _enforced_widths = enforced_widths[added_peak_inds]  / self._dt
-                _widths = np.append(_widths, enforced_widths)
+                _widths = np.append(_widths, _enforced_widths)
 
                 # Ensure that the newly added peak is within one of the identified 
                 # ranges
@@ -473,6 +474,7 @@ class Chromatogram(object):
             # Perform the inference
             popt, pcov = scipy.optimize.curve_fit(self._fit_skewnorms, v['time_range'],
                                                v['signal'], p0=p0, bounds=bounds,
+                                               maxfev=int(1E6),
                                                **optimizer_kwargs)
             self.param_opts = popt
             self.param_cov = pcov
@@ -586,11 +588,13 @@ class Chromatogram(object):
                          'scale': params['scale'],
                          'skew': params['alpha'],
                          'amplitude': params['amplitude'],
-                         'area': params['area'],
-                         'peak_id': iter + 1}     
+                         'area': params['area']}     
                 iter += 1
                 peak_df = pd.concat([peak_df, pd.DataFrame(_dict, index=[0])])
-                peak_df['peak_id'] = peak_df['peak_id'].astype(int)
+
+        peak_df.sort_values(by='retention_time', inplace=True)
+        peak_df['peak_id'] = np.arange(len(peak_df))
+        peak_df['peak_id'] = peak_df['peak_id'].astype(int)
         self.peaks = peak_df
 
         # Compute the mixture

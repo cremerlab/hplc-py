@@ -43,11 +43,12 @@ for i, sig in enumerate(scales):
 peaks.to_csv('./test_fitting_peaks.csv', index=False) 
 chroms.to_csv('./test_fitting_chrom.csv', index=False) 
 
-#%%
+
+# %%
 # Generate test data for peak unmixing
 x = np.arange(0, 25, dt)
 n_mixes = 20
-nudge=0.2
+nudge = 0.2
 peak1 = 100 * scipy.stats.norm(8, 1).pdf(x)
 chroms = pd.DataFrame([])
 peaks = pd.DataFrame([])
@@ -69,9 +70,9 @@ for n in range(n_mixes):
                                 columns=['retention_time', 'scale', 'skew', 
                                          'amplitude', 'area', 'peak_idx', 'iter'])
     peaks = pd.concat([peaks, _df])
-
 chroms.to_csv('./test_unmix_chrom.csv', index=False)
 peaks.to_csv('./test_unmix_peaks.csv', index=False)
+
 
 #%%
 # Generate a noisy background to test the background subtraction algorithm
@@ -90,16 +91,38 @@ noise = np.random.exponential(size=len(x))
 df = pd.DataFrame(np.array([x, sig, sig + noise]).T, columns=['x', 'bg', 'y'])
 df.to_csv('./test_SNIP_chrom.csv', index=False)
 
-#%%
-import hplc.quant
-c = hplc.quant.Chromatogram(df, bg_subtract=False, cols={'time':'x', 'intensity':'y'})
-bg_df = c._bg_subtract(return_df=True, window=0.5)
-#%%
-plt.plot(bg_df['estimated_background'].values)
-plt.plot(sig)
+# %%
+# Generate test data for peak unmixing
+x = np.arange(0, 25, dt)
+n_mixes = 20
+nudge = 0.2
+peak1 = 100 * scipy.stats.norm(8, 1).pdf(x)
+chroms = pd.DataFrame([])
+peaks = pd.DataFrame([])
+amps = np.linspace(10, 100, n_mixes)
+for n in range(n_mixes):
+    sig = peak1.copy()
+    peak2 = 1.5 * amps[n] * scipy.stats.norm(11, 2).pdf(x)
+    sig += peak2
+    # Save chromatogram
+    _df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
+    _df['iter'] = n
+    chroms = pd.concat([chroms, _df])
 
-#%%
-np.isclose(bg_df['estimated_background'].values[50:-50], sig[50:-50], rtol=0.01).all()
+
+    # Save the peak info
+    _df = pd.DataFrame(np.array([[8, 10.5 + n * 0.2], [1, 1], [0, 0], 
+                                [100, 70], [peak1.sum(), peak2.sum()],
+                                [1, 2], [n, n]]).T, 
+                                columns=['retention_time', 'scale', 'skew', 
+                                         'amplitude', 'area', 'peak_idx', 'iter'])
+    peaks = pd.concat([peaks, _df])
+chroms.to_csv('./test_manual_unmix_chrom.csv', index=False)
+peaks.to_csv('./test_manual_unmix_peaks.csv', index=False)
 
 
-# bg_df[50:-50]
+# # %%
+# import matplotlib.pyplot as plt
+# for g, d in chroms.groupby(['iter']):
+#     plt.plot(d['y'])
+# # %%
