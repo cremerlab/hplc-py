@@ -106,5 +106,3 @@ def test_add_peak():
     peaks = chrom.fit_peaks(enforced_locations=[25.0], correct_baseline=False, prominence=0.5)
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
-
-test_shouldered_peaks()
