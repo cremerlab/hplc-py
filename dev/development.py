@@ -13,14 +13,10 @@ imp.reload(hplc.quant)
 # Load the simulated data and ground truth
 data = pd.read_csv('./simulated_chromatogram.csv')
 peaks = pd.read_csv('./simulated_chromatogram_peaks.csv') 
-plt.plot(data['time_min'],  data['intensity_mV'], label='observed chrom')
-plt.plot(data['time_min'], data['bg_truth'], label='bg')
-plt.legend()
-
-chrom = hplc.quant.Chromatogram('./simulated_chromatogram.csv', bg_subtract=True)
-locs = peaks['retention_time'].values
-df = chrom.quantify()
+chrom = hplc.quant.Chromatogram(data, cols={'time':'time_min','signal':'intensity_mV'})
+chrom.fit_peaks()
+chrom.show()
 
 
 #%%
-chrom.show()
+data

@@ -40,8 +40,8 @@ def test_peak_fitting():
     if the estimated parameter is within 0.01.
     """
     # Load test data
-    chrom_df = pd.read_csv('./test_data/test_fitting_chrom.csv')
-    peak_df = pd.read_csv('./test_data/test_fitting_peaks.csv')
+    chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv')
+    peak_df = pd.read_csv('./tests/test_data/test_fitting_peaks.csv')
     for g, d in chrom_df.groupby('iter'):
         truth = peak_df[peak_df['iter']==g]
         fit_peaks(d, truth)
@@ -52,8 +52,8 @@ def test_peak_unmixing():
     1% of the  ground truth.
     """
     # Load test data
-    chrom_df = pd.read_csv('./test_data/test_unmix_chrom.csv')
-    peak_df = pd.read_csv('./test_data/test_unmix_peaks.csv')
+    chrom_df = pd.read_csv('./tests/test_data/test_unmix_chrom.csv')
+    peak_df = pd.read_csv('./tests/test_data/test_unmix_peaks.csv')
     for g, d in chrom_df.groupby('iter'):
         # Select true peak info
         truth = peak_df[peak_df['iter']==g]
@@ -66,7 +66,7 @@ def test_bg_estimation():
     within 1.5% of the ground truth with a fixed window size.
     """
     tol = 1.5E-2
-    data = pd.read_csv('./test_data/test_SNIP_chrom.csv')
+    data = pd.read_csv('./tests/test_data/test_SNIP_chrom.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
     chrom.correct_baseline(window=0.5)
     window = int(0.5 / np.mean(np.diff(data['x'].values)))
@@ -79,8 +79,8 @@ def test_shouldered_peaks():
     of the known parameter values.
     """
     tol = 1.5E-2
-    data = pd.read_csv('./test_data/test_manual_unmix_chrom.csv')
-    peak_df = pd.read_csv('./test_data/test_manual_unmix_peaks.csv')
+    data = pd.read_csv('./tests/test_data/test_manual_unmix_chrom.csv')
+    peak_df = pd.read_csv('./tests/test_data/test_manual_unmix_peaks.csv')
     props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
     for g, d in data.groupby('iter'):
         truth = peak_df[peak_df['iter']==g]
@@ -99,9 +99,9 @@ def test_add_peak():
     an extant peak window can be identified and deconvolved to within 1.5% of
     the known parameter values.    
     """
-    data = pd.read_csv('./test_data/test_shallow_signal_chrom.csv')
+    data = pd.read_csv('./tests/test_data/test_shallow_signal_chrom.csv')
     props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
-    peak_df = pd.read_csv('./test_data/test_shallow_signal_peaks.csv')
+    peak_df = pd.read_csv('./tests/test_data/test_shallow_signal_peaks.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
     peaks = chrom.fit_peaks(enforced_locations=[25.0], correct_baseline=False, prominence=0.5)
     for p in props:
