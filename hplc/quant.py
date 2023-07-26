@@ -20,19 +20,33 @@ class Chromatogram(object):
     window_props : `dict`
        A dictionary of each peak window, labeled as increasing integers in 
        linear order. Each key has its own dictionary with the following keys:
-    peak_df : `pandas.core.frame.DataFrame` 
+    peaks : `pandas.core.frame.DataFrame` 
         A Pandas DataFrame containing the inferred properties of each peak 
         including the retention time, scale, skew, amplitude, and total
         area under the peak across the entire chromatogram.
-    mix_array : `numpy.ndarray`
-        A where each row corresponds to a time point and each column corresponds
+    deconvolved_peaks : `numpy.ndarray`
+        A matrix where each row corresponds to a time point and each column corresponds
         to the value of the probability density for each individual peak. This 
         is used primarily for plotting in the `show` method. 
+    quantified_peaks : `pandas.core.frame.DataFrame`
+        A Pandas Dataframe with peak areas converted to 
+    param_opt : `numpy.ndarray`
+        An array of the parameter estimates in order of amplitude, location, scale, 
+        and skew for each peak in temporal order. 
+    param_pcov: 2-D `numpy.ndarray`
+        The estimated approximate covariance matrix of the parameters. Uncertainty
+        for each parameter can be calculated as `numpy.sqrt(numpy.diag(param_pcov))`,
+        with the following big caveat:
 
+        .. attention::
+            `param.pcov` is only an *estimate* of the *approximate* covariance
+            matrix and computation of the error is only valid if the linear 
+            approximation to the model about the optimum is valid. Use this 
+            attribute with caution.
+ 
     """
     def __init__(self, file, time_window=None, 
-                    cols={'time':'time', 'signal':'signal'},
-                    approx_peak_width=5):
+                 cols={'time':'time', 'signal':'signal'}):
         """
         Instantiates a chromatogram object on which peak detection and quantification
         is performed.
@@ -84,8 +98,8 @@ class Chromatogram(object):
 
         # Blank out vars that are used elsewhere
         self.window_props = None
-        self._peaks = None
-        self.peak_df = None
+        self._peak_indices = None
+        self.peaks = None
         self._guesses = None
         self._bg_corrected = False
         self._mapped_compounds = None
@@ -493,9 +507,143 @@ class Chromatogram(object):
         self._peak_props = peak_props
         return peak_props
 
-    def fit_peaks(self, enforced_locations=[], enforced_widths=[], enforcement_tolerance=0.5, prominence=1E-2, rel_height=1.0, 
+    def deconvolve_mixture(self, verbose=True, param_bounds={}, **optimizer_kwargs):
+        R"""
+        .. note::
+           In most cases, this function should not be called directly. Instead, 
+           it should called through the :func:`~hplc.quant.Chromatogram.fit_peaks`
+
+        For each peak window, estimate the parameters of skew-normal distributions 
+        which makeup the peak(s) in the window. See "Notes" for information on
+        default parameter bounds.
+
+        Parameters
+        ----------
+        verbose : `bool`
+            If `True`, a progress bar will be printed during the inference.
+
+        param_bounds : `dict`, optional
+            Modifications to the default parameter bounds (see Notes below) as 
+            a dictionary for each parameter. A dict entry should be of the 
+            form `parameter: [lower, upper]`. Modifications have the following effects:
+            + Modifications to `amplitude` bounds are multiplicative of the 
+              observed magnitude at the peak position. 
+            + Modifications to `location` are values that are subtracted or 
+              added from the peak position for lower and upper bounds, respectively.
+            + Modifications to `scale` replace the default values. 
+            + Modifications to `skew` replace the default values. 
+        optimizer_kwargs : dict
+            Keyword arguments to be passed to `scipy.optimize.curve_fit`.
+
+        Returns 
+        --------
+        peak_props: `dict`
+            A dataframe containing properties of the peak fitting procedure. 
+
+        Notes
+        -----
+        The parameter boundaries are set automatically to prevent run-away estimation 
+        into non-realistic regimes that can seriously slow down the inference. The 
+        default parameter boundaries for each peak are as follows.
+
+            + `amplitude`: The lower and upper peak amplitude boundaries correspond 
+            to one-tenth and ten-times the value of the peak at the peak location 
+            in the chromatogram.
+
+            + `location`: The lower and upper location bounds correspond to the 
+            minimum and maximum time values of the chromatogram.
+
+            + `scale`: The lower and upper bounds of the peak standard deviation
+            defaults to the chromatogram time-step and one-half of the chromatogram
+            duration, respectively.  
+
+            + `skew`: The skew parameter by default is allowed to take any value
+            between (-5, 5).
+        """ 
+        if self.window_props is None:
+            raise RuntimeError('Function `_assign_peak_windows` must be run first. Go do that.')
+        if verbose:
+            iterator = tqdm.tqdm(self.window_props.items(), desc='Deconvolving mixture')  
+        else:
+            iterator = self.window_props.items()
+        if (len(param_bounds)) > 0 & (param_bounds.keys() not in ['amplitude', 'location', 'scale', 'skew']):
+            raise ValueError(f"`param_bounds` must have keys of `amplitude`, `location`, `scale`, and `skew`. Provided keys are {param_bounds.keys()}")
+        peak_props = {}
+        for k, v in iterator:
+            window_dict = {}
+
+            # Set up the initial guess
+            p0 = [] 
+            bounds = [[],  []] 
+
+            # If there are more than 5 peaks in a mixture, throw a warning 
+            if v['num_peaks'] >= 10:
+               warnings.warn(f"""
+------------------------------ Yo! Heads up! -----------------------------------
+| This time window (from {np.round(v['time_range'].min(), decimals=4)} to {np.round(v['time_range'].max(), decimals=3)}) has {v['num_peaks']} candidate peaks.
+| This is a complex mixture and may take a long time to properly fit depending 
+| on how well resolved the peaks are. Reduce `buffer` if the peaks in this      
+| window should be separable by eye. Or maybe just go get something to drink.
+-------------------------------------------------------------------------------
+""")
+
+            for i in range(v['num_peaks']):
+                p0.append(v['amplitude'][i])
+                p0.append(v['location'][i]),
+                p0.append(v['width'][i] / 2) # scale parameter
+                p0.append(0) # Skew parameter, starts with assuming Gaussian
+
+                if len(param_bounds) == 0:
+                    # Lower bounds
+                    bounds[0].append(0.1 * v['amplitude'][i]) 
+                    bounds[0].append(v['time_range'].min()) 
+                    bounds[0].append(self._dt) 
+                    bounds[0].append(-np.inf) 
+                    # Upper bounds
+                    bounds[1].append(10 * v['amplitude'][i])
+                    bounds[1].append(v['time_range'].max())
+                    bounds[1].append((v['time_range'].max() - v['time_range'].min())/2)
+                    bounds[1].append(np.inf)
+                else:
+                    bounds[0].append(param_bounds['amplitude'][0] * v['amplitude'][i]) 
+                    bounds[0].append(v['location'] - param_bounds['location'][0]) 
+                    bounds[0].append(param_bounds['scale'][0]) 
+                    bounds[0].append(param_bounds['skew'][0]) 
+                    # Upper bounds
+                    bounds[1].append(param_bounds['amplitude'][1] * v['amplitude'][i])
+                    bounds[1].append(v['location'] + param_bounds['location'][1])
+                    bounds[1].append(param_bounds['scale'][1])
+                    bounds[1].append(param_bounds['skew'][1]) 
+            
+            # Perform the inference
+            popt, pcov = scipy.optimize.curve_fit(self._fit_skewnorms, v['time_range'],
+                                               v['signal'], p0=p0, bounds=bounds,
+                                               **optimizer_kwargs)
+            self.param_opts = popt
+            self.param_cov = pcov
+
+            # Assemble the dictionary of output 
+            if v['num_peaks'] > 1:
+                popt = np.reshape(popt, (v['num_peaks'], 4)) 
+            else:
+                popt = [popt]
+            for i, p in enumerate(popt):
+                window_dict[f'peak_{i + 1}'] = {
+                            'amplitude': p[0],
+                            'retention_time': p[1],
+                            'scale': p[2],
+                            'alpha': p[3],
+                            'area':self._compute_skewnorm(v['time_range'], *p).sum()}
+            peak_props[k] = window_dict
+         
+        self._peak_props = peak_props
+        return peak_props
+
+
+    def fit_peaks(self, locations=[], time_window=None, prominence=1E-2, rel_height=1.0, 
+
                   approx_peak_width=3, buffer=100, param_bounds={}, verbose=True, return_peaks=True, 
-                 correct_baseline=True):
+                 correct_baseline=True, **optimizer_kwargs):
         R"""
         Detects and fits peaks present in the chromatogram
 
@@ -541,6 +689,8 @@ class Chromatogram(object):
             If True, the baseline of the chromatogram will be automatically 
             corrected using the SNIP algorithm. See :func:`~hplc.quant.Chromatogram.correct_baseline`
             for more information.
+        **optimizer_kwargs : `dict`
+            Additional arguments to be passed to `scipy.optimize.curve_fit`.
 
         Returns
         -------
@@ -574,7 +724,7 @@ class Chromatogram(object):
                                       buffer=buffer)
 
         # Infer the distributions for the peaks
-        peak_props = self.deconvolve_mixture(verbose=verbose, param_bounds=param_bounds)
+        peak_props = self.deconvolve_mixture(verbose=verbose, param_bounds=param_bounds, **optimizer_kwargs)
 
         # Set up a dataframe of the peak properties
         peak_df = pd.DataFrame([])
@@ -724,7 +874,8 @@ class Chromatogram(object):
         self.quantified_peaks = peak_df
         self._mapped_compounds = mapper
         return peak_df
-                
+
+               
     def show(self, time_range=[]):
         """
         Displays the chromatogram with mapped peaks if available.
