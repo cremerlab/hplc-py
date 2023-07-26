@@ -103,6 +103,7 @@ class Chromatogram(object):
         self._guesses = None
         self._bg_corrected = False
         self._mapped_peaks = None
+        self._added_peaks = None
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -228,9 +229,12 @@ class Chromatogram(object):
             # Consider the edge case where all enforced locations have been automatically detected
             if len(added_peaks) > 0:
                 self._peak_indices = np.append(self._peak_indices, added_peaks)                
+                self._added_peaks = self.df[self.time_col].values[added_peaks]
                 if len(enforced_widths) == 0:
                     _enforced_widths = np.ones_like(added_peaks) / self._dt
                 else:
+                    if type(enforced_widths) == list:
+                        enforced_widths = np.array(enforced_widths)
                     _enforced_widths = enforced_widths[added_peak_inds]  / self._dt
                 _widths = np.append(_widths, _enforced_widths)
 
@@ -799,15 +803,19 @@ class Chromatogram(object):
                         if 'unit' in d.keys():
                             label += f" {d['unit'].values[0]}]"
                         else:
-                            label += ']'
-                            
+                            label += ']'    
                     else:
                         label = f'peak {int(g)}'
 
                 ax.fill_between(time, self.deconvolved_peaks[:, int(g) - 1], label=label, 
                                 alpha=0.5)
         if 'estimated_background' in self.df.keys():
-            ax.plot(self.df[self.time_col], self.df['estimated_background'], '--', color='dodgerblue', label='estimated background')
+            ax.plot(self.df[self.time_col], self.df['estimated_background'],  color='dodgerblue', label='estimated background')
+        
+        if self._added_peaks is not None:
+            ymax = ax.get_ylim()[1]
+            for loc in self._added_peaks:
+                ax.vlines(loc, 0, ymax, linestyle='--', color='dodgerblue', label="suggested peak location")
         ax.legend(bbox_to_anchor=(1.5,1))
         fig.patch.set_facecolor((0, 0, 0, 0))
         if len(time_range) == 2:
