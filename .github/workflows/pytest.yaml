@@ -25,16 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest-cov
         pip install -r requirements.txt
-        pip install coveralls
         pip install -e ./
     - name: Test with pytest
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        pytest --cov-report xml 
-        coveralls
-
-    - name: Report Coveralls
-      uses: coverallsapp/github-action@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        pytest 
