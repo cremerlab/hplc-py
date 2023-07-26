@@ -31,8 +31,8 @@ jobs:
       run: |
         pytest --cov-report xml 
         coveralls
-    - name: Publish to coveralls.io   
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Report Coveralls
+      uses: coverallsapp/github-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
