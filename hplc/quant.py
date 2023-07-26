@@ -374,7 +374,7 @@ class Chromatogram(object):
         return out
 
 
-    def deconvolve_mixture(self, verbose=True, param_bounds={}, max_iter=1000000, **optimizer_kwargs):
+    def deconvolve_peaks(self, verbose=True, param_bounds={}, max_iter=1000000, **optimizer_kwargs):
         R"""
         .. note::
            In most cases, this function should not be called directly. Instead, 
@@ -549,7 +549,7 @@ class Chromatogram(object):
             If True, a progress bar will be printed during the inference. 
         param_bounds: `dict`, optional
             Parameter boundary modifications to be used to constrain fitting. 
-            See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_mixture`
+            See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
             for more information.
         return_peaks : `bool`, optional
             If True, a dataframe containing the peaks will be returned. Default
@@ -596,7 +596,7 @@ class Chromatogram(object):
                                       buffer=buffer)
 
         # Infer the distributions for the peaks
-        peak_props = self.deconvolve_mixture(verbose=verbose, param_bounds=param_bounds, max_iter=max_iter, 
+        peak_props = self.deconvolve_peaks(verbose=verbose, param_bounds=param_bounds, max_iter=max_iter, 
                                              **optimizer_kwargs)
 
         # Set up a dataframe of the peak properties
@@ -688,7 +688,7 @@ class Chromatogram(object):
         if return_df:
             return df
 
-    def map_compounds(self, params, loc_tolerance=0.5):
+    def map_compounds(self, params, loc_tolerance=0.5, include_unmapped=False):
         """
         Maps user-provided mappings to arbitrarily labeled peaks. If a linear 
         calibration curve is also provided, the concentration will be computed.
@@ -706,13 +706,16 @@ class Chromatogram(object):
             as keys. If only `retention_time` is given, concentration will 
             not be computed. The key `retention_time` will be used to map the compound to the 
             `peak_id`. If `unit` are provided, this will be added as a column
-       loc_tolerance : float 
+       loc_tolerance : `float`
            The tolerance for mapping the compounds to the retention time. The 
            default is 0.5 time units.
+       include_unmapped : `bool`
+            If True, unmapped compounds will remain in the returned peak dataframe,
+            but will be populated with Nan. Default is False.
 
-        Returns
-        -------
-        peaks : `pandas.core.frame.DataFrame`
+       Returns
+       -------
+       peaks : `pandas.core.frame.DataFrame`
             A modified peak table with the compound name and concentration 
             added as columns.
         """
@@ -743,7 +746,8 @@ class Chromatogram(object):
                     peak_df.loc[peak_df['compound']==g, 'concentration'] = conc
                     if 'unit' in params[g].keys():
                         peak_df.loc[peak_df['compound']==g, 'unit'] = params[g]['unit']
-        peak_df.dropna(inplace=True)
+        if include_unmapped == False:
+            peak_df.dropna(inplace=True)
         self.quantified_peaks = peak_df
         self._mapped_compounds = mapper
         return peak_df
