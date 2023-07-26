@@ -102,7 +102,7 @@ class Chromatogram(object):
         self.peaks = None
         self._guesses = None
         self._bg_corrected = False
-        self._mapped_compounds = None
+        self._mapped_peaks = None
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -448,12 +448,12 @@ class Chromatogram(object):
             # If there are more than 5 peaks in a mixture, throw a warning 
             if v['num_peaks'] >= 10:
                warnings.warn(f"""
------------------------------- Yo! Heads up! -----------------------------------
+-------------------------- Hey! Yo! Heads up! ----------------------------------
 | This time window (from {np.round(v['time_range'].min(), decimals=4)} to {np.round(v['time_range'].max(), decimals=3)}) has {v['num_peaks']} candidate peaks.
 | This is a complex mixture and may take a long time to properly fit depending 
 | on how well resolved the peaks are. Reduce `buffer` if the peaks in this      
 | window should be separable by eye. Or maybe just go get something to drink.
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 """)
 
             for i in range(v['num_peaks']):
@@ -688,13 +688,14 @@ class Chromatogram(object):
         if return_df:
             return df
 
-    def map_compounds(self, params, loc_tolerance=0.5, include_unmapped=False):
+    def map_peaks(self, params, loc_tolerance=0.5, include_unmapped=False):
         """
         Maps user-provided mappings to arbitrarily labeled peaks. If a linear 
         calibration curve is also provided, the concentration will be computed.
+
         .. note::
             As of `v0.1.0`, this function can only accommodate linear calibration 
-            curves.
+            functions.
 
         Parameters
         ----------
@@ -749,7 +750,7 @@ class Chromatogram(object):
         if include_unmapped == False:
             peak_df.dropna(inplace=True)
         self.quantified_peaks = peak_df
-        self._mapped_compounds = mapper
+        self._mapped_peaks = mapper
         return peak_df
 
                
@@ -791,10 +792,10 @@ class Chromatogram(object):
             ax.plot(time, convolved, 'r--', label='inferred mixture') 
             for g, d in self.peaks.groupby('peak_id'):
                 label = f'peak {int(g)}'
-                if self._mapped_compounds is not None: 
-                    if g in self._mapped_compounds.keys():
-                        d = self.quantified_peaks[self.quantified_peaks['compound']==self._mapped_compounds[g]]
-                        label = f"{self._mapped_compounds[g]}\n[{d.concentration.values[0]:0.3g}"
+                if self._mapped_peaks is not None: 
+                    if g in self._mapped_peaks.keys():
+                        d = self.quantified_peaks[self.quantified_peaks['compound']==self._mapped_peaks[g]]
+                        label = f"{self._mapped_peaks[g]}\n[{d.concentration.values[0]:0.3g}"
                         if 'unit' in d.keys():
                             label += f" {d['unit'].values[0]}]"
                         else:
