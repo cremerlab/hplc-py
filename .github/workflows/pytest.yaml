@@ -27,6 +27,8 @@ jobs:
         pip install -r requirements.txt
         pip install coveralls
         pip install -e ./
+    - env:
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Test with pytest
       run: |
         pytest --cov-report xml 
