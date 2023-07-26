@@ -25,10 +25,25 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+html_logo = "_static/logo_horizontal-02.png"
 html_theme_options = {
-    "light_logo": "logo_light_mode.svg",
-    "dark_logo": "logo_dark_mode.svg",
-    "sidebar_hide_name": True,
-    }   
+    "logo_only": True,
+    "sticky_navigation": True,
+    "collapse_navigation": True,
+    "style_nav_header_background":"#3C3E47",
+}
+# html_theme_options = {
+#     "logo": {
+#         "image_dark": '_static/logo_horizontal-02.svg',
+#         "image_light": '_static/logo_horizontal-01.svg',
+#     } ,
+#     "navbar_end": ["navbar-icon-links"]
+#     }   
+# html_context = {"default_mode": "light"}
+
+
+# html_css_files = [
+#     'css/custom.css',
+# ]

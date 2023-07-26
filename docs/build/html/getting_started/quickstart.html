@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quickstart &mdash; hplc-py 0.0.01 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Quantifying Peaks in Chromatograms" href="quantify_example.html" />
+    <link rel="prev" title="About" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3C3E47" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_horizontal-02.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Loading-and-viewing-chromatograms">Loading and viewing chromatograms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Detecting-and-Quantifying-Peaks">Detecting and Quantifying Peaks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Deconvolving-Heavily-Overlapping-and-Subtle-Peaks">Deconvolving Heavily-Overlapping and Subtle Peaks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quantify_example.html">Quantifying Peaks in Chromatograms</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quant.html"><cite>hplc.quant</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html"><cite>hplc.io</cite></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #3C3E47" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hplc-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/getting_started/quickstart.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Quickstart">
+<h1>Quickstart<a class="headerlink" href="#Quickstart" title="Permalink to this heading"></a></h1>
+<p>This package is meant to get you from chromatogram to quantified peaks as rapidly as possible. Below is a brief example of how to go from a raw, off-the-machine data set to a list of compounds and their absolute concentrations.</p>
+<section id="Loading-and-viewing-chromatograms">
+<h2>Loading and viewing chromatograms<a class="headerlink" href="#Loading-and-viewing-chromatograms" title="Permalink to this heading"></a></h2>
+<p>Text files containing chromatograms with time and signal information can be intelligently read into a pandas DataFrame using <code class="docutils literal notranslate"><span class="pre">hplc.io.load_chromatogram()</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the chromatogram as a dataframe</span>
+<span class="kn">import</span> <span class="nn">hplc.io</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">hplc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/sample.txt&#39;</span><span class="p">,</span>
+                                 <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;R.Time (min)&#39;</span><span class="p">,</span> <span class="s1">&#39;Intensity&#39;</span><span class="p">])</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>R.Time (min)</th>
+      <th>Intensity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.00000</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.00833</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.01667</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.02500</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.03333</td>
+      <td>-1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>By providing the column names as a dictionary, you can rename the (often annoying) default column names to something easier to work with, such as “time” and “signal” as</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load chromatogram and rename the columns</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">hplc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/sample.txt&#39;</span><span class="p">,</span> <span class="n">colnames</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;R.Time (min)&#39;</span><span class="p">:</span><span class="s1">&#39;time&#39;</span><span class="p">,</span>
+                                                              <span class="s1">&#39;Intensity&#39;</span><span class="p">:</span> <span class="s1">&#39;signal&#39;</span><span class="p">})</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>time</th>
+      <th>signal</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.00000</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.00833</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.01667</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.02500</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.03333</td>
+      <td>-1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>This dataframe can now be loaded passed to the <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> class, which has a variety of methods for quantification, cropping, and visualization and more.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Instantiate the Chromatogram class with the loaded chromatogram.</span>
+<span class="kn">import</span> <span class="nn">hplc.quant</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">hplc</span><span class="o">.</span><span class="n">quant</span><span class="o">.</span><span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+<span class="c1"># Show the chromatogram</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_7_1.png" src="../_images/getting_started_quickstart_7_1.png" />
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">crop</span></code> method allows you to crop the chromatogram <em>in place</em> to restrict the signal to a specific time range.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Crop the chromatogram in place between 8 and 21 min.</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">crop</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_9_1.png" src="../_images/getting_started_quickstart_9_1.png" />
+</div>
+</div>
+<p>Note that the crop function operates <strong>in place</strong> and modifies the loaded as data within the <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> object.</p>
+</section>
+<section id="Detecting-and-Quantifying-Peaks">
+<h2>Detecting and Quantifying Peaks<a class="headerlink" href="#Detecting-and-Quantifying-Peaks" title="Permalink to this heading"></a></h2>
+<p>The real meat of the package comes in the deconvolution of signal into discrete peaks and measurement of their properties. Described in more detail in <strong>XXX</strong>, this typically involves the automated estimation and subtraction of the baseline, detection of peaks, and fitting of skew-normal distributions to reconstitute the signal. Luckily for you, all of this is done in a single method call <code class="docutils literal notranslate"><span class="pre">Chromatogram.fit_peaks()</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Automatically detect and fit the peaks</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">()</span>
+<span class="n">peaks</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 178/178 [00:00&lt;00:00, 3168.49it/s]
+Deconvolving mixture: 100%|██████████| 2/2 [00:00&lt;00:00,  4.40it/s]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>retention_time</th>
+      <th>scale</th>
+      <th>skew</th>
+      <th>amplitude</th>
+      <th>area</th>
+      <th>peak_id</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>10.904346</td>
+      <td>0.157576</td>
+      <td>0.677681</td>
+      <td>23248.375233</td>
+      <td>2.789805e+06</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.170582</td>
+      <td>0.582447</td>
+      <td>3.836861</td>
+      <td>42222.313082</td>
+      <td>5.066678e+06</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>14.447599</td>
+      <td>0.353161</td>
+      <td>-3.019937</td>
+      <td>35249.388929</td>
+      <td>4.229927e+06</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>15.531862</td>
+      <td>0.312374</td>
+      <td>1.629658</td>
+      <td>14881.173269</td>
+      <td>1.785741e+06</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>16.522672</td>
+      <td>0.342696</td>
+      <td>1.969566</td>
+      <td>10736.906034</td>
+      <td>1.288429e+06</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>17.293670</td>
+      <td>0.341221</td>
+      <td>1.616547</td>
+      <td>12411.399410</td>
+      <td>1.489368e+06</td>
+      <td>6</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>To see how well the deconvolution worked, you can once again call the <code class="docutils literal notranslate"><span class="pre">show</span></code> method to see the composite compound chromatograms.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># View the result of the fitting.</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_15_1.png" src="../_images/getting_started_quickstart_15_1.png" />
+</div>
+</div>
+<p>If you know the parameters of the linear calibration curve, which relates peak area to a known concentration, you can use the <code class="docutils literal notranslate"><span class="pre">map_compounds</span></code> method which will map user provided compound names to peaks.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the two peaks of interest and their calibration curves</span>
+<span class="n">calibration</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;compound A&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;retention_time&#39;</span><span class="p">:</span> <span class="mf">15.5</span><span class="p">,</span>
+                              <span class="s1">&#39;slope&#39;</span><span class="p">:</span> <span class="mf">10547.6</span><span class="p">,</span>
+                              <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">205.6</span><span class="p">,</span>
+                              <span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="s1">&#39;µM&#39;</span><span class="p">},</span>
+               <span class="s1">&#39;compound B&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;retention_time&#39;</span><span class="p">:</span> <span class="mf">17.2</span><span class="p">,</span>
+                              <span class="s1">&#39;slope&#39;</span><span class="p">:</span> <span class="mf">26401.2</span><span class="p">,</span>
+                              <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="mf">54.2</span><span class="p">,</span>
+                              <span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="s1">&#39;nM&#39;</span><span class="p">}}</span>
+<span class="n">quant_peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">map_peaks</span><span class="p">(</span><span class="n">calibration</span><span class="p">)</span>
+<span class="n">quant_peaks</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>retention_time</th>
+      <th>scale</th>
+      <th>skew</th>
+      <th>amplitude</th>
+      <th>area</th>
+      <th>peak_id</th>
+      <th>compound</th>
+      <th>concentration</th>
+      <th>unit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>15.531862</td>
+      <td>0.312374</td>
+      <td>1.629658</td>
+      <td>14881.173269</td>
+      <td>1.785741e+06</td>
+      <td>4</td>
+      <td>compound A</td>
+      <td>169.322537</td>
+      <td>µM</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>17.293670</td>
+      <td>0.341221</td>
+      <td>1.616547</td>
+      <td>12411.399410</td>
+      <td>1.489368e+06</td>
+      <td>6</td>
+      <td>compound B</td>
+      <td>56.410835</td>
+      <td>nM</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Successfully mapping compounds to peak ID’s will also be reflected in the <code class="docutils literal notranslate"><span class="pre">show</span></code> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show the chromatogram with mapped compounds</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_19_1.png" src="../_images/getting_started_quickstart_19_1.png" />
+</div>
+</div>
+</section>
+<section id="Deconvolving-Heavily-Overlapping-and-Subtle-Peaks">
+<h2>Deconvolving Heavily-Overlapping and Subtle Peaks<a class="headerlink" href="#Deconvolving-Heavily-Overlapping-and-Subtle-Peaks" title="Permalink to this heading"></a></h2>
+<p>Often, compounds will have similar retention times leading to heavily overlapping peaks. If one of the compounds dominates the signal, the other compounds may only show up as a “shoulder” on the predominant peak. In this case, automatic peak detection will fail and will fit only a single peak, as in the following example.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load, fit, and display a chromatogram with heavily overlapping peaks</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">hplc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/example_overlap.txt&#39;</span><span class="p">,</span> <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+<span class="n">chrom</span> <span class="o">=</span>  <span class="n">hplc</span><span class="o">.</span><span class="n">quant</span><span class="o">.</span><span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">()</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 148/148 [00:00&lt;00:00, 1401.67it/s]
+Deconvolving mixture: 100%|██████████| 1/1 [00:00&lt;00:00, 99.52it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_21_2.png" src="../_images/getting_started_quickstart_21_2.png" />
+</div>
+</div>
+<p>However, if you <em>know</em> there is a second peak, and you know its approximate retention time, you can manually add an approximate peak position, forcing the algorithm to estimate the peak convolution including more than one peak.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enforce a manual peak position at around 11 time units</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">enforced_locations</span><span class="o">=</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 148/148 [00:00&lt;00:00, 1351.03it/s]
+Deconvolving mixture: 100%|██████████| 1/1 [00:00&lt;00:00,  8.77it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_23_2.png" src="../_images/getting_started_quickstart_23_2.png" />
+</div>
+</div>
+<p>Note that even though we provided a guess of ≈ 12 time units for the position of the second peak, the algorithm did not force the peak to be exactly there. If <code class="docutils literal notranslate"><span class="pre">enforced_locations</span></code> are provided, these are used as initial guesses when performing the fitting.</p>
+<p>This approach can also be used if there is a shallow, isolated peak that is not automatically detected.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load and fit a sample with a shallow peak</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">hplc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/example_shallow.csv&#39;</span><span class="p">,</span> <span class="n">colnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">hplc</span><span class="o">.</span><span class="n">quant</span><span class="o">.</span><span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">prominence</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span> <span class="c1"># Prominence is to exclude shallow peak</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 148/148 [00:00&lt;00:00, 900.78it/s]
+Deconvolving mixture: 100%|██████████| 1/1 [00:00&lt;00:00, 103.02it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_26_2.png" src="../_images/getting_started_quickstart_26_2.png" />
+</div>
+</div>
+<p>As the second peak is broad, you can provide an estimate of the width of the peak at the half maximum value to provide a better initial guess.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add the location of the second peak</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">enforced_locations</span><span class="o">=</span><span class="p">[</span><span class="mi">25</span><span class="p">],</span> <span class="n">enforced_widths</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">prominence</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 148/148 [00:00&lt;00:00, 893.61it/s]
+Deconvolving mixture: 100%|██████████| 2/2 [00:00&lt;00:00, 102.51it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/getting_started_quickstart_28_2.png" src="../_images/getting_started_quickstart_28_2.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="About" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quantify_example.html" class="btn btn-neutral float-right" title="Quantifying Peaks in Chromatograms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Griffin Chure &amp; Jonas Cremer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
