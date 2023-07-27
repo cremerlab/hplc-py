@@ -28,7 +28,7 @@ jobs:
         pip install -e ./
     - name: Test with pytest
       run: |
-        pytest --codecov
+        pytest --codecov --cov-report html:coverage_rep
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       env:
