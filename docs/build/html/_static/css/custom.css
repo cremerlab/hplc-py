@@ -1,9 +1,5 @@
-html[data-theme="light"] {
-    --pst-color-primary: #1C75BC;
-    --pst-color-secondary: white;
-}
+@import url("https://fonts.googleapis.com/css?family=Lato");
 
-html[data-theme="dark"] {
-    --pst-color-primary: #27AAE1;
-    --pst-color-secondary: black;
+body {
+    font-family: Lato;
 }

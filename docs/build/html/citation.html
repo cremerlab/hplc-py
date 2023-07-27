@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>hplc.io &mdash; hplc-py 0.0.01 documentation</title>
+  <title>Credit &mdash; hplc-py 0.0.01 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/_static/css/custom.css" type="text/css" />
@@ -20,8 +20,7 @@
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="hplc.quant" href="quant.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,12 +49,9 @@
 <li class="toctree-l1"><a class="reference internal" href="getting_started/algorithm.html">Methodology</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="quant.html"><cite>hplc.quant</cite></a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#"><cite>hplc.io</cite></a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#hplc.io.load_chromatogram"><code class="docutils literal notranslate"><span class="pre">load_chromatogram()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="io.html"><cite>hplc.io</cite></a></li>
 </ul>
 
         </div>
@@ -72,9 +68,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active"><cite>hplc.io</cite></li>
+      <li class="breadcrumb-item active">Credit</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/io.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/citation.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -82,41 +78,29 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-hplc.io">
-<span id="hplc-io"></span><h1><cite>hplc.io</cite><a class="headerlink" href="#module-hplc.io" title="Permalink to this heading"></a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="hplc.io.load_chromatogram">
-<span class="sig-prename descclassname"><span class="pre">hplc.io.</span></span><span class="sig-name descname"><span class="pre">load_chromatogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colnames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">','</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropna</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hplc.io.load_chromatogram" title="Permalink to this definition"></a></dt>
-<dd><p>Parses a file containing a chromatogram and returns it as a Pandas DataFrame.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fname</strong> (<cite>str</cite>) – The path to the file containing the chromatogram. This must be a text
-file (i.e. not <cite>.xslx</cite>!)</p></li>
-<li><p><strong>colnames</strong> (<cite>list</cite> or <cite>dict</cite>) – The desired columns present in the file. If provided as a dict, columns will
-be renamed as <cite>key</cite> -&gt; <cite>value</cite>. If not provided, it will be assumed
-that the chromatogram begins without needing to skip any lines.</p></li>
-<li><p><strong>delimiter</strong> (<em>'str'</em>) – The delimiter character separating columns in the chromatogram.</p></li>
-<li><p><strong>dropna</strong> (<cite>bool</cite>) – If True, NaN’s will be dropped from the chromatogram.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>df</strong> – The chromatogram loaded as a Pandas DataFrame with the desired columns.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><cite>pandas.core.frame.DataFrame</cite></p>
-</dd>
-</dl>
-</dd></dl>
-
+  <section id="credit">
+<h1>Credit<a class="headerlink" href="#credit" title="Permalink to this heading"></a></h1>
+<p>This package is primarily written by <a class="reference external" href="https://gchure.github.io">Griffin Chure</a>
+with contributions from <cite>Jonas Cremer &lt;https://cremerlab.github.io&gt;</cite> who
+are both at Stanford University. Griffin Chure is supported by a National Science
+Foundation Postdoctoral Research Fellowship under the award number 2010807.</p>
+</section>
+<section id="citing-hplc-py">
+<h1>Citing <cite>hplc-py</cite><a class="headerlink" href="#citing-hplc-py" title="Permalink to this heading"></a></h1>
+<p>If you end up using <cite>hplc-py</cite> in your research, great! Please consider citing
+the project. The package is being actively developed and improved, so please
+ensure that you cite the version number you are using.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A formal bibtex citation key will be included here when the repository is
+registered on Zenodo.</p>
+</div>
 </section>
 
 
            </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="quant.html" class="btn btn-neutral float-left" title="hplc.quant" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-    </div>
+          <footer>
 
   <hr/>
 

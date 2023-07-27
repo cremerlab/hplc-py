@@ -1,6 +1,7 @@
-.. image:: _static/logo_horizontal-01.svg
-   :width: 500px
+.. image:: _static/homepage_logo.png
    :align: center
+
+----
 
 About
 =====

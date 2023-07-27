@@ -4,10 +4,11 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quantifying Peaks in Chromatograms &mdash; hplc-py 0.0.01 documentation</title>
+  <title>Quantification of Peaks: &mdash; hplc-py 0.0.01 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -22,9 +23,7 @@
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="hplc.quant" href="../quant.html" />
-    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+    <link rel="search" title="Search" href="../search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,10 +47,9 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html#Detecting-and-Quantifying-Peaks">Detecting and Quantifying Peaks</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Quantifying Peaks in Chromatograms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithm.html">Methodology</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
 <ul>
@@ -73,9 +71,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Quantifying Peaks in Chromatograms</li>
+      <li class="breadcrumb-item active">Quantification of Peaks:</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/getting_started/quantify_example.ipynb.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/getting_started/quantification.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -83,10 +81,27 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Quantifying-Peaks-in-Chromatograms">
-<h1>Quantifying Peaks in Chromatograms<a class="headerlink" href="#Quantifying-Peaks-in-Chromatograms" title="Permalink to this heading"></a></h1>
-<p><strong>H</strong>igh-<strong>P</strong>erformance <strong>L</strong>iquid <strong>C</strong>hromatography (HPLC) is an analytical technique which allows for the quantitative characterization of the chemical components of a mixture. While many of the technical details of HPLC are now automated, the programmatic cleaning and processing of the resulting data can be cumbersome. This package was developed to alevieate some of this burden, making the actual running of the HPLC the most time consuming part of the analysis.</p>
-<p>The rest of this page will show you how to use the cremerlab.hplc module to convert the ASCII data output from our Shimadzu HPLC to a useable format and how to quantify the abundance of the relevant peaks.</p>
+  <section id="Quantification-of-Peaks:">
+<h1>Quantification of Peaks:<a class="headerlink" href="#Quantification-of-Peaks:" title="Permalink to this heading"></a></h1>
+<p><strong>H</strong>igh-<strong>P</strong>erformance <strong>L</strong>iquid <strong>C</strong>hromatography (HPLC) is an analytical technique which allows for the quantitative characterization of the chemical components of a mixture. While many of the technical details of HPLC are now automated, the programmatic cleaning and processing of the resulting data can be cumbersome and often requires extensive manual labor. This package was developed to alleviate some of this burden, making the actual running of the HPLC the most time-consuming
+part of the analysis.</p>
+<p>In the sections below, we cover the major features of this package using</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
@@ -108,10 +123,7 @@
 
            </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../quant.html" class="btn btn-neutral float-right" title="hplc.quant" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
+          <footer>
 
   <hr/>
 
