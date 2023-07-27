@@ -7,7 +7,7 @@ import tqdm
 import matplotlib.pyplot as plt
 import warnings 
 import seaborn as sns
-from termcolor import cprint, colored
+import termcolor
 
 class Chromatogram(object):
     """
@@ -124,6 +124,8 @@ class Chromatogram(object):
         cropped_df : pandas DataFrame
             If `return_df = True`, then the cropped dataframe is returned.
         """
+        if self.peaks is not None:
+            raise RuntimeError("You are trying to crop a chromatogram after it has been fit. Make sure that you do this before calling `fit_peaks()` or provide the argument `time_window` to the `fit_peaks()`.")
         if type(time_window) != list:
                 raise TypeError(f'`time_window` must be of type `list`. Type {type(time_window)} was proivided')
         if len(time_window) != 2:
@@ -207,15 +209,16 @@ class Chromatogram(object):
         self._ranges = ranges
         # Identiy subset ranges and remove
         valid = [True] * len(ranges)
-        for i, r1 in enumerate(ranges):
-            for j, r2 in enumerate(ranges):
-                if i != j:
-                    if set(r2).issubset(r1):
-                        valid[j] = False
+        if len(ranges) > 1:
+            for i, r1 in enumerate(ranges):
+                for j, r2 in enumerate(ranges):
+                    if i != j:
+                        if set(r2).issubset(r1):
+                            valid[j] = False
 
         # Keep only valid ranges and baselines
         ranges = [r for i, r in enumerate(ranges) if valid[i] is True]
-
+        self.ranges = ranges
         # If manual locations are provided, ensure that they are identified        
         if len(enforced_locations) != 0:
             enforced_location_inds = np.int_(np.array(enforced_locations) / self._dt)
@@ -273,8 +276,9 @@ class Chromatogram(object):
 
         # Convert this to a dictionary for easy parsing
         window_dict = {}
-        window_df = window_df[window_df['window_id'] > 0]
+        # window_df = window_df[window_df['window_id'] > 0]
         for g, d in window_df.groupby('window_id'):
+            if g > 0:
                 _peaks = [p for p in self._peak_indices if p in d['time_id'].values]
                 peak_inds = [x for _p in _peaks for x in np.where(self._peak_indices == _p)[0]]
                 _dict = {'time_range':d[self.time_col].values,
@@ -287,10 +291,7 @@ class Chromatogram(object):
                              }
                 window_dict[int(g)] = _dict
 
-        # window_df.dropna(inplace=True) 
-        window_df = window_df[window_df['window_id'] > 0]
-        self.window_df = window_df
-  
+        self.window_df = window_df  
         self.window_props = window_dict
 
         return window_df  
@@ -780,7 +781,8 @@ class Chromatogram(object):
         score_df : `pandas.core.frame.DataFrame`
             A DataFrame reporting the scoring statistic for each window as well 
             as for the entire chromatogram. A window value of `0` corresponds 
-            to the entire chromatogram. 
+            to the chromatogram regions which don't have peaks. A window 
+            value of `-1` corresponds to the chromatogram as a whole
 
         Notes
         -----
@@ -799,38 +801,45 @@ class Chromatogram(object):
 
         # tform = np.log(np.log(np.sqrt(signal.values + 1) + 1) + 1)
         columns = ['window_id', 'time_start', 'time_end', 'signal_area', 
-                   'inferred_area', 'reconstruction_score']
+                   'inferred_area', 'signal_fano_factor', 'reconstruction_score']
         score_df = pd.DataFrame([])  
         # Compute the per-window reconstruction
+        # TODO: Subtract the chromatograms, sum the difference
         for g, d in self.window_df.groupby('window_id'):
-            steps = (d[self.time_col].max() - d[self.time_col].min())/self._dt
-            window_area = np.sqrt(d[self.int_col].values + 1).sum()/ steps 
-            window_peaks = self._peak_props[g]
-            window_peak_area = np.sqrt(np.array([v['reconstructed_signal'] for v in window_peaks.values()]) + 1).sum() / steps
-            score = np.abs(window_peak_area - window_area) / window_area
-            x = np.array([g, d[self.time_col].min(),  
-                          d[self.time_col].max(), window_area, 
-                          window_peak_area, score])
+            # Compute the non-peak windows separately.
+            if g != 0:
+                window_area = d[self.int_col].values.sum()
+                window_peaks = self._peak_props[g]
+                window_peak_area = np.array([v['reconstructed_signal'] for v in window_peaks.values()]).sum()
+                score = window_peak_area / window_area 
+                signal_fano = np.var(d[self.int_col].values) / np.mean(d[self.int_col].values)
+                x = np.array([g, d[self.time_col].min(),  
+                            d[self.time_col].max(), window_area, 
+                            window_peak_area, signal_fano, score])
               
-            _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[1])
+                _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[1])
 
-            score_df = pd.concat([score_df, _df]) 
+                score_df = pd.concat([score_df, _df]) 
         
-        # Compute the score for the whole chromatogram
-        total_area = np.sqrt(self.df[self.int_col].values + 1).sum()
-        recon_area = np.sqrt(np.sum(self.unmixed_chromatograms, axis=1) + 1).sum()
-        total_score = (np.abs(recon_area - total_area) / total_area)
+        # Compute the score for the non-peak regions
+        nonpeak = self.window_df[self.window_df['window_id'] == 0]['time_id'].values
+        if len(nonpeak) > 0:
+            total_area = self.df[self.int_col].values[nonpeak].sum()
+            recon_area = np.sum(self.unmixed_chromatograms, axis=1)[nonpeak].sum()
+            nonpeak_score = recon_area / total_area
+            signal_fano = np.var(self.df[self.int_col].values[nonpeak]) / np.mean(self.df[self.int_col].values[nonpeak])
+            # Add to score dataframe
+            x = [0, self.df[self.time_col].min(),
+                self.df[self.time_col].max(),
+                total_area, recon_area, signal_fano, nonpeak_score]
+            _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[1])
+            score_df = pd.concat([score_df, _df])
 
-        # Append to the dataframe
-        x = [0, self.df[self.time_col].min(),
-            self.df[self.time_col].max(),
-            total_area, recon_area, total_score]
-        _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[1])
-        score_df = pd.concat([score_df, _df])
+
         self.reconstruction_score = score_df
         return score_df
 
-    def assess_fit(self, tol=1E-2, verbose=True):
+    def assess_fit(self, tol=1E-2, fano_tol=1E-3, verbose=True):
         """
         Assesses whether the computed reconstruction score is adequate, given a tolerance.
 
@@ -874,31 +883,62 @@ class Chromatogram(object):
         score_df = self.reconstruction_score.copy()
         score_df['applied_tolerance'] = tol
         score_df['accepted'] = np.abs(np.round(score_df['reconstruction_score'].values - 1, 
-                                               decimals=int(np.abs(np.ceil(np.log10(tol)))))) <= tol
-
+                                          decimals=int(np.abs(np.ceil(np.log10(tol)))))) <= tol
+        self._assessment = -1
+        if (score_df['accepted']==True).all():
+            self._assessment = 0
+        else:
+            if score_df['window_id'].min() == 0:
+                if (score_df[score_df['window_id'] > 0]['accepted']==True).all() \
+                    & (score_df[score_df['window_id']==0]['accepted'].values[0]==False):
+                    fano_ratio = score_df[score_df['window_id'] == 0]['signal_fano_factor'].values / score_df[score_df['window_id'] != 0]['signal_fano_factor'].values.mean()
+                    if fano_ratio < 1E-3:
+                        self._assessment = 1
+                    else:
+                        self._assessment = 2
+                elif (score_df[score_df['window_id'] > 0]['accepted']==False).all():
+                        self._assessment = 3
+            else:
+                self._assessment = 3 
+ 
         # Print the summary to the screen
         if verbose:
             print("""
 -------------------Chromatogram Reconstruction Report Card----------------------""")
-            if (score_df['accepted'].values == True).all():
-                cprint("""
-Success! Inferred chromatogram is a faithful reconstruction of the observed signal. """, "black", "on_green", attrs=["bold"])
-            elif (score_df[score_df['window_id']==0]['accepted'].values[0] == False) \
-                & (score_df[score_df['window_id'] != 0]['accepted'].values == True).all():
-                    cprint("""
-!!Warning: Chromatogram only faithfully reconstructed within peak windows!!
+            if self._assessment == 0:
+                termcolor.cprint("""
+Success: Inferred chromatogram is a faithful reconstruction of the observed 
+signal.""", "black", "on_green", attrs=["bold"])
+            elif self._assessment == 1:
+                termcolor.cprint("""
+Success (Mostly): Peak window chromatograms are faithfully reconstructed, but 
+poorly reconstructed in peak-free regions.""", "black", "on_yellow", attrs=["bold"])
+                print("""
+This means that there are peak-free regions that are not well described by the inferred
+mixtures, but have a small Fano factor compared to detected peak regions. This 
+is probably fine, but call `Chromatogram.show()` to ensure you're not missing 
+a peak.""")
+ 
+            elif self._assessment == 2:
+                    termcolor.cprint("""
+Warning: Chromatogram only faithfully reconstructed within peak windows.
 """, "black", "on_magenta", attrs=["bold"])
                     print("""
-This means that there are regions that are not well described by the inferred
-mixtures, but these regions do not overlap with detected peaks. This may be due
-to pronounced noise in the chromatogram or there are peaks which are not being 
+This means that there are peak-free regions that are not well described by the inferred
+mixtures, but have a Fano factor above the noise. This may be due
+to pronounced systematic noise in the chromatogram or there are peaks which are not being 
 detected. Call `Chromatogram.show()` and visually inspect where things have gone
 awry.""")
-            elif (score_df[score_df['window_id'] > 0]['accepted'] == False).any():                
+            
+            elif self._assessment == 3:
                 bad_regions = score_df[(score_df['window_id'] > 0) &
                                        (score_df['accepted']==False)]
+                if len(bad_regions) > 1:
+                    num = f'{len(bad_regions)} out of {len(bad_regions) - 1} peak windows were'
+                else:
+                    num  = 'The peak window was'
                 cprint(f"""
-!!!Failure: {len(bad_regions)} out of {len(score_df) - 1} peak windows were not properly reconstructed!!!""", 
+!!!Failure: {num} not properly reconstructed!!!""", 
 "black", "on_red", attrs=["bold"])
                 print("""
 The following regions are problematic. Try adjusting parameter bounds and peak 
