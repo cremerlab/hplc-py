@@ -39,7 +39,7 @@ with the following dependencies
    :caption: User Guide
 
    getting_started/quickstart.ipynb
-   getting_started/quantify_example.ipynb
+   getting_started/algorithm.ipynb
 
 
 .. toctree::
@@ -48,6 +48,10 @@ with the following dependencies
 
    quant
    io
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Credit & Citation
    
 
 

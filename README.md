@@ -13,24 +13,15 @@ Hplc-py can be installed via pip
 ```
 $ pip install --upgrade hplc-py
 ```
-
-
-If you are interested in contributing to the development of the software, 
-you can clone or fork the [GitHub Repository](https://github.com/cremerlab/hplc-py)
-and install the package locally as follows:
+<!-- 
+If you like danger and think error messages make your terminal look cool, you
+can install the pre-release developer version 
 
 ```
-$ git clone git@github.com:cremerlab/hplc-py
-$ cd hplc-py
-$ pip install -e ./
+$ pip install git+https://github.com/cremerlab/hplc-py.git@dev#egg=tqdm
 ```
+ -->
 
-If you don't want to clone the source repository, you can install the development
-version directly from GitHub:
-
-```
-$ pip install -e git+https://github.com/cremerlab/hplc-py.git
-```
 
 # License
 The software is released under a standard MIT license which reads as follows:

@@ -822,6 +822,6 @@ class Chromatogram(object):
           ax.set_xlim(time_range)
           # Determine the max min and max value of the chromatogram within range.
           _y = self.df[(self.df[self.time_col] >= time_range[0]) & (self.df[self.time_col] <= time_range[1])][self.int_col].values
-          ax.set_ylim([_y.min() - 0.02 * _y.min(), 1.1 * _y.max()])
+          ax.set_ylim([ax.get_ylim()[0], 1.1 * _y.max()])
 
         return [fig, ax]
