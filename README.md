@@ -5,22 +5,30 @@
 [![codecov](https://codecov.io/gh/cremerlab/hplc-py/branch/main/graph/badge.svg?token=WXL50JVR6C)](https://codecov.io/gh/cremerlab/hplc-py)
 # About
 
-**H**igh-**P**erformance **L**iquid **C**hromatography (HPLC) is an analytical technique which allows for the quantitative characterization of the chemical components of a mixture. While many of the technical details of HPLC are now automated, the programmatic cleaning and processing of the resulting data can be cumbersome and often requires extensive manual labor. This package was developed to alleviate some of this burden, making the actual running of the HPLC the most time-consuming part of the analysis. 
+**H**igh-**P**erformance **L**iquid **C**hromatography (HPLC) is an analytical
+technique which allows for quantitative characterization of the chemical
+components of a mixture. While many of the technical details of HPLC are now
+automated, the programmatic cleaning and processing of the resulting data often requires extensive manual labor. This package was
+developed to alleviate some of this burden, making the actual running of the
+HPLC the most time-consuming part of the quantification. 
 
 # Installation
-Hplc-py can be installed via pip
+
+Hplc-Py is not yet *officially released*, but will installable via pip in the 
+very near future.
 
 ```
 $ pip install --upgrade hplc-py
-```
+``` 
+
 <!-- 
 If you like danger and think error messages make your terminal look cool, you
 can install the pre-release developer version 
 
 ```
 $ pip install git+https://github.com/cremerlab/hplc-py.git@dev#egg=tqdm
-```
- -->
+``` -->
+
 
 
 # License
