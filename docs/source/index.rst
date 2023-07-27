@@ -11,6 +11,10 @@ from chromatography data, specifically from High-Performance Liquid Chromatograp
 
 Installation
 ------------
+
+.. note::
+   The package is not yet on pip, but will be very (very) soon.
+
 You can install `hplc-py` using pip::
 
    $ pip install --upgrade hplc-py
