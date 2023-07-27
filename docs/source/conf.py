@@ -34,6 +34,8 @@ html_theme_options = {
     "collapse_navigation": True,
     "style_nav_header_background":"#3C3E47",
 }
+
+html_css_files = ['_static/css/custom.css']
 # html_theme_options = {
 #     "logo": {
 #         "image_dark": '_static/logo_horizontal-02.svg',
