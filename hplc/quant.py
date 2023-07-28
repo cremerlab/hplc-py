@@ -279,8 +279,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Determine the windows for the background (nonpeak) areas.
         bg_windows = window_df[window_df['window_id']==0]
-        
-        # TODO: Check that this splitting works as advertised.
+        tidx = bg_windows['time_idx'].values
+
         if len(bg_windows) > 0:
             split_inds = np.nonzero(np.diff(bg_windows['time_idx'].values) - 1)[0]
 
@@ -291,18 +291,14 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
             # If more than one split ind, set up all ranges.
             if split_inds[0] != 0:
+                split_inds += 1
                 split_inds = np.insert(split_inds, 0, 0)
-                split_inds = np.append(split_inds, len(bg_windows) - 1) 
-            bg_ranges = [np.arange(bg_windows['time_idx'].values[split_inds[i]+1], 
-                                   bg_windows['time_idx'].values[split_inds[i+1]], 1) for i in range(len(split_inds)-1)]
-            bg_ranges[0] = np.insert(bg_ranges[0], 0, bg_windows['time_idx'].values[0])
-            bg_ranges[-1] = np.append(bg_ranges[-1], bg_windows['time_idx'].values[-1])
-            self.split_inds = split_inds
-            self.bg_ranges = bg_ranges
+                split_inds = np.append(split_inds, len(tidx)) 
+
+            bg_ranges = [bg_windows.iloc[np.arange(split_inds[i], split_inds[i+1], 1)]['time_idx'].values for i in range(len(split_inds)-1)]
             for i, rng in enumerate(bg_ranges):
                 window_df.loc[window_df['time_idx'].isin(rng), 'window_id'] = i + 1
                 window_df.loc[window_df['time_idx'].isin(rng), 'window_type'] = 'background' 
-
         
         # Convert this to a dictionary for easy parsing
         window_dict = {}
@@ -829,7 +825,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         """
 
         # tform = np.log(np.log(np.sqrt(signal.values + 1) + 1) + 1)
-        columns = ['window_id', 'window_type', 'time_start', 'time_end', 'signal_area', 
+        columns = ['window_id', 'time_start', 'time_end', 'signal_area', 
                    'inferred_area', 'signal_fano_factor', 'reconstruction_score']
         score_df = pd.DataFrame([])  
         # Compute the per-window reconstruction
@@ -839,14 +835,15 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             window_area = d[self.int_col].values.sum()
             window_peaks = self._peak_props[g]
             window_peak_area = np.array([v['reconstructed_signal'] for v in window_peaks.values()]).sum()
-            score = window_peak_area / window_area 
-            signal_fano = np.var(d[self.int_col].values) / np.mean(d[self.int_col].values)
-            x = np.array([g, 'peak', d[self.time_col].min(),  
+            score = np.array(window_peak_area / window_area).astype(float)
+            signal_fano = np.array(np.var(d[self.int_col].values) / np.mean(d[self.int_col].values)).astype(float)
+            x = np.array([g, d[self.time_col].min(),  
                             d[self.time_col].max(), window_area, 
                             window_peak_area, signal_fano, score]) 
-            _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[1])
+            _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[g - 1])
+            _df['window_type'] = 'peak'
             score_df = pd.concat([score_df, _df]) 
-        
+         
         # Compute the score for the non-peak regions
         nonpeak = self.window_df[self.window_df['window_type'] == 'background']
         if len(nonpeak) > 0:
@@ -856,11 +853,14 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 nonpeak_score = recon_area / total_area
                 signal_fano = np.var(self.df[self.int_col].values[d['time_idx'].values]) / np.mean(self.df[self.int_col].values[d['time_idx'].values])
                 # Add to score dataframe
-                x = [g, 'background', d[self.time_col].min(),
+                x = [g, d[self.time_col].min(),
                     d[self.time_col].max(),
                     total_area, recon_area, signal_fano, nonpeak_score]
-                _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[1])
+                _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[g - 1])
+                _df['window_type'] = 'background'
                 score_df = pd.concat([score_df, _df])
+        score_df['signal_area'] = score_df['signal_area'].astype(float)
+        score_df['inferred_area'] = score_df['inferred_area'].astype(float)
         self.scores = score_df
         return score_df
 
@@ -927,57 +927,57 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             else:
                 self._assessment = 3 
  
-        # Print the summary to the screen
-        if verbose:
-            print("""
--------------------Chromatogram Reconstruction Report Card----------------------""")
-            if self._assessment == 0:
-                termcolor.cprint("""
-Success: Inferred chromatogram is a faithful reconstruction of the observed 
-signal.""", "black", "on_green", attrs=["bold"])
-            elif self._assessment == 1:
-                termcolor.cprint("""
-Success (Mostly): Peak window chromatograms are faithfully reconstructed, but 
-poorly reconstructed in peak-free regions.""", "black", "on_yellow", attrs=["bold"])
-                print("""
-This means that there are peak-free regions that are not well described by the inferred
-mixtures, but have a small Fano factor compared to detected peak regions. This 
-is probably fine, but call `Chromatogram.show()` to ensure you're not missing 
-a peak.""")
+#         # Print the summary to the screen
+#         if verbose:
+#             print("""
+# -------------------Chromatogram Reconstruction Report Card----------------------""")
+#             if self._assessment == 0:
+#                 termcolor.cprint("""
+# Success: Inferred chromatogram is a faithful reconstruction of the observed 
+# signal.""", "black", "on_green", attrs=["bold"])
+#             elif self._assessment == 1:
+#                 termcolor.cprint("""
+# Success (Mostly): Peak window chromatograms are faithfully reconstructed, but 
+# poorly reconstructed in peak-free regions.""", "black", "on_yellow", attrs=["bold"])
+#                 print("""
+# This means that there are peak-free regions that are not well described by the inferred
+# mixtures, but have a small Fano factor compared to detected peak regions. This 
+# is probably fine, but call `Chromatogram.show()` to ensure you're not missing 
+# a peak.""")
  
-            elif self._assessment == 2:
-                    termcolor.cprint("""
-Warning: Chromatogram only faithfully reconstructed within peak windows.
-""", "black", "on_magenta", attrs=["bold"])
-                    print("""
-This means that there are peak-free regions that are not well described by the
-inferred mixtures, but have a Fano factor above the noise. This may be due to
-pronounced systematic noise in the chromatogram or there are peaks which are not
-being detected. Call `Chromatogram.show()` and visually inspect where things
-have gone awry.""")
+#             elif self._assessment == 2:
+#                     termcolor.cprint("""
+# Warning: Chromatogram only faithfully reconstructed within peak windows.
+# """, "black", "on_magenta", attrs=["bold"])
+#                     print("""
+# This means that there are peak-free regions that are not well described by the
+# inferred mixtures, but have a Fano factor above the noise. This may be due to
+# pronounced systematic noise in the chromatogram or there are peaks which are not
+# being detected. Call `Chromatogram.show()` and visually inspect where things
+# have gone awry.""")
             
-            elif self._assessment == 3:
-                bad_regions = score_df[(score_df['window_id'] > 0) &
-                                       (score_df['accepted']==False)]
-                if len(bad_regions) > 1:
-                    num = f'{len(bad_regions)} out of {len(bad_regions) - 1} peak windows were'
-                else:
-                    num  = 'The peak window was'
-                termcolor.cprint(f"""
-!!!Failure: {num} not properly reconstructed!!!""", 
-"black", "on_red", attrs=["bold"])
-                print("""
-The following regions are problematic. Try adjusting parameter bounds and peak 
-prominence filters or check if some locations need to be manually enforced (if 
-you have shouldered peaks, for example).
-""")
-                for i in range(len(bad_regions)):
-                    info = bad_regions.iloc[i].to_dict()
-                    print(f"Window {info['window_id']} (t: {info['time_start']} - {info['time_end']}). R = {info['reconstruction_score']}")
-            print("""
---------------------------------------------------------------------------------""")
-        self.scores = score_df
-        return score_df
+#             elif self._assessment == 3:
+#                 bad_regions = score_df[(score_df['window_id'] > 0) &
+#                                        (score_df['accepted']==False)]
+#                 if len(bad_regions) > 1:
+#                     num = f'{len(bad_regions)} out of {len(bad_regions) - 1} peak windows were'
+#                 else:
+#                     num  = 'The peak window was'
+#                 termcolor.cprint(f"""
+# !!!Failure: {num} not properly reconstructed!!!""", 
+# "black", "on_red", attrs=["bold"])
+#                 print("""
+# The following regions are problematic. Try adjusting parameter bounds and peak 
+# prominence filters or check if some locations need to be manually enforced (if 
+# you have shouldered peaks, for example).
+# """)
+#                 for i in range(len(bad_regions)):
+#                     info = bad_regions.iloc[i].to_dict()
+#                     print(f"Window {info['window_id']} (t: {info['time_start']} - {info['time_end']}). R = {info['reconstruction_score']}")
+#             print("""
+# --------------------------------------------------------------------------------""")
+#         self.scores = score_df
+#         return score_df
 
  
     def show(self, time_range=[]):

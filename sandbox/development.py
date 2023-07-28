@@ -22,67 +22,33 @@ chrom.show()
 chrom.assess_fit()
 
 #%%
-bg_time_id = chrom.window_df[chrom.window_df['window_id']==0].time_id.values
-split_inds = np.nonzero(np.diff(bg_time_id) - 1)[0]
-chrom.window_df[chrom.window_df['window_id']==0]['x'].values[split_inds+1]
+df = chrom.window_df
+bg_windows = df[df['window_id']==0]
+tidx = bg_windows['time_idx'].values
+# plt.plot(bg_windows['time_idx'], 'o')
 
-# %%
-w2 = chrom.window_df[chrom.window_df['window_id']==2]
-plt.plot(w2['time_min'], w2['intensity_mV']+1)
-plt.plot(chrom.df['time_min'], np.sum(chrom.unmixed_chromatograms, axis=1))
+if len(bg_windows) > 0:
+    split_inds = np.nonzero(np.diff(bg_windows['time_idx']) - 1)[0]
+    if split_inds[0] != 0:
+        n_bg_windows = len(split_inds) + 1
+    else:
+        n_bg_windows = 1
 
-# %%
-recon = np.sum(chrom.unmixed_chromatograms, axis=1)
-res = np.sqrt((recon - chrom.df['intensity_mV'])**2)
-np.sum(res) / np.sum(chrom.df['intensity_mV'])
-# %%
+    # Add the indices for the ranges
+    split_inds += 1 
+    split_inds = np.insert(split_inds, 0, 0) 
+    split_inds = np.append(split_inds, len(tidx)-1)
+    bg_ranges = [bg_windows.iloc[np.arange(split_inds[i], split_inds[i+1])]['time_idx'].values for i in range(len(split_inds) - 1)]
+#%%
 
-# %%
-import scipy.signal
-intensity = chrom.df.y
-norm_int = (intensity - intensity.min()) / (intensity.max() - intensity.min())
-peaks, _ = scipy.signal.find_peaks(norm_int, prominence=0.5)
-_widths, _, _, _ = scipy.signal.peak_widths(intensity, peaks, rel_height=0.5)
-_, _, left, right = scipy.signal.peak_widths(intensity, peaks, rel_height=1)
-print(left, right)
-ranges = []
-for l, r in zip(left, right):
-    _range = np.arange(int(l - 100), int(r + 100), 1)
-    _range = _range[(_range >= 0) & (_range <= len(norm_int))]
-    ranges.append(_range)
-plt.plot(intensity)
-plt.vlines(_range[0], 0,intensity.max())
-plt.vlines(_range[-1], 0,intensity.max())
-# %%
-
-
-
-# %%
-
-# %%
-chrom.window_df
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-np.sqrt(data['y']).sum()
-
-# %%
-chrom.peaks
-# %%
-chrom.window_props
+plt.plot(bg_ranges[0], np.ones_like(bg_ranges[0]))
+plt.plot(bg_ranges[1], np.ones_like(bg_ranges[1]))
+plt.plot(df['y'], '.')
+#%%
+win_1 = bg_windows.iloc[bg_ranges[0]].time_idx
+win_1
+#%%
+for g, d in chrom.window_df.groupby(['window_id', 'window_type']):
+        plt.plot(d['y'], '.', label=g)
+plt.legend()
+#%%
