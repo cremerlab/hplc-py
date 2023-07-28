@@ -279,36 +279,31 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Determine the windows for the background (nonpeak) areas.
         bg_windows = window_df[window_df['window_id']==0]
-
+        
+        # TODO: Check that this splitting works as advertised.
         if len(bg_windows) > 0:
-            split_inds = np.nonzero(np.diff(bg_windows['time_idx'].values))[0]
+            split_inds = np.nonzero(np.diff(bg_windows['time_idx'].values) - 1)[0]
 
             # If there is only one background window
             if split_inds[0] == 0:
                 window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_id'] = 1 
                 window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_type'] = 'background'
 
-            # If there are at least  two windows, assign the first and last
-            else:
-                window_df.loc[(window_df['time_idx'] >= bg_windows['time_idx'].values[0]) 
-                          & (window_df['time_idx'] < split_inds[0]), 'window_id'] = 1
-                window_df.loc[(window_df['time_idx'] >= bg_windows['time_idx'].values[0]) 
-                          & (window_df['time_idx'] <= split_inds[0]), 'window_type'] = 'background'
+            # If more than one split ind, set up all ranges.
+            if split_inds[0] != 0:
+                split_inds = np.insert(split_inds, 0, 0)
+                split_inds = np.append(split_inds, len(bg_windows) - 1) 
+            bg_ranges = [np.arange(bg_windows['time_idx'].values[split_inds[i]+1], 
+                                   bg_windows['time_idx'].values[split_inds[i+1]], 1) for i in range(len(split_inds)-1)]
+            bg_ranges[0] = np.insert(bg_ranges[0], 0, bg_windows['time_idx'].values[0])
+            bg_ranges[-1] = np.append(bg_ranges[-1], bg_windows['time_idx'].values[-1])
+            self.split_inds = split_inds
+            self.bg_ranges = bg_ranges
+            for i, rng in enumerate(bg_ranges):
+                window_df.loc[window_df['time_idx'].isin(rng), 'window_id'] = i + 1
+                window_df.loc[window_df['time_idx'].isin(rng), 'window_type'] = 'background' 
 
-                if len(split_inds) > 1: 
-                    window_df.loc[(window_df['time_idx'] >= split_inds[-1] + 1) 
-                          & (window_df['time_idx'] <= bg_windows['time_idx'].values[-1]), 'window_id'] = len(split_inds) + 1 
-                    window_df.loc[(window_df['time_idx'] >= split_inds[-1] + 1) 
-                          & (window_df['time_idx'] <= bg_windows['time_idx'].values[-1]), 'window_type'] = 'background' 
-
-                # Assign the intervening windows.
-                else:
-                    for i in range(1, len(split_inds) - 1):
-                        window_df.loc[(window_df['time_idx'] >= split_inds[i] + 1) 
-                          & (window_df['time_idx'] <= split_inds[i+1]), 'window_id'] = i+1
-                        window_df.loc[(window_df['time_idx'] >= split_inds[i] + 1) 
-                          & (window_df['time_idx'] <= split_inds[i+1]), 'window_type'] = 'background'
-
+        
         # Convert this to a dictionary for easy parsing
         window_dict = {}
         for g, d in window_df[window_df['window_type']=='peak'].groupby('window_id'):
