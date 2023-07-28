@@ -9,15 +9,20 @@ import imp
 imp.reload(hplc.quant)
 
 # Load the simulated data and ground truth
-data = pd.read_csv('./sample_chromatogram.txt')
+# data = pd.read_csv('./sample_chromatogram.txt')
 # data = pd.read_csv('./simulated_chromatogram.csv') 
-# data = pd.read_csv('test_shallow_signal_chrom.csv')
-chrom = hplc.quant.Chromatogram(data, cols={'time':'time_min','signal':'intensity_mV'})
-chrom.crop([10, 20])
-chrom.fit_peaks()
+data = pd.read_csv('test_shallow_signal_chrom.csv')
+chrom = hplc.quant.Chromatogram(data, cols={'time':'x','signal':'y'})
+# chrom.crop([10, 20])
+chrom.fit_peaks(prominence=0.5)
 
 chrom.show()
 chrom.assess_fit()
+
+#%%
+bg_time_id = chrom.window_df[chrom.window_df['window_id']==0].time_id.values
+split_inds = np.nonzero(np.diff(bg_time_id) - 1)[0]
+chrom.window_df[chrom.window_df['window_id']==0]['x'].values[split_inds+1]
 
 # %%
 w2 = chrom.window_df[chrom.window_df['window_id']==2]

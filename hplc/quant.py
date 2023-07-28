@@ -125,7 +125,9 @@ class Chromatogram(object):
             If `return_df = True`, then the cropped dataframe is returned.
         """
         if self.peaks is not None:
-            raise RuntimeError("You are trying to crop a chromatogram after it has been fit. Make sure that you do this before calling `fit_peaks()` or provide the argument `time_window` to the `fit_peaks()`.")
+            raise RuntimeError("""
+You are trying to crop a chromatogram after it has been fit. Make sure that you 
+do this before calling `fit_peaks()` or provide the argument `time_window` to the `fit_peaks()`.""")
         if type(time_window) != list:
                 raise TypeError(f'`time_window` must be of type `list`. Type {type(time_window)} was proivided')
         if len(time_window) != 2:
@@ -135,8 +137,8 @@ class Chromatogram(object):
         if return_df:
             return self.df
 
-    def _assign_peak_windows(self, enforced_locations=[], enforced_widths=[], 
-                             enforcement_tolerance=0.5,
+    def _assign_windows(self, enforced_locations=[], enforced_widths=[], 
+                             enforcement_tolerance=0.5, 
                              prominence=0.01, rel_height=0.95, buffer=100):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
@@ -268,25 +270,57 @@ class Chromatogram(object):
         # Copy the dataframe and return the windows
         window_df = df.copy(deep=True)
         window_df.sort_values(by=self.time_col, inplace=True)
-        window_df['time_id'] = np.arange(len(window_df))
+        window_df['time_idx'] = np.arange(len(window_df))
         window_df['window_id'] = 0
+        window_df['window_type'] = 'peak'
         for i, r in enumerate(ranges):
-            window_df.loc[window_df['time_id'].isin(r), 
+            window_df.loc[window_df['time_idx'].isin(r), 
                                     'window_id'] = int(i + 1)
+
+        # Determine the windows for the background (nonpeak) areas.
+        bg_windows = window_df[window_df['window_id']==0]
+
+        if len(bg_windows) > 0:
+            split_inds = np.nonzero(np.diff(bg_windows['time_idx'].values))[0]
+
+            # If there is only one background window
+            if split_inds[0] == 0:
+                window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_id'] = 1 
+                window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_type'] = 'background'
+
+            # If there are at least  two windows, assign the first and last
+            else:
+                window_df.loc[(window_df['time_idx'] >= bg_windows['time_idx'].values[0]) 
+                          & (window_df['time_idx'] < split_inds[0]), 'window_id'] = 1
+                window_df.loc[(window_df['time_idx'] >= bg_windows['time_idx'].values[0]) 
+                          & (window_df['time_idx'] <= split_inds[0]), 'window_type'] = 'background'
+
+                if len(split_inds) > 1: 
+                    window_df.loc[(window_df['time_idx'] >= split_inds[-1] + 1) 
+                          & (window_df['time_idx'] <= bg_windows['time_idx'].values[-1]), 'window_id'] = len(split_inds) + 1 
+                    window_df.loc[(window_df['time_idx'] >= split_inds[-1] + 1) 
+                          & (window_df['time_idx'] <= bg_windows['time_idx'].values[-1]), 'window_type'] = 'background' 
+
+                # Assign the intervening windows.
+                else:
+                    for i in range(1, len(split_inds) - 1):
+                        window_df.loc[(window_df['time_idx'] >= split_inds[i] + 1) 
+                          & (window_df['time_idx'] <= split_inds[i+1]), 'window_id'] = i+1
+                        window_df.loc[(window_df['time_idx'] >= split_inds[i] + 1) 
+                          & (window_df['time_idx'] <= split_inds[i+1]), 'window_type'] = 'background'
 
         # Convert this to a dictionary for easy parsing
         window_dict = {}
-        # window_df = window_df[window_df['window_id'] > 0]
-        for g, d in window_df.groupby('window_id'):
+        for g, d in window_df[window_df['window_type']=='peak'].groupby('window_id'):
             if g > 0:
-                _peaks = [p for p in self._peak_indices if p in d['time_id'].values]
+                _peaks = [p for p in self._peak_indices if p in d['time_idx'].values]
                 peak_inds = [x for _p in _peaks for x in np.where(self._peak_indices == _p)[0]]
                 _dict = {'time_range':d[self.time_col].values,
                          'signal': d[self.int_col].values,
                          'signal_area': d[self.int_col].values.sum(),
                          'num_peaks': len(_peaks),
-                         'amplitude': [d[d['time_id']==p][self.int_col].values[0] for p in _peaks],
-                         'location' : [d[d['time_id']==p][self.time_col].values[0] for p in _peaks],
+                         'amplitude': [d[d['time_idx']==p][self.int_col].values[0] for p in _peaks],
+                         'location' : [d[d['time_idx']==p][self.time_col].values[0] for p in _peaks],
                          'width' :  [_widths[ind] * self._dt for ind in peak_inds]
                              }
                 window_dict[int(g)] = _dict
@@ -438,7 +472,7 @@ class Chromatogram(object):
             between (-5, 5).
         """ 
         if self.window_props is None:
-            raise RuntimeError('Function `_assign_peak_windows` must be run first. Go do that.')
+            raise RuntimeError('Function `_assign_windows` must be run first. Go do that.')
         if verbose:
             iterator = tqdm.tqdm(self.window_props.items(), desc='Deconvolving mixture')  
         else:
@@ -598,7 +632,7 @@ class Chromatogram(object):
             self.correct_baseline(window=approx_peak_width, verbose=verbose, return_df=False)
 
         # Assign the window bounds
-        _ = self._assign_peak_windows(enforced_locations=enforced_locations, 
+        _ = self._assign_windows(enforced_locations=enforced_locations, 
                                       enforced_widths=enforced_widths,
                                       enforcement_tolerance=enforcement_tolerance,
                                       prominence=prominence, rel_height=rel_height, 
@@ -800,46 +834,42 @@ class Chromatogram(object):
         """
 
         # tform = np.log(np.log(np.sqrt(signal.values + 1) + 1) + 1)
-        columns = ['window_id', 'time_start', 'time_end', 'signal_area', 
+        columns = ['window_id', 'window_type', 'time_start', 'time_end', 'signal_area', 
                    'inferred_area', 'signal_fano_factor', 'reconstruction_score']
         score_df = pd.DataFrame([])  
         # Compute the per-window reconstruction
-        # TODO: Subtract the chromatograms, sum the difference
-        for g, d in self.window_df.groupby('window_id'):
-            # Compute the non-peak windows separately.
-            if g != 0:
-                window_area = d[self.int_col].values.sum()
-                window_peaks = self._peak_props[g]
-                window_peak_area = np.array([v['reconstructed_signal'] for v in window_peaks.values()]).sum()
-                score = window_peak_area / window_area 
-                signal_fano = np.var(d[self.int_col].values) / np.mean(d[self.int_col].values)
-                x = np.array([g, d[self.time_col].min(),  
-                            d[self.time_col].max(), window_area, 
-                            window_peak_area, signal_fano, score])
-              
-                _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[1])
 
-                score_df = pd.concat([score_df, _df]) 
+        for g, d in self.window_df[self.window_df['window_type']=='peak'].groupby('window_id'):
+            # Compute the non-peak windows separately.
+            window_area = d[self.int_col].values.sum()
+            window_peaks = self._peak_props[g]
+            window_peak_area = np.array([v['reconstructed_signal'] for v in window_peaks.values()]).sum()
+            score = window_peak_area / window_area 
+            signal_fano = np.var(d[self.int_col].values) / np.mean(d[self.int_col].values)
+            x = np.array([g, 'peak', d[self.time_col].min(),  
+                            d[self.time_col].max(), window_area, 
+                            window_peak_area, signal_fano, score]) 
+            _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[1])
+            score_df = pd.concat([score_df, _df]) 
         
         # Compute the score for the non-peak regions
-        nonpeak = self.window_df[self.window_df['window_id'] == 0]['time_id'].values
+        nonpeak = self.window_df[self.window_df['window_type'] == 'background']
         if len(nonpeak) > 0:
-            total_area = self.df[self.int_col].values[nonpeak].sum()
-            recon_area = np.sum(self.unmixed_chromatograms, axis=1)[nonpeak].sum()
-            nonpeak_score = recon_area / total_area
-            signal_fano = np.var(self.df[self.int_col].values[nonpeak]) / np.mean(self.df[self.int_col].values[nonpeak])
-            # Add to score dataframe
-            x = [0, self.df[self.time_col].min(),
-                self.df[self.time_col].max(),
-                total_area, recon_area, signal_fano, nonpeak_score]
-            _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[1])
-            score_df = pd.concat([score_df, _df])
-
-
-        self.reconstruction_score = score_df
+            for g, d in nonpeak.groupby('window_id'):
+                total_area = d[self.int_col].values.sum()
+                recon_area = np.sum(self.unmixed_chromatograms, axis=1)[d['time_idx'].values].sum()
+                nonpeak_score = recon_area / total_area
+                signal_fano = np.var(self.df[self.int_col].values[d['time_idx'].values]) / np.mean(self.df[self.int_col].values[d['time_idx'].values])
+                # Add to score dataframe
+                x = [g, 'background', d[self.time_col].min(),
+                    d[self.time_col].max(),
+                    total_area, recon_area, signal_fano, nonpeak_score]
+                _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[1])
+                score_df = pd.concat([score_df, _df])
+        self.scores = score_df
         return score_df
 
-    def assess_fit(self, tol=1E-2, fano_tol=1E-3, verbose=True):
+    def assess_fit(self, tol=1E-2, fano_tol=1E-3):
         """
         Assesses whether the computed reconstruction score is adequate, given a tolerance.
 
@@ -880,19 +910,20 @@ class Chromatogram(object):
         score_df = self.score_reconstruction() 
 
         # Apply the tolerance parameter
-        score_df = self.reconstruction_score.copy()
+        score_df = self.scores.copy()
         score_df['applied_tolerance'] = tol
         score_df['accepted'] = np.abs(np.round(score_df['reconstruction_score'].values - 1, 
-                                          decimals=int(np.abs(np.ceil(np.log10(tol)))))) <= tol
-        self._assessment = -1
-        if (score_df['accepted']==True).all():
-            self._assessment = 0
+                                          decimals=int(np.abs(np.ceil(np.log10(tol)))))) <= tol 
+        print("""
+-------------------Chromatogram Reconstruction Report Card----------------------""")
+        for g, d in score_df.groupby(['window_type','window_id']): 
+            a = 1
         else:
             if score_df['window_id'].min() == 0:
                 if (score_df[score_df['window_id'] > 0]['accepted']==True).all() \
                     & (score_df[score_df['window_id']==0]['accepted'].values[0]==False):
                     fano_ratio = score_df[score_df['window_id'] == 0]['signal_fano_factor'].values / score_df[score_df['window_id'] != 0]['signal_fano_factor'].values.mean()
-                    if fano_ratio < 1E-3:
+                    if fano_ratio < fano_tol:
                         self._assessment = 1
                     else:
                         self._assessment = 2
@@ -924,11 +955,11 @@ a peak.""")
 Warning: Chromatogram only faithfully reconstructed within peak windows.
 """, "black", "on_magenta", attrs=["bold"])
                     print("""
-This means that there are peak-free regions that are not well described by the inferred
-mixtures, but have a Fano factor above the noise. This may be due
-to pronounced systematic noise in the chromatogram or there are peaks which are not being 
-detected. Call `Chromatogram.show()` and visually inspect where things have gone
-awry.""")
+This means that there are peak-free regions that are not well described by the
+inferred mixtures, but have a Fano factor above the noise. This may be due to
+pronounced systematic noise in the chromatogram or there are peaks which are not
+being detected. Call `Chromatogram.show()` and visually inspect where things
+have gone awry.""")
             
             elif self._assessment == 3:
                 bad_regions = score_df[(score_df['window_id'] > 0) &
@@ -937,7 +968,7 @@ awry.""")
                     num = f'{len(bad_regions)} out of {len(bad_regions) - 1} peak windows were'
                 else:
                     num  = 'The peak window was'
-                cprint(f"""
+                termcolor.cprint(f"""
 !!!Failure: {num} not properly reconstructed!!!""", 
 "black", "on_red", attrs=["bold"])
                 print("""
@@ -950,7 +981,7 @@ you have shouldered peaks, for example).
                     print(f"Window {info['window_id']} (t: {info['time_start']} - {info['time_end']}). R = {info['reconstruction_score']}")
             print("""
 --------------------------------------------------------------------------------""")
-        self.reconstruction_score = score_df
+        self.scores = score_df
         return score_df
 
  
