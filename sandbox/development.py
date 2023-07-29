@@ -8,23 +8,12 @@ sns.set()
 import imp
 imp.reload(hplc.quant)
 
-# Load the simulated data and ground t
+# Load the simulated data and ground truth
 data = pd.read_csv('./sample_chromatogram.txt')
-# data = pd.read_csv('./simulated_chromatogram.csv') 
-# data = pd.read_csv('test_shallow_signal_chrom.csv')
 chrom = hplc.quant.Chromatogram(data, cols={'time':'time_min','signal':'intensity_mV'})
 chrom.crop([10, 20])
-_ = chrom.fit_peaks()
-_ = chrom.show()
-_ = chrom.assess_fit()
-_
-
-#%%
-df = chrom.window_df
-bg_windows = df[df['window_id']==0]
-tidx = bg_windows['time_idx'].values
-# plt.plot(bg_windows['time_idx'], 'o')
-
+chrom.fit_peaks()
+chrom.show()
 if len(bg_windows) > 0:
     split_inds = np.nonzero(np.diff(bg_windows['time_idx']) - 1)[0]
     if split_inds[0] != 0:
@@ -49,4 +38,3 @@ win_1
 for g, d in chrom.window_df.groupby(['window_id', 'window_type']):
         plt.plot(d['y'], '.', label=g)
 plt.legend()
-#%%
