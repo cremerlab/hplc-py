@@ -185,14 +185,10 @@ score_df['status'] = ['needs review', 'invalid', 'valid', 'invalid', 'valid']
 score_df.to_csv('./test_data/test_assessment_scores.csv', index=False)
 #%%
 import matplotlib.pyplot as plt
-plt.plot(df['y'])
 import importlib
 import hplc.quant
 importlib.reload(hplc.quant)
 chrom = hplc.quant.Chromatogram(df, cols={'time':'x', 'signal':'y'})
 peaks = chrom.fit_peaks(prominence=0.5)
-fig, ax = chrom.show(time_range=[95, 150])
-ax.set_ylim([-1E-5, 1E-5])
-
 _ = chrom.assess_fit(tol=1E-3)
-_
+chrom.show()

@@ -113,12 +113,16 @@ def test_score_reconstruction():
     and Fano ratios. 
     """
     data = pd.read_csv('./tests/test_data/test_assessment_chrom.csv')
-    peaks = pd.read_csv('./tests/test_data/test_assessment_peaks.csv')
     scores = pd.read_csv('./tests/test_data/test_assessment_scores.csv')
-    loc = peaks[peaks['peak_idx']==2]['retention_time'].values[0]
     chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
     _ = chrom.fit_peaks(prominence=0.5)
-    fit_scores =  chrom.assess_fit(verbose=False, tol=1E-3)
+    fit_scores =  chrom.assess_fit(tol=1E-3)
     for g, d in scores.groupby(['window_id', 'window_type']):
         _d = fit_scores[(fit_scores['window_id']==g[0]) & (fit_scores['window_type']==g[1])]['status'].values
         assert (_d == d['status'].values).all()
+
+
+
+import importlib
+importlib.reload(hplc.quant)
+test_score_reconstruction()

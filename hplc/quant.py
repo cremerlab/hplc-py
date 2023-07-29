@@ -286,13 +286,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             split_inds = np.nonzero(np.diff(bg_windows['time_idx'].values) - 1)[0]
 
             # If there is only one background window
-            print(len(split_inds))
-            if split_inds[0] == 0:
+            if (len(split_inds) == 0):
                 window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_id'] = 1 
                 window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_type'] = 'interpeak'
 
             # If more than one split ind, set up all ranges.
-            if split_inds[0] != 0:
+            elif split_inds[0] != 0:
                 split_inds += 1
                 split_inds = np.insert(split_inds, 0, 0)
                 split_inds = np.append(split_inds, len(tidx)) 
@@ -804,7 +803,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         return peak_df
 
     def score_reconstruction(self):
-        """
+        R"""
         Computes the reconstruction score on a per-window and total chromatogram
         basis.
 
@@ -889,7 +888,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         return score_df
 
     def assess_fit(self, tol=1E-2, fano_tol=1E-3, verbose=True):
-        """
+        R"""
         Assesses whether the computed reconstruction score is adequate, given a tolerance.
 
         Parameters
