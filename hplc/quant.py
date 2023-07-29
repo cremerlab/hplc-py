@@ -220,7 +220,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Keep only valid ranges and baselines
         ranges = [r for i, r in enumerate(ranges) if valid[i] is True]
-        self.ranges = ranges
+
         # If manual locations are provided, ensure that they are identified        
         if len(enforced_locations) != 0:
             enforced_location_inds = np.int_(np.array(enforced_locations) / self._dt)
@@ -273,6 +273,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         window_df['time_idx'] = np.arange(len(window_df))
         window_df['window_id'] = 0
         window_df['window_type'] = 'peak'
+        self.ranges = ranges
         for i, r in enumerate(ranges):
             window_df.loc[window_df['time_idx'].isin(r), 
                                     'window_id'] = int(i + 1)
@@ -285,6 +286,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             split_inds = np.nonzero(np.diff(bg_windows['time_idx'].values) - 1)[0]
 
             # If there is only one background window
+            print(len(split_inds))
             if split_inds[0] == 0:
                 window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_id'] = 1 
                 window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_type'] = 'interpeak'
@@ -302,7 +304,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     window_df.loc[window_df['time_idx'].isin(rng), 'window_id'] = win_idx 
                     window_df.loc[window_df['time_idx'].isin(rng), 'window_type'] = 'interpeak' 
                     win_idx += 1
-        
+        window_df = window_df[window_df['window_id'] > 0]  
         # Convert this to a dictionary for easy parsing
         window_dict = {}
         for g, d in window_df[window_df['window_type']=='peak'].groupby('window_id'):
@@ -546,8 +548,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
     def fit_peaks(self, enforced_locations=[], enforced_widths=[],
                   enforcement_tolerance=0.5, prominence=1E-2, rel_height=1.0, 
-                  approx_peak_width=3, buffer=100, param_bounds={}, verbose=True, return_peaks=True, 
-                 correct_baseline=True, max_iter=1000000, **optimizer_kwargs):
+                  approx_peak_width=5, buffer=100, param_bounds={}, verbose=True, return_peaks=True, 
+                 correct_baseline=True, max_iter=1000000, precision=9, 
+                 **optimizer_kwargs):
         R"""
         Detects and fits peaks present in the chromatogram
 
@@ -593,9 +596,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         return_peaks : `bool`, optional
             If True, a dataframe containing the peaks will be returned. Default
             is True.
-        max_iter : int
+        max_iter : `int`
             The maximum number of iterations the optimization protocol should 
             take before erroring out. Default value is 10^6.
+        precision : `int`
+            The number of decimals to round the reconstructed signal to. Default
+            is 9.
         **optimizer_kwargs : `dict`
             Additional arguments to be passed to `scipy.optimize.curve_fit`.
 
@@ -665,13 +671,11 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                           v['scale'], v['alpha']]
                 out[:, iter] = self._compute_skewnorm(time, *params)
                 iter += 1
-        self.unmixed_chromatograms = out
-
-        # Assess the quality of the fit and throw a cased warning 
+        self.unmixed_chromatograms = np.round(out, decimals=precision)
         if return_peaks:
             return peak_df
     
-    def correct_baseline(self, window=3, return_df=False, verbose=True):
+    def correct_baseline(self, window=3, return_df=False, verbose=True, precision=9):
         R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
@@ -684,6 +688,10 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             the SNIP algorithm.
         return_df : `bool`
             If `True`, then chromatograms (before and after background correction) are returned
+        verbose: `bool`
+            If `True`, progress will be printed to screen as a progress bar. 
+        precision: `int`
+            The number of decimals to round the subtracted signal to. Default is 9.
 
         Returns
         -------
@@ -693,7 +701,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         Notes
         -----
         This implements the SNIP algorithm as presented and summarized in `Morhác
-        and Matousek 2008 <https://doi.org/10.1366/000370208783412762>`_.
+        and Matousek 2008 <https://doi.org/10.1366/000370208783412762>`_. The 
+        implementation here also rounds to 9 decimal places in the subtracted signal
+        to avoid small values very near zero.
         """
 
         # Unpack and copy dataframe and intensity profile
@@ -722,7 +732,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Perform the inverse of the LLS transformation and subtract
         inv_tform = (np.exp(np.exp(tform) - 1) - 1)**2 - 1 
-        df[self.int_col] = signal - inv_tform
+        df[self.int_col] = np.round((signal - inv_tform) * np.heaviside(signal - inv_tform,0), decimals=precision)
         df[f'estimated_background'] = inv_tform 
         self.df = df  
         if return_df:
@@ -818,32 +828,36 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         The reconstruction score is defined as
 
         ..math:: 
-            R = \frac{\log\left[\sum\limits_{i\in t}^t \sum\limits_{j \in N_\text{peaks}}^{N_\text{peaks}}2A_j \text{SkewNormal}(\alpha_j, r_{t_j}, \sigma_j)\right]}{\log\left[\sum\limits_{i \in t}^t S_i\right]}
+            R = \frac{\text{area of inferred mixture in window} + 1}{\text{area of observed signal in window} + 1} = \frac{\frac{\sum\limits_{i\in t}^t \sum\limits_{j \in N_\text{peaks}}^{N_\text{peaks}}2A_j \text{SkewNormal}(\alpha_j, r_{t_j}, \sigma_j) + 1}{\sum\limits_{i \in t}^t S_i + 1}
            
         where :math:`t` is the total time of the region, :math:`A`is the inferred 
         peak amplitude, :math:`\alpha` is the inferred skew paramter, :math:`r_t` is
         the inferred peak retention time, :math:`\sigma` is the inferred scale 
         parameter and :math:`S_i` is the observed signal intensity at time point
-        :math:`i`. 
+        :math:`i`. Note that the signal and reconstruction is cast to be positive
+        to compute the score.  
 
         """
-
-        # tform = np.log(np.log(np.sqrt(signal.values + 1) + 1) + 1)
         columns = ['window_id', 'time_start', 'time_end', 'signal_area', 
-                   'inferred_area', 'signal_fano_factor', 'reconstruction_score']
+                   'inferred_area', 'signal_variance', 'signal_mean', 'signal_fano_factor', 'reconstruction_score']
         score_df = pd.DataFrame([])  
         # Compute the per-window reconstruction
 
         for g, d in self.window_df[self.window_df['window_type']=='peak'].groupby('window_id'):
             # Compute the non-peak windows separately.
-            window_area = d[self.int_col].values.sum()
+            window_area = np.abs(d[self.int_col].values).sum() + 1
             window_peaks = self._peak_props[g]
-            window_peak_area = np.array([v['reconstructed_signal'] for v in window_peaks.values()]).sum()
+            window_peak_area = np.array([v['reconstructed_signal'] for v in window_peaks.values()]).sum() + 1
             score = np.array(window_peak_area / window_area).astype(float)
-            signal_fano = np.array(np.var(d[self.int_col].values) / np.mean(d[self.int_col].values)).astype(float)
+            signal_var = np.var(np.abs(d[self.int_col].values))
+            signal_mean = np.mean(np.abs(d[self.int_col].values))
+            #Account for an edge case to avoid dividing by zero
+            if signal_mean == 0:
+                signal_mean += 1E-9
+            signal_fano = signal_var / signal_mean
             x = [g, d[self.time_col].min(),  
                             d[self.time_col].max(), window_area, window_peak_area, 
-                            signal_fano, score]
+                            signal_var, signal_mean, signal_fano, score]
             _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[g - 1])
             _df['window_type'] = 'peak'
             score_df = pd.concat([score_df, _df]) 
@@ -852,14 +866,20 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         nonpeak = self.window_df[self.window_df['window_type'] == 'interpeak']
         if len(nonpeak) > 0:
             for g, d in nonpeak.groupby('window_id'):
-                total_area = d[self.int_col].values.sum()
-                recon_area = np.sum(self.unmixed_chromatograms, axis=1)[d['time_idx'].values].sum()
+                total_area = np.abs(d[self.int_col].values).sum() + 1
+                recon_area = np.sum(self.unmixed_chromatograms, axis=1)[d['time_idx'].values].sum() + 1
                 nonpeak_score = recon_area / total_area
-                signal_fano = np.var(self.df[self.int_col].values[d['time_idx'].values]) / np.mean(self.df[self.int_col].values[d['time_idx'].values])
+                signal_var = np.var(np.abs(d[self.int_col].values))
+                signal_mean = np.mean(np.abs(d[self.int_col].values))
+                # Account for an edge case to avoide dividing by zero
+                if signal_mean == 0:
+                    signal_mean += 1E-9
+                signal_fano = signal_var / signal_mean
+
                 # Add to score dataframe
                 x = [g, d[self.time_col].min(),
                     d[self.time_col].max(),
-                    total_area, recon_area, signal_fano, nonpeak_score]
+                    total_area, recon_area, signal_var, signal_mean, signal_fano, nonpeak_score]
                 _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[g - 1])
                 _df['window_type'] = 'interpeak'
                 score_df = pd.concat([score_df, _df])
@@ -949,15 +969,20 @@ Reconstruction of Peaks
                 warning = ''
             else:
                 warning = """
-Peak mixture poorly reconstructs signal. Adjust parameter bounds or add manual 
-peak positions if needed."""    
+Peak mixture poorly reconstructs signal. You many need to adjust parameter bounds 
+or add manual peak positions (if you have a shouldered pair, for example). If 
+you have a very noisy signal, you may need to increase the reconstruction 
+tolerance `tol`."""    
             if (d['reconstruction_score'].values[0] >= 10) | \
                 (d['reconstruction_score'].values[0] <= 0.1):
-                r_score = f"10^{int(np.log10(d['reconstruction_score'].values[0]))}"
+                if d['reconstruction_score'].values[0] == 0:
+                    r_score = f'0'
+                else: 
+                    r_score = f"10^{int(np.log10(d['reconstruction_score'].values[0]))}"
             else:
                 r_score = f"{d['reconstruction_score'].values[0]:0.4f}"
             if verbose:
-                termcolor.cprint(f"{print_colors[status][0]} Peak Window {int(g)} (t: {d['time_start'].values[0]} - {d['time_end'].values[0]}) R-Score = {r_score}",
+                termcolor.cprint(f"{print_colors[status][0]} Peak Window {int(g)} (t: {d['time_start'].values[0]:0.3f} - {d['time_end'].values[0]:0.3f}) R-Score = {r_score}",
                              *print_colors[status][1], attrs=['bold'], end='') 
                 print(warning)  
 
@@ -984,17 +1009,23 @@ to `fit_peaks()`."""
 
                 if (d['reconstruction_score'].values[0] >= 10) | \
                     (d['reconstruction_score'].values[0] <= 0.1):
-                    r_score = f"10^{int(np.log10(d['reconstruction_score'].values[0]))}"
+                    if d['reconstruction_score'].values[0] == 0:
+                        r_score = f'0'
+                    else:
+                        r_score = f"10^{int(np.log10(d['reconstruction_score'].values[0]))}"
                 else:
                     r_score = f"{d['reconstruction_score'].values[0]:0.4f}"
                 if ((d['signal_fano_factor'].values[0] / mean_fano) > 10) | \
                    ((d['signal_fano_factor'].values[0] / mean_fano) <= 1E-5):
-                   fano = f"10^{int(np.log10(d['signal_fano_factor'].values[0] / mean_fano))}"
+                    if (d['signal_fano_factor'].values[0] / mean_fano) == 0:
+                        fano = '0'
+                    else:
+                        fano = f"10^{int(np.log10(d['signal_fano_factor'].values[0] / mean_fano))}"
                 else:
                     fano = f"{d['signal_fano_factor'].values[0] / mean_fano:0.4f}"
                 
                 if verbose:
-                    termcolor.cprint(f"{print_colors[status][0]} Interpeak Window {int(g)} (t: {d['time_start'].values[0]} - {d['time_end'].values[0]}) R-Score = {r_score} & Fano Ratio = {fano}",
+                    termcolor.cprint(f"{print_colors[status][0]} Interpeak Window {int(g)} (t: {d['time_start'].values[0]:0.3f} - {d['time_end'].values[0]:0.3f}) R-Score = {r_score} & Fano Ratio = {fano}",
                              *print_colors[status][1], attrs=['bold'], end='')
                     print(warning)           
         if verbose:
