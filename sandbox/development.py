@@ -8,18 +8,17 @@ sns.set()
 import imp
 imp.reload(hplc.quant)
 
-
-
-# Load the simulated data and ground truth
+# Load the simulated data and ground t
 # data = pd.read_csv('./sample_chromatogram.txt')
 # data = pd.read_csv('./simulated_chromatogram.csv') 
 data = pd.read_csv('test_shallow_signal_chrom.csv')
 chrom = hplc.quant.Chromatogram(data, cols={'time':'x','signal':'y'})
 # chrom.crop([10, 20])
-chrom.fit_peaks(prominence=0.5)
+_ = chrom.fit_peaks()
 
-chrom.show()
-chrom.assess_fit()
+_ = chrom.show()
+_ = chrom.assess_fit()
+_
 
 #%%
 df = chrom.window_df
