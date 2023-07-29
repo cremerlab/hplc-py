@@ -106,3 +106,23 @@ def test_add_peak():
     peaks = chrom.fit_peaks(enforced_locations=[25.0], correct_baseline=False, prominence=0.5)
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
+
+def test_score_reconstruction():
+    """
+    Tests that a known peak mixture is accurately reconstructed using R-scores 
+    and Fano ratios. 
+    """
+    data = pd.read_csv('./tests/test_data/test_assessment_chrom.csv')
+    scores = pd.read_csv('./tests/test_data/test_assessment_scores.csv')
+    chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
+    _ = chrom.fit_peaks(prominence=0.5)
+    fit_scores =  chrom.assess_fit(tol=1E-3)
+    for g, d in scores.groupby(['window_id', 'window_type']):
+        _d = fit_scores[(fit_scores['window_id']==g[0]) & (fit_scores['window_type']==g[1])]['status'].values
+        assert (_d == d['status'].values).all()
+
+
+
+import importlib
+importlib.reload(hplc.quant)
+test_score_reconstruction()

@@ -5,8 +5,9 @@ import scipy.optimize
 import scipy.special
 import tqdm
 import matplotlib.pyplot as plt
-import warnings
+import warnings 
 import seaborn as sns
+import termcolor
 
 class Chromatogram(object):
     """
@@ -24,7 +25,7 @@ class Chromatogram(object):
         A Pandas DataFrame containing the inferred properties of each peak 
         including the retention time, scale, skew, amplitude, and total
         area under the peak across the entire chromatogram.
-    deconvolved_peaks : `numpy.ndarray`
+    unmixed_chromatograms : `numpy.ndarray`
         A matrix where each row corresponds to a time point and each column corresponds
         to the value of the probability density for each individual peak. This 
         is used primarily for plotting in the `show` method. 
@@ -104,6 +105,7 @@ class Chromatogram(object):
         self._bg_corrected = False
         self._mapped_peaks = None
         self._added_peaks = None
+        self.unmixed_chromatograms = None
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -122,6 +124,10 @@ class Chromatogram(object):
         cropped_df : pandas DataFrame
             If `return_df = True`, then the cropped dataframe is returned.
         """
+        if self.peaks is not None:
+            raise RuntimeError("""
+You are trying to crop a chromatogram after it has been fit. Make sure that you 
+do this before calling `fit_peaks()` or provide the argument `time_window` to the `fit_peaks()`.""")
         if type(time_window) != list:
                 raise TypeError(f'`time_window` must be of type `list`. Type {type(time_window)} was proivided')
         if len(time_window) != 2:
@@ -131,8 +137,8 @@ class Chromatogram(object):
         if return_df:
             return self.df
 
-    def _assign_peak_windows(self, enforced_locations=[], enforced_widths=[], 
-                             enforcement_tolerance=0.5,
+    def _assign_windows(self, enforced_locations=[], enforced_widths=[], 
+                             enforcement_tolerance=0.5, 
                              prominence=0.01, rel_height=0.95, buffer=100):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
@@ -178,7 +184,7 @@ class Chromatogram(object):
         if (prominence < 0) | (prominence > 1):
             raise ValueError(f'Parameter `prominence` must be [0, 1].')
         if (rel_height < 0) | (rel_height > 1):  
-            raise ValueError(f'Parameter `rel_height` must be [0, 1].')
+            raise ValueError(f' `rel_height` must be [0, 1].')
         if (buffer < 0):
             raise ValueError('Parameter `buffer` cannot be less than 0.')
 
@@ -205,11 +211,12 @@ class Chromatogram(object):
         self._ranges = ranges
         # Identiy subset ranges and remove
         valid = [True] * len(ranges)
-        for i, r1 in enumerate(ranges):
-            for j, r2 in enumerate(ranges):
-                if i != j:
-                    if set(r2).issubset(r1):
-                        valid[j] = False
+        if len(ranges) > 1:
+            for i, r1 in enumerate(ranges):
+                for j, r2 in enumerate(ranges):
+                    if i != j:
+                        if set(r2).issubset(r1):
+                            valid[j] = False
 
         # Keep only valid ranges and baselines
         ranges = [r for i, r in enumerate(ranges) if valid[i] is True]
@@ -264,32 +271,56 @@ class Chromatogram(object):
         window_df = df.copy(deep=True)
         window_df.sort_values(by=self.time_col, inplace=True)
         window_df['time_idx'] = np.arange(len(window_df))
-        window_df['window_idx'] = 0
+        window_df['window_id'] = 0
+        window_df['window_type'] = 'peak'
+        self.ranges = ranges
         for i, r in enumerate(ranges):
             window_df.loc[window_df['time_idx'].isin(r), 
-                                    'window_idx'] = int(i + 1)
+                                    'window_id'] = int(i + 1)
 
+        # Determine the windows for the background (nonpeak) areas.
+        bg_windows = window_df[window_df['window_id']==0]
+        tidx = bg_windows['time_idx'].values
+
+        if len(bg_windows) > 0:
+            split_inds = np.nonzero(np.diff(bg_windows['time_idx'].values) - 1)[0]
+
+            # If there is only one background window
+            if (len(split_inds) == 0):
+                window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_id'] = 1 
+                window_df.loc[window_df['time_idx'].isin(bg_windows['time_idx'].values), 'window_type'] = 'interpeak'
+
+            # If more than one split ind, set up all ranges.
+            elif split_inds[0] != 0:
+                split_inds += 1
+                split_inds = np.insert(split_inds, 0, 0)
+                split_inds = np.append(split_inds, len(tidx)) 
+
+            bg_ranges = [bg_windows.iloc[np.arange(split_inds[i], split_inds[i+1], 1)]['time_idx'].values for i in range(len(split_inds)-1)]
+            win_idx = 1
+            for i, rng in enumerate(bg_ranges):
+                if len(rng) >= buffer:
+                    window_df.loc[window_df['time_idx'].isin(rng), 'window_id'] = win_idx 
+                    window_df.loc[window_df['time_idx'].isin(rng), 'window_type'] = 'interpeak' 
+                    win_idx += 1
+        window_df = window_df[window_df['window_id'] > 0]  
         # Convert this to a dictionary for easy parsing
         window_dict = {}
-        window_df = window_df[window_df['window_idx'] > 0]
-        for g, d in window_df.groupby('window_idx'):
+        for g, d in window_df[window_df['window_type']=='peak'].groupby('window_id'):
+            if g > 0:
                 _peaks = [p for p in self._peak_indices if p in d['time_idx'].values]
                 peak_inds = [x for _p in _peaks for x in np.where(self._peak_indices == _p)[0]]
                 _dict = {'time_range':d[self.time_col].values,
                          'signal': d[self.int_col].values,
+                         'signal_area': d[self.int_col].values.sum(),
                          'num_peaks': len(_peaks),
                          'amplitude': [d[d['time_idx']==p][self.int_col].values[0] for p in _peaks],
                          'location' : [d[d['time_idx']==p][self.time_col].values[0] for p in _peaks],
-                         'width' :  [_widths[ind] * self._dt for ind in peak_inds]
-                             }
+                         'width' :  [_widths[ind] * self._dt for ind in peak_inds]}
                 window_dict[int(g)] = _dict
 
-        # window_df.dropna(inplace=True) 
-        window_df = window_df[window_df['window_idx'] > 0]
-        self.window_df = window_df
-  
+        self.window_df = window_df  
         self.window_props = window_dict
-
         return window_df  
 
     def _compute_skewnorm(self, x, *params):
@@ -321,13 +352,13 @@ class Chromatogram(object):
 
         Notes
         -----
-        This function infers the parameters defining skew-norma distributions 
+        This function infers the parameters defining skew-normal distributions 
         for each peak in the chromatogram. The fitted distribution has the form 
             
         .. math:: 
-            I = 2I_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
+            I = 2S_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
 
-        where :math:`I_\text{max}` is the maximum intensity of the peak, 
+        where :math:`S_\text{max}` is the maximum signal of the peak, 
         :math:`t` is the time, :math:`r_t` is the retention time, :math:`\sigma`
         is the scale parameter, and :math:`\alpha` is the skew parameter.
 
@@ -434,7 +465,7 @@ class Chromatogram(object):
             between (-5, 5).
         """ 
         if self.window_props is None:
-            raise RuntimeError('Function `_assign_peak_windows` must be run first. Go do that.')
+            raise RuntimeError('Function `_assign_windows` must be run first. Go do that.')
         if verbose:
             iterator = tqdm.tqdm(self.window_props.items(), desc='Deconvolving mixture')  
         else:
@@ -506,7 +537,8 @@ class Chromatogram(object):
                             'retention_time': p[1],
                             'scale': p[2],
                             'alpha': p[3],
-                            'area':self._compute_skewnorm(v['time_range'], *p).sum()}
+                            'area':self._compute_skewnorm(v['time_range'], *p).sum(),
+                            'reconstructed_signal':self._compute_skewnorm(v['time_range'], *p)}
             peak_props[k] = window_dict
          
         self._peak_props = peak_props
@@ -515,8 +547,9 @@ class Chromatogram(object):
 
     def fit_peaks(self, enforced_locations=[], enforced_widths=[],
                   enforcement_tolerance=0.5, prominence=1E-2, rel_height=1.0, 
-                  approx_peak_width=3, buffer=100, param_bounds={}, verbose=True, return_peaks=True, 
-                 correct_baseline=True, max_iter=1000000, **optimizer_kwargs):
+                  approx_peak_width=5, buffer=100, param_bounds={}, verbose=True, return_peaks=True, 
+                 correct_baseline=True, max_iter=1000000, precision=9, 
+                 **optimizer_kwargs):
         R"""
         Detects and fits peaks present in the chromatogram
 
@@ -547,24 +580,27 @@ class Chromatogram(object):
             this has no effect. 
         buffer : positive `int`
             The padding of peak windows in units of number of time steps. Default 
-            is 100 points on each side of the identified peak window. If `locations` 
-            is provided, this is not used.
+            is 100 points on each side of the identified peak window. Must have a value 
+            of at least 10.
         verbose : `bool`
             If True, a progress bar will be printed during the inference. 
         param_bounds: `dict`, optional
             Parameter boundary modifications to be used to constrain fitting. 
             See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
             for more information.
-        return_peaks : `bool`, optional
-            If True, a dataframe containing the peaks will be returned. Default
-            is True.
         correct_baseline : `bool`, optional
             If True, the baseline of the chromatogram will be automatically 
             corrected using the SNIP algorithm. See :func:`~hplc.quant.Chromatogram.correct_baseline`
             for more information.
-        max_iter : int
+        return_peaks : `bool`, optional
+            If True, a dataframe containing the peaks will be returned. Default
+            is True.
+        max_iter : `int`
             The maximum number of iterations the optimization protocol should 
             take before erroring out. Default value is 10^6.
+        precision : `int`
+            The number of decimals to round the reconstructed signal to. Default
+            is 9.
         **optimizer_kwargs : `dict`
             Additional arguments to be passed to `scipy.optimize.curve_fit`.
 
@@ -582,18 +618,21 @@ class Chromatogram(object):
         for each peak in the chromatogram. The fitted distribution has the form 
             
         .. math:: 
-            I = 2I_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
+            I = 2S_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
 
-        where :math:`I_\text{max}` is the maximum intensity of the peak, 
+        where :math:`S_\text{max}` is the maximum signal of the peak, 
         :math:`t` is the time, :math:`r_t` is the retention time, :math:`\sigma`
         is the scale parameter, and :math:`\alpha` is the skew parameter.
 
         """
+        if buffer < 10:
+            warnings.warn("Provided buffer  is {buffer}, but must be ≥ 10. Casting to 10.")
+            buffer = 10
         if correct_baseline and not self._bg_corrected:
             self.correct_baseline(window=approx_peak_width, verbose=verbose, return_df=False)
 
         # Assign the window bounds
-        _ = self._assign_peak_windows(enforced_locations=enforced_locations, 
+        _ = self._assign_windows(enforced_locations=enforced_locations, 
                                       enforced_widths=enforced_widths,
                                       enforcement_tolerance=enforcement_tolerance,
                                       prominence=prominence, rel_height=rel_height, 
@@ -631,11 +670,11 @@ class Chromatogram(object):
                           v['scale'], v['alpha']]
                 out[:, iter] = self._compute_skewnorm(time, *params)
                 iter += 1
-        self.deconvolved_peaks = out
+        self.unmixed_chromatograms = np.round(out, decimals=precision)
         if return_peaks:
             return peak_df
     
-    def correct_baseline(self, window=3, return_df=False, verbose=True):
+    def correct_baseline(self, window=3, return_df=False, verbose=True, precision=9):
         R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
@@ -648,6 +687,10 @@ class Chromatogram(object):
             the SNIP algorithm.
         return_df : `bool`
             If `True`, then chromatograms (before and after background correction) are returned
+        verbose: `bool`
+            If `True`, progress will be printed to screen as a progress bar. 
+        precision: `int`
+            The number of decimals to round the subtracted signal to. Default is 9.
 
         Returns
         -------
@@ -657,7 +700,9 @@ class Chromatogram(object):
         Notes
         -----
         This implements the SNIP algorithm as presented and summarized in `Morhác
-        and Matousek 2008 <https://doi.org/10.1366/000370208783412762>`_.
+        and Matousek 2008 <https://doi.org/10.1366/000370208783412762>`_. The 
+        implementation here also rounds to 9 decimal places in the subtracted signal
+        to avoid small values very near zero.
         """
 
         # Unpack and copy dataframe and intensity profile
@@ -686,7 +731,7 @@ class Chromatogram(object):
 
         # Perform the inverse of the LLS transformation and subtract
         inv_tform = (np.exp(np.exp(tform) - 1) - 1)**2 - 1 
-        df[self.int_col] = signal - inv_tform
+        df[self.int_col] = np.round((signal - inv_tform) * np.heaviside(signal - inv_tform,0), decimals=precision)
         df[f'estimated_background'] = inv_tform 
         self.df = df  
         if return_df:
@@ -757,7 +802,237 @@ class Chromatogram(object):
         self._mapped_peaks = mapper
         return peak_df
 
-               
+    def score_reconstruction(self):
+        R"""
+        Computes the reconstruction score on a per-window and total chromatogram
+        basis.
+
+        Parameters
+        ----------
+        tol : `float`
+            The tolerance for a reconstruction to be valid. This is the tolerated 
+            deviation from a score of 1 which indicates a perfectly reconstructed
+            chromatogram. 
+
+        Returns
+        -------
+        score_df : `pandas.core.frame.DataFrame`
+            A DataFrame reporting the scoring statistic for each window as well 
+            as for the entire chromatogram. A window value of `0` corresponds 
+            to the chromatogram regions which don't have peaks. A window 
+            value of `-1` corresponds to the chromatogram as a whole
+
+        Notes
+        -----
+        The reconstruction score is defined as
+
+        ..math:: 
+            R = \frac{\text{area of inferred mixture in window} + 1}{\text{area of observed signal in window} + 1} = \frac{\frac{\sum\limits_{i\in t}^t \sum\limits_{j \in N_\text{peaks}}^{N_\text{peaks}}2A_j \text{SkewNormal}(\alpha_j, r_{t_j}, \sigma_j) + 1}{\sum\limits_{i \in t}^t S_i + 1}
+           
+        where :math:`t` is the total time of the region, :math:`A`is the inferred 
+        peak amplitude, :math:`\alpha` is the inferred skew paramter, :math:`r_t` is
+        the inferred peak retention time, :math:`\sigma` is the inferred scale 
+        parameter and :math:`S_i` is the observed signal intensity at time point
+        :math:`i`. Note that the signal and reconstruction is cast to be positive
+        to compute the score.  
+
+        """
+        columns = ['window_id', 'time_start', 'time_end', 'signal_area', 
+                   'inferred_area', 'signal_variance', 'signal_mean', 'signal_fano_factor', 'reconstruction_score']
+        score_df = pd.DataFrame([])  
+        # Compute the per-window reconstruction
+
+        for g, d in self.window_df[self.window_df['window_type']=='peak'].groupby('window_id'):
+            # Compute the non-peak windows separately.
+            window_area = np.abs(d[self.int_col].values).sum() + 1
+            window_peaks = self._peak_props[g]
+            window_peak_area = np.array([v['reconstructed_signal'] for v in window_peaks.values()]).sum() + 1
+            score = np.array(window_peak_area / window_area).astype(float)
+            signal_var = np.var(np.abs(d[self.int_col].values))
+            signal_mean = np.mean(np.abs(d[self.int_col].values))
+            #Account for an edge case to avoid dividing by zero
+            if signal_mean == 0:
+                signal_mean += 1E-9
+            signal_fano = signal_var / signal_mean
+            x = [g, d[self.time_col].min(),  
+                            d[self.time_col].max(), window_area, window_peak_area, 
+                            signal_var, signal_mean, signal_fano, score]
+            _df = pd.DataFrame({_c:_x for _c, _x in zip(columns, x)}, index=[g - 1])
+            _df['window_type'] = 'peak'
+            score_df = pd.concat([score_df, _df]) 
+         
+        # Compute the score for the non-peak regions
+        nonpeak = self.window_df[self.window_df['window_type'] == 'interpeak']
+        if len(nonpeak) > 0:
+            for g, d in nonpeak.groupby('window_id'):
+                total_area = np.abs(d[self.int_col].values).sum() + 1
+                recon_area = np.sum(self.unmixed_chromatograms, axis=1)[d['time_idx'].values].sum() + 1
+                nonpeak_score = recon_area / total_area
+                signal_var = np.var(np.abs(d[self.int_col].values))
+                signal_mean = np.mean(np.abs(d[self.int_col].values))
+                # Account for an edge case to avoide dividing by zero
+                if signal_mean == 0:
+                    signal_mean += 1E-9
+                signal_fano = signal_var / signal_mean
+
+                # Add to score dataframe
+                x = [g, d[self.time_col].min(),
+                    d[self.time_col].max(),
+                    total_area, recon_area, signal_var, signal_mean, signal_fano, nonpeak_score]
+                _df = pd.DataFrame({c:xi for c, xi in zip(columns, x)}, index=[g - 1])
+                _df['window_type'] = 'interpeak'
+                score_df = pd.concat([score_df, _df])
+        score_df['signal_area'] = score_df['signal_area'].astype(float)
+        score_df['inferred_area'] = score_df['inferred_area'].astype(float)
+        self.scores = score_df
+        return score_df
+
+    def assess_fit(self, tol=1E-2, fano_tol=1E-3, verbose=True):
+        R"""
+        Assesses whether the computed reconstruction score is adequate, given a tolerance.
+
+        Parameters
+        ----------
+        tol : `float`
+            The tolerance for a reconstruction to be valid. This is the tolerated 
+            deviation from a score of 1 which indicates a perfectly reconstructed
+            chromatogram. 
+        verbose : `bool`
+            If True, a summary of the fit will be printed to screen indicating 
+            problematic regions if detected.
+
+        Returns
+        -------
+        score_df : `pandas.core.frame.DataFrame`  
+            A DataFrame reporting the scoring statistic for each window as well 
+            as for the entire chromatogram. A window value of `0` corresponds 
+            to the entire chromatogram. A column `accepted` with a boolean 
+            value represents whether the reconstruction is within tolerance (`True`)
+            or (`False`).
+
+        Notes
+        -----
+        A reconstruction score of :math:`R = 1` indicates a perfect 
+        reconstruction of the chromatogram. For practical purposes, a chromatogram
+        is deemed to be adequately reconstructed if :math:`R` is within a tolerance
+        :math:`\epsilon` of 1 such that
+
+        .. math::
+            \left| R - 1 \right| \leq \epsilon \Rightarrow \text{Valid Reconstruction}
+        """
+
+        if self.unmixed_chromatograms is None:
+            raise RuntimeError("No reconstruction found! `.fit_peaks()` must be called first. Go do that.")
+
+        # Compute the reconstruction score
+        _score_df = self.score_reconstruction() 
+
+        # Apply the tolerance parameter
+        _score_df['applied_tolerance'] = tol
+        score_df = pd.DataFrame([])
+        mean_fano = _score_df[_score_df['window_type']=='peak']['signal_fano_factor'].mean() 
+        for g, d in _score_df.groupby(['window_type', 'window_id']):
+            tolpass = np.abs(d['reconstruction_score'].values[0] - 1) <= tol 
+
+            d = d.copy()
+            if g[0] == 'peak':
+                if tolpass: 
+                    d['status'] = 'valid' 
+                else:
+                    d['status'] = 'invalid'
+                                
+            else:
+                fanopass = (d['signal_fano_factor'].values[0] / mean_fano) <= fano_tol
+                if tolpass:
+                    d['status'] = 'valid' 
+                elif fanopass:
+                    d['status'] = 'needs review' 
+                else:
+                    d['status'] = 'invalid'
+            score_df = pd.concat([score_df, d], sort=False)   
+
+        # Define colors printing parameters to avoid retyping everything. 
+        print_colors = {'valid': ('A+, Success: ', ('black', 'on_green')),
+                        'invalid': ('F, Failed: ', ('black', 'on_red')),
+                        'needs review': ('C-, Needs Review: ', ('black', 'on_yellow'))}
+        if verbose:
+            print("""
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+======================= 
+""")     
+        for g, d in score_df[score_df['window_type']=='peak'].groupby('window_id'):  
+            status = d['status'].values[0]
+            if status == 'valid':     
+                warning = ''
+            else:
+                warning = """
+Peak mixture poorly reconstructs signal. You many need to adjust parameter bounds 
+or add manual peak positions (if you have a shouldered pair, for example). If 
+you have a very noisy signal, you may need to increase the reconstruction 
+tolerance `tol`."""    
+            if (d['reconstruction_score'].values[0] >= 10) | \
+                (d['reconstruction_score'].values[0] <= 0.1):
+                if d['reconstruction_score'].values[0] == 0:
+                    r_score = f'0'
+                else: 
+                    r_score = f"10^{int(np.log10(d['reconstruction_score'].values[0]))}"
+            else:
+                r_score = f"{d['reconstruction_score'].values[0]:0.4f}"
+            if verbose:
+                termcolor.cprint(f"{print_colors[status][0]} Peak Window {int(g)} (t: {d['time_start'].values[0]:0.3f} - {d['time_end'].values[0]:0.3f}) R-Score = {r_score}",
+                             *print_colors[status][1], attrs=['bold'], end='') 
+                print(warning)  
+
+        if len(score_df[score_df['window_type']=='interpeak']) > 0:
+            if verbose:
+                print("""
+Signal Reconstruction of Interpeak Windows
+==========================================
+                  """)
+            for g, d in score_df[score_df['window_type']=='interpeak'].groupby('window_id'):
+                status = d['status'].values[0]
+                if status == 'valid':
+                    warning = ''
+                elif status == 'needs review':
+                    warning = f"""
+Interpeak window {g} is not well reconstructed by mixture, but has a small Fano factor  
+compared to peak region(s). This is likely acceptable, but visually check this region.\n"""
+                elif status == 'invalid':  
+                    warning = f"""
+Interpeak window {g} is not well reconstructed by mixture and has an appreciable Fano 
+factor compared to peak region(s). This suggests you have missed a peak in this 
+region. Consider adding manual peak positioning by passing `enforced_locations` 
+to `fit_peaks()`."""
+
+                if (d['reconstruction_score'].values[0] >= 10) | \
+                    (d['reconstruction_score'].values[0] <= 0.1):
+                    if d['reconstruction_score'].values[0] == 0:
+                        r_score = f'0'
+                    else:
+                        r_score = f"10^{int(np.log10(d['reconstruction_score'].values[0]))}"
+                else:
+                    r_score = f"{d['reconstruction_score'].values[0]:0.4f}"
+                if ((d['signal_fano_factor'].values[0] / mean_fano) > 10) | \
+                   ((d['signal_fano_factor'].values[0] / mean_fano) <= 1E-5):
+                    if (d['signal_fano_factor'].values[0] / mean_fano) == 0:
+                        fano = '0'
+                    else:
+                        fano = f"10^{int(np.log10(d['signal_fano_factor'].values[0] / mean_fano))}"
+                else:
+                    fano = f"{d['signal_fano_factor'].values[0] / mean_fano:0.4f}"
+                
+                if verbose:
+                    termcolor.cprint(f"{print_colors[status][0]} Interpeak Window {int(g)} (t: {d['time_start'].values[0]:0.3f} - {d['time_end'].values[0]:0.3f}) R-Score = {r_score} & Fano Ratio = {fano}",
+                             *print_colors[status][1], attrs=['bold'], end='')
+                    print(warning)           
+        if verbose:
+            print("""
+--------------------------------------------------------------------------------""")
+        return score_df
+
+ 
     def show(self, time_range=[]):
         """
         Displays the chromatogram with mapped peaks if available.
@@ -792,7 +1067,7 @@ class Chromatogram(object):
         if self.peaks is not None:
             time = self.df[self.time_col].values
             # Plot the mix
-            convolved = np.sum(self.deconvolved_peaks, axis=1)
+            convolved = np.sum(self.unmixed_chromatograms, axis=1)
             ax.plot(time, convolved, 'r--', label='inferred mixture') 
             for g, d in self.peaks.groupby('peak_id'):
                 label = f'peak {int(g)}'
@@ -807,7 +1082,7 @@ class Chromatogram(object):
                     else:
                         label = f'peak {int(g)}'
 
-                ax.fill_between(time, self.deconvolved_peaks[:, int(g) - 1], label=label, 
+                ax.fill_between(time, self.unmixed_chromatograms[:, int(g) - 1], label=label, 
                                 alpha=0.5)
         if 'estimated_background' in self.df.keys():
             ax.plot(self.df[self.time_col], self.df['estimated_background'],  color='dodgerblue', label='estimated background', zorder=1)
