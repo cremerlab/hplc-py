@@ -4,7 +4,7 @@ permissions:
     contents: write
 jobs:
   docs:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
@@ -14,7 +14,7 @@ jobs:
           pip install nbsphinx
       - name: Sphinx build 
         run: |  
-          apt install -y pandoc
+          brew install pandoc 
           sphinx-build docs/source _build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
