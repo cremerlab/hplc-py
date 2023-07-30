@@ -12,10 +12,9 @@ jobs:
         run: |
           pip install sphinx sphinx_rtd_theme
           pip install sphinxnb
-      - name: Sphinx build
-        with:
-          pre-build-command: "apt install -y pandoc"
+      - name: Sphinx build 
         run: |
+          pip install pandoc
           sphinx-build doc _build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
