@@ -11,7 +11,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme
-          pip install sphinxnb
+          pip install nbsphinx
       - name: Sphinx build 
         run: |
           pip install pandoc
