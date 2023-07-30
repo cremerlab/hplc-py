@@ -18,8 +18,8 @@ setup(
     url="https://github.com/cremerlab/hplc-py",
     license="MIT",
     classifiers=[
-        "Development Status :: 1 - Planning",
-        "Intended Audience :: Developers",
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
         "Programming Language :: Python :: 3",
     ],
     author="Griffin Chure",
