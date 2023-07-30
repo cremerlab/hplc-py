@@ -16,7 +16,7 @@ setup(
     description="Python utilities for the processing and quantification of chromatograms from High Performance Liquid Chromatography (HPLC).",
     long_description_content_type='text/markdown',
     url="https://github.com/cremerlab/hplc-py",
-    license="MIT",
+    license="GPLv3",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
