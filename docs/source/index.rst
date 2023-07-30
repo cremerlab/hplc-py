@@ -27,7 +27,7 @@ You can install `hplc-py` using pip::
 If you like danger and think error messages make your terminal look pretty, you
 can install the pre-release developer version::
 
-$ pip install git+https://github.com/cremerlab/hplc-py.git@dev#egg=hplc-py
+$ pip install git+https://github.com/cremerlab/hplc-py.git@main#egg=hplc-py
 
 
 Hplc-py has the following dependencies:
@@ -47,14 +47,6 @@ Hplc-py has the following dependencies:
 .. _Matplotlib: https://matplotlib.org/
 .. _Seaborn: https://seaborn.pydata.org/
 .. _Termcolor: https://pypi.org/project/termcolor/
-
-
-.. .. toctree::
-..    :maxdepth: 2
-..    :caption: About
-..    :hidden:
-
-..    getting_started/algorithm.ipynb
 
 
 .. toctree::
