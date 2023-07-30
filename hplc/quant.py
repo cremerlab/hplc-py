@@ -30,7 +30,11 @@ class Chromatogram(object):
         to the value of the probability density for each individual peak. This 
         is used primarily for plotting in the `show` method. 
     quantified_peaks : `pandas.core.frame.DataFrame`
-        A Pandas Dataframe with peak areas converted to 
+        A Pandas DataFrame with peak areas converted to 
+    scores : `pandas.core.frame.DataFrame`
+        A Pandas DataFrame containing the reconstruction scores and Fano factor 
+        ratios for each peak and interpeak region. This is generated only afer 
+        `assess_fit()` is called.
     param_opt : `numpy.ndarray`
         An array of the parameter estimates in order of amplitude, location, scale, 
         and skew for each peak in temporal order. 
@@ -59,7 +63,7 @@ class Chromatogram(object):
             the pandas DataFrame of the chromatogram. If None, a pandas DataFrame 
             of the chromatogram must be passed.
         dataframe : `pandas.core.frame.DataFrame`
-            a Pandas Dataframe of the chromatogram to analyze. If None, 
+            a Pandas DataFrame of the chromatogram to analyze. If None, 
             a path to the csv file must be passed
         time_window: `list` [start, end], optional
             The retention time window of the chromatogram to consider for analysis.
@@ -99,6 +103,7 @@ class Chromatogram(object):
 
         # Blank out vars that are used elsewhere
         self.window_props = None
+        self.scores = None
         self._peak_indices = None
         self.peaks = None
         self._guesses = None
@@ -423,20 +428,23 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         ----------
         verbose : `bool`
             If `True`, a progress bar will be printed during the inference.
-        param_bounds : `dict`, optional
+
+        param_bounds : `dict`
             Modifications to the default parameter bounds (see Notes below) as 
             a dictionary for each parameter. A dict entry should be of the 
             form `parameter: [lower, upper]`. Modifications have the following effects:
-            + Modifications to `amplitude` bounds are multiplicative of the 
-              observed magnitude at the peak position. 
-            + Modifications to `location` are values that are subtracted or 
-              added from the peak position for lower and upper bounds, respectively.
-            + Modifications to `scale` replace the default values. 
-            + Modifications to `skew` replace the default values. 
-        max_iter : int
+                * Modifications to `amplitude` bounds are multiplicative of the 
+                  observed magnitude at the peak position. 
+                * Modifications to `location` are values that are subtracted or 
+                  added from the peak position for lower and upper bounds, respectively.
+                * Modifications to `scale` replace the default values. 
+                * Modifications to `skew` replace the default values. 
+
+        max_iter : `int`
             The maximum number of iterations the optimization protocol should 
             take before erroring out. Default value is 10^6.
-        optimizer_kwargs : dict
+
+        optimizer_kwargs : `dict`
             Keyword arguments to be passed to `scipy.optimize.curve_fit`.
 
         Returns 
@@ -450,19 +458,13 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         into non-realistic regimes that can seriously slow down the inference. The 
         default parameter boundaries for each peak are as follows.
 
-            + `amplitude`: The lower and upper peak amplitude boundaries correspond 
-            to one-tenth and ten-times the value of the peak at the peak location 
-            in the chromatogram.
+            * `amplitude`: The lower and upper peak amplitude boundaries correspond to one-tenth and ten-times the value of the peak at the peak location in the chromatogram.
 
-            + `location`: The lower and upper location bounds correspond to the 
-            minimum and maximum time values of the chromatogram.
+            * `location`: The lower and upper location bounds correspond to the minimum and maximum time values of the chromatogram.
 
-            + `scale`: The lower and upper bounds of the peak standard deviation
-            defaults to the chromatogram time-step and one-half of the chromatogram
-            duration, respectively.  
+            * `scale`: The lower and upper bounds of the peak standard deviation defaults to the chromatogram time-step and one-half of the chromatogram duration, respectively.  
 
-            + `skew`: The skew parameter by default is allowed to take any value
-            between (-5, 5).
+            * `skew`: The skew parameter by default is allowed to take any value between (-`inf`, `inf`).
         """ 
         if self.window_props is None:
             raise RuntimeError('Function `_assign_windows` must be run first. Go do that.')
@@ -674,7 +676,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         if return_peaks:
             return peak_df
     
-    def correct_baseline(self, window=3, return_df=False, verbose=True, precision=9):
+    def correct_baseline(self, window=5, return_df=False, verbose=True, precision=9):
         R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
@@ -738,24 +740,21 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             return df
 
     def map_peaks(self, params, loc_tolerance=0.5, include_unmapped=False):
-        """
+        R"""
         Maps user-provided mappings to arbitrarily labeled peaks. If a linear 
         calibration curve is also provided, the concentration will be computed.
 
-        .. note::
-            As of `v0.1.0`, this function can only accommodate linear calibration 
-            functions.
-
         Parameters
         ----------
-        params : `dict` of `dict`s
+        params : `dict` 
             A dictionary mapping each peak to a slope and intercept used for 
-            converting peak areas to units of concentraions. Each peak 
-            should have a key that is the compound name (e.g. "glucose"). Each 
-            key should have another dict as the key with `retention_time`, `slope`, and `intercept`
-            as keys. If only `retention_time` is given, concentration will 
-            not be computed. The key `retention_time` will be used to map the compound to the 
-            `peak_id`. If `unit` are provided, this will be added as a column
+            converting peak areas to units of concentraions. Each peak should
+            have a key that is the compound name (e.g. "glucose"). Each key
+            should have another dict as the key with `retention_time` , `slope` ,
+            and `intercept` as keys. If only `retention_time` is given,
+            concentration will not be computed. The key `retention_time` will be
+            used to map the compound to the `peak_id`. If `unit` are provided,
+            this will be added as a column
        loc_tolerance : `float`
            The tolerance for mapping the compounds to the retention time. The 
            default is 0.5 time units.
@@ -768,6 +767,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
        peaks : `pandas.core.frame.DataFrame`
             A modified peak table with the compound name and concentration 
             added as columns.
+
+        Notes
+        -----
+        .. note::
+            As of `v0.1.0`, this function can only accommodate linear calibration 
+            functions.
         """
         # Create a mapper for peak id to compound
         mapper = {}
@@ -802,7 +807,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         self._mapped_peaks = mapper
         return peak_df
 
-    def score_reconstruction(self):
+    def _score_reconstruction(self):
         R"""
         Computes the reconstruction score on a per-window and total chromatogram
         basis.
@@ -825,8 +830,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         Notes
         -----
         The reconstruction score is defined as
-
         ..math:: 
+
             R = \frac{\text{area of inferred mixture in window} + 1}{\text{area of observed signal in window} + 1} = \frac{\frac{\sum\limits_{i\in t}^t \sum\limits_{j \in N_\text{peaks}}^{N_\text{peaks}}2A_j \text{SkewNormal}(\alpha_j, r_{t_j}, \sigma_j) + 1}{\sum\limits_{i \in t}^t S_i + 1}
            
         where :math:`t` is the total time of the region, :math:`A`is the inferred 
@@ -897,6 +902,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             The tolerance for a reconstruction to be valid. This is the tolerated 
             deviation from a score of 1 which indicates a perfectly reconstructed
             chromatogram. 
+        fano_tol : `float`
+            The tolerance away from zero for evaluating the Fano factor of 
+            inerpeak windows. See note below.
         verbose : `bool`
             If True, a summary of the fit will be printed to screen indicating 
             problematic regions if detected.
@@ -912,6 +920,18 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         Notes
         -----
+        The reconstruction score is defined as
+
+        .. math:: 
+            R = \frac{\text{area of inferred mixture in window} + 1}{\text{area of observed signal in window} + 1} 
+           
+        where :math:`t` is the total time of the region, :math:`A` is the inferred 
+        peak amplitude, :math:`\alpha` is the inferred skew paramter, :math:`r_t` is
+        the inferred peak retention time, :math:`\sigma` is the inferred scale 
+        parameter and :math:`S_i` is the observed signal intensity at time point
+        :math:`i`. Note that the signal and reconstruction is cast to be positive
+        to compute the score.  
+
         A reconstruction score of :math:`R = 1` indicates a perfect 
         reconstruction of the chromatogram. For practical purposes, a chromatogram
         is deemed to be adequately reconstructed if :math:`R` is within a tolerance
@@ -919,6 +939,22 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         .. math::
             \left| R - 1 \right| \leq \epsilon \Rightarrow \text{Valid Reconstruction}
+
+        Interpeak regions may have a poor reconstruction score due to noise or
+        short durations. To determine if this poor reconstruction score is due 
+        to a missed peak, the signal Fano factor of the region is computed as 
+
+        .. math::
+            F = \frac{\sigma^2_{S}}{\langle S \rangle}.
+        
+        This is compared with the average Fano factor of :math:`N` peak windows such 
+        that the Fano factor ratio is 
+
+        .. math::
+            \frac{F}{\langle F_{peak} \rangle} = \frac{\sigma^2_{S} / \langle S \rangle}{\frac{1}{N} \sum\limits_{i}^N \frac{\sigma_{S,i}^2}{\langle S_i \rangle}}.
+
+        If the Fano factor ratio is below a tolerance `fano_tol`, then that 
+        window is deemed to be noisy and peak-free. 
         """
 
         if self.unmixed_chromatograms is None:

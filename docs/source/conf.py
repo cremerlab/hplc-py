@@ -9,18 +9,16 @@
 project = 'hplc-py'
 copyright = '2023, Griffin Chure & Jonas Cremer'
 author = 'Griffin Chure & Jonas Cremer'
-release = '0.0.01'
+release = '0.1.00'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ['sphinx.ext.napoleon', 'nbsphinx', 'sphinx.ext.coverage', 
-              'sphinx.ext.autodoc']
+              'sphinx.ext.autodoc'] 
 
 templates_path = ['_templates']
 exclude_patterns = []
-
-
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

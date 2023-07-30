@@ -140,9 +140,9 @@ peaks.to_csv('./test_data/test_manual_unmix_peaks.csv', index=False)
 # ##############################################################################
 # Generate data with a very shallow peak that would not normally be detected
 # but can be identified if the manual position is included. 
-x = np.arange(0, 40, dt)
+x = np.arange(0, 80, dt)
 sig1 = 100 * scipy.stats.norm(10, 1).pdf(x)
-sig2 = 10 * scipy.stats.norm(25, 3).pdf(x)
+sig2 = 10 * scipy.stats.norm(50, 3).pdf(x)
 sig = sig1 + sig2
 df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
 df.to_csv('./test_data/test_shallow_signal_chrom.csv', index=False)
@@ -151,8 +151,6 @@ peak_df = pd.DataFrame(np.array([[10, 25], [1, 3], [0, 0], [100, 10],
                        columns = ['retention_time', 'scale', 'skew',
                                   'amplitude', 'area', 'peak_idx'])
 peak_df.to_csv('./test_data/test_shallow_signal_peaks.csv', index=False)
-
-
 
 #%%
 # ##############################################################################
@@ -183,12 +181,3 @@ score_df = pd.DataFrame(np.array([1, 2, 3, 1, 2]).T, columns=['window_id'])
 score_df['window_type'] = ['interpeak', 'interpeak', 'interpeak', 'peak', 'peak']
 score_df['status'] = ['needs review', 'invalid', 'valid', 'invalid', 'valid']
 score_df.to_csv('./test_data/test_assessment_scores.csv', index=False)
-#%%
-import matplotlib.pyplot as plt
-import importlib
-import hplc.quant
-importlib.reload(hplc.quant)
-chrom = hplc.quant.Chromatogram(df, cols={'time':'x', 'signal':'y'})
-peaks = chrom.fit_peaks(prominence=0.5)
-_ = chrom.assess_fit(tol=1E-3)
-chrom.show()

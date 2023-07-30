@@ -1,0 +1,488 @@
+:py:mod:`hplc.quant`
+====================
+
+.. py:module:: hplc.quant
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   hplc.quant.Chromatogram
+
+
+
+
+.. py:class:: Chromatogram(file, time_window=None, cols={'time': 'time', 'signal': 'signal'})
+
+
+   Bases: :py:obj:`object`
+
+   Base class for the processing and quantification of an HPLC chromatogram.
+
+   .. attribute:: df
+
+      A Pandas DataFrame containing the chromatogram, minimally with columns
+      of time and signal intensity.
+
+      :type: `pandas.core.frame.DataFrame`
+
+   .. attribute:: window_props
+
+      A dictionary of each peak window, labeled as increasing integers in
+      linear order. Each key has its own dictionary with the following keys:
+
+      :type: `dict`
+
+   .. attribute:: peaks
+
+      A Pandas DataFrame containing the inferred properties of each peak
+      including the retention time, scale, skew, amplitude, and total
+      area under the peak across the entire chromatogram.
+
+      :type: `pandas.core.frame.DataFrame`
+
+   .. attribute:: unmixed_chromatograms
+
+      A matrix where each row corresponds to a time point and each column corresponds
+      to the value of the probability density for each individual peak. This
+      is used primarily for plotting in the `show` method.
+
+      :type: `numpy.ndarray`
+
+   .. attribute:: quantified_peaks
+
+      A Pandas DataFrame with peak areas converted to
+
+      :type: `pandas.core.frame.DataFrame`
+
+   .. attribute:: scores
+
+      A Pandas DataFrame containing the reconstruction scores and Fano factor
+      ratios for each peak and interpeak region. This is generated only afer
+      `assess_fit()` is called.
+
+      :type: `pandas.core.frame.DataFrame`
+
+   .. attribute:: param_opt
+
+      An array of the parameter estimates in order of amplitude, location, scale,
+      and skew for each peak in temporal order.
+
+      :type: `numpy.ndarray`
+
+   .. attribute:: param_pcov
+
+      The estimated approximate covariance matrix of the parameters. Uncertainty
+      for each parameter can be calculated as `numpy.sqrt(numpy.diag(param_pcov))`,
+      with the following big caveat:
+
+      .. attention::
+          `param.pcov` is only an *estimate* of the *approximate* covariance
+          matrix and computation of the error is only valid if the linear
+          approximation to the model about the optimum is valid. Use this
+          attribute with caution.
+
+      :type: 2-D `numpy.ndarray`
+
+   .. py:method:: crop(time_window=None, return_df=False)
+
+      Restricts the time dimension of the DataFrame in place.
+
+      :param time_window: The retention time window of the chromatogram to consider for analysis.
+                          If None, the entire time range of the chromatogram will be considered.
+      :type time_window: `list` [start, end], optional
+      :param return_df: If `True`, the cropped DataFrame is
+      :type return_df: `bool`
+
+      :returns: **cropped_df** -- If `return_df = True`, then the cropped dataframe is returned.
+      :rtype: pandas DataFrame
+
+
+   .. py:method:: _assign_windows(enforced_locations=[], enforced_widths=[], enforcement_tolerance=0.5, prominence=0.01, rel_height=0.95, buffer=100)
+
+      Breaks the provided chromatogram down to windows of likely peaks.
+
+      :param enforced_locations: The approximate locations of the peaks. If this is not provided,
+                                 peak locations will be automatically detected.
+      :type enforced_locations: `list`
+      :param enforced_widths: The approximate widths of the peaks. If this is not provided  but
+                              `locations` is, approximate widths of one time unit (0.5 / dt)
+                              will be assumed.
+      :type enforced_widths: `list`
+      :param enforce_tolerance: If an enforced peak location is within tolerance of an automatically
+                                identified peak, the automatically identified peak will be preferred.
+                                This parameter is in units of time. Default is one-half time unit.
+      :type enforce_tolerance: `float`, optional
+      :param prominence: The promimence threshold for identifying peaks. Prominence is the
+                         relative height of the normalized signal relative to the local
+                         background. Default is 1%.
+      :type prominence: `float`,  [0, 1]
+      :param rel_height: The relative height of the peak where the baseline is determined.
+                         Default is 95%.
+      :type rel_height: `float`, [0, 1]
+      :param buffer: The padding of peak windows in units of number of time steps. Default
+                     is 100 points on each side of the identified peak window.
+      :type buffer: positive `int`
+
+      :returns: **window_df** -- A Pandas DataFrame with each measurement assigned to an identified
+                peak or overlapping peak set. This returns a copy of the chromatogram
+                DataFrame with  a column  for the local baseline and one column for
+                the window IDs. Window ID of -1 corresponds to area not assigned to
+                any peaks
+      :rtype: `pandas.core.frame.DataFrame`
+
+
+   .. py:method:: _compute_skewnorm(x, *params)
+
+      Computes the lineshape of a skew-normal distribution given the shape,
+      location, and scale parameters
+
+      :param x: The time dimension of the skewnorm
+      :type x: `float` or `numpy.ndarray`
+      :param params: Parameters for the shape and scale parameters of the skewnorm
+                     distribution.
+                         `amplitude` : positive `float`
+                             Height of the peak.
+                         `loc` : positive `float`
+                             The location parameter of the distribution.
+                         `scale` : positive `float`
+                             The scale parameter of the distribution.
+                         `alpha` : positive `float`
+                             The skew shape parater of the distribution.
+      :type params: `list`, [`amplitude`, `loc`, `scale`, `alpha`]
+
+      :returns: **scaled_pdf** -- The PDF of the skew-normal distribution scaled with the supplied
+                amplitude.
+      :rtype: `float or numpy array, same shape as `x`
+
+      .. rubric:: Notes
+
+      This function infers the parameters defining skew-normal distributions
+      for each peak in the chromatogram. The fitted distribution has the form
+
+      .. math::
+          I = 2S_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
+
+      where :math:`S_\text{max}` is the maximum signal of the peak,
+      :math:`t` is the time, :math:`r_t` is the retention time, :math:`\sigma`
+      is the scale parameter, and :math:`\alpha` is the skew parameter.
+
+
+   .. py:method:: _fit_skewnorms(x, *params)
+
+      Estimates the parameters of the distributions which consititute the
+      peaks in the chromatogram.
+
+      :param x: The time dimension of the skewnorm
+      :type x: `float`
+      :param params: Parameters for the shape and scale parameters of the skewnorm
+                     distribution. Must be provided in following order, repeating
+                     for each distribution.
+                         `amplitude` : float; > 0
+                             Height of the peak.
+                         `loc` : float; > 0
+                             The location parameter of the distribution.
+                         `scale` : float; > 0
+                             The scale parameter of the distribution.
+                         `alpha` : float; >
+                             The skew shape parater of the distribution.
+      :type params: list of length 4 x number of peaks, [amplitude, loc, scale, alpha]
+
+      :returns: **out** -- The evaluated distribution at the given time x. This is the summed
+                value for all distributions modeled to construct the peak in the
+                chromatogram.
+      :rtype: `float`
+
+
+   .. py:method:: deconvolve_peaks(verbose=True, param_bounds={}, max_iter=1000000, **optimizer_kwargs)
+
+      .. note::
+         In most cases, this function should not be called directly. Instead,
+         it should called through the :func:`~hplc.quant.Chromatogram.fit_peaks`
+
+      For each peak window, estimate the parameters of skew-normal distributions
+      which makeup the peak(s) in the window. See "Notes" for information on
+      default parameter bounds.
+
+      :param verbose: If `True`, a progress bar will be printed during the inference.
+      :type verbose: `bool`
+      :param param_bounds: Modifications to the default parameter bounds (see Notes below) as
+                           a dictionary for each parameter. A dict entry should be of the
+                           form `parameter: [lower, upper]`. Modifications have the following effects:
+                           + Modifications to `amplitude` bounds are multiplicative of the
+                             observed magnitude at the peak position.
+                           + Modifications to `location` are values that are subtracted or
+                             added from the peak position for lower and upper bounds, respectively.
+                           + Modifications to `scale` replace the default values.
+                           + Modifications to `skew` replace the default values.
+      :type param_bounds: `dict`, optional
+      :param max_iter: The maximum number of iterations the optimization protocol should
+                       take before erroring out. Default value is 10^6.
+      :type max_iter: int
+      :param optimizer_kwargs: Keyword arguments to be passed to `scipy.optimize.curve_fit`.
+      :type optimizer_kwargs: dict
+
+      :returns: **peak_props** -- A dataframe containing properties of the peak fitting procedure.
+      :rtype: `dict`
+
+      .. rubric:: Notes
+
+      The parameter boundaries are set automatically to prevent run-away estimation
+      into non-realistic regimes that can seriously slow down the inference. The
+      default parameter boundaries for each peak are as follows.
+
+          + `amplitude`: The lower and upper peak amplitude boundaries correspond
+          to one-tenth and ten-times the value of the peak at the peak location
+          in the chromatogram.
+
+          + `location`: The lower and upper location bounds correspond to the
+          minimum and maximum time values of the chromatogram.
+
+          + `scale`: The lower and upper bounds of the peak standard deviation
+          defaults to the chromatogram time-step and one-half of the chromatogram
+          duration, respectively.
+
+          + `skew`: The skew parameter by default is allowed to take any value
+          between (-5, 5).
+
+
+   .. py:method:: fit_peaks(enforced_locations=[], enforced_widths=[], enforcement_tolerance=0.5, prominence=0.01, rel_height=1.0, approx_peak_width=5, buffer=100, param_bounds={}, verbose=True, return_peaks=True, correct_baseline=True, max_iter=1000000, precision=9, **optimizer_kwargs)
+
+      Detects and fits peaks present in the chromatogram
+
+      :param enforced_locations: The approximate locations of the peaks. If this is not provided,
+                                 peak locations will be automatically detected.
+      :type enforced_locations: `list`
+      :param enforced_widths: The approximate widths of the peaks. If this is not provided  but
+                              `locations` is, approximate widths of one time unit (1 / dt)
+                              will be assumed.
+      :type enforced_widths: `list`
+      :param enforce_tolerance: If an enforced peak location is within tolerance of an automatically
+                                identified peak, the automatically identified peak will be preferred.
+                                This parameter is in units of time. Default is one-half time unit.
+      :type enforce_tolerance: `float`, optional
+      :param prominence: The promimence threshold for identifying peaks. Prominence is the
+                         relative height of the normalized signal relative to the local
+                         background. Default is 1%. If `locations` is provided, this is
+                         not used.
+      :type prominence: `float`,  [0, 1]
+      :param rel_height: The relative height of the peak where the baseline is determined.
+                         Default is 100%. If `locations` is provided, this is not used.
+      :type rel_height: `float`, [0, 1]
+      :param approx_peak_width: The approximate width of the signal you want to quantify. This is
+                                used as filtering window for automatic baseline correction. If `correct_baseline==False`,
+                                this has no effect.
+      :type approx_peak_width: `float`, optional
+      :param buffer: The padding of peak windows in units of number of time steps. Default
+                     is 100 points on each side of the identified peak window. Must have a value
+                     of at least 10.
+      :type buffer: positive `int`
+      :param verbose: If True, a progress bar will be printed during the inference.
+      :type verbose: `bool`
+      :param param_bounds: Parameter boundary modifications to be used to constrain fitting.
+                           See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
+                           for more information.
+      :type param_bounds: `dict`, optional
+      :param correct_baseline: If True, the baseline of the chromatogram will be automatically
+                               corrected using the SNIP algorithm. See :func:`~hplc.quant.Chromatogram.correct_baseline`
+                               for more information.
+      :type correct_baseline: `bool`, optional
+      :param return_peaks: If True, a dataframe containing the peaks will be returned. Default
+                           is True.
+      :type return_peaks: `bool`, optional
+      :param max_iter: The maximum number of iterations the optimization protocol should
+                       take before erroring out. Default value is 10^6.
+      :type max_iter: `int`
+      :param precision: The number of decimals to round the reconstructed signal to. Default
+                        is 9.
+      :type precision: `int`
+      :param \*\*optimizer_kwargs: Additional arguments to be passed to `scipy.optimize.curve_fit`.
+      :type \*\*optimizer_kwargs: `dict`
+
+      :returns: **peak_df** -- A dataframe containing information for each detected peak. This is
+                only returned if `return_peaks == True`. The peaks are always
+                stored as an attribute `peak_df`.
+      :rtype: `pandas.core.frame.DataFrame`
+
+      .. rubric:: Notes
+
+      This function infers the parameters defining skew-norma distributions
+      for each peak in the chromatogram. The fitted distribution has the form
+
+      .. math::
+          I = 2S_\text{max} \left(\frac{1}{\sqrt{2\pi\sigma^2}}\right)e^{-\frac{(t - r_t)^2}{2\sigma^2}}\left[1 + \text{erf}\frac{\alpha(t - r_t)}{\sqrt{2\sigma^2}}\right]
+
+      where :math:`S_\text{max}` is the maximum signal of the peak,
+      :math:`t` is the time, :math:`r_t` is the retention time, :math:`\sigma`
+      is the scale parameter, and :math:`\alpha` is the skew parameter.
+
+
+   .. py:method:: correct_baseline(window=5, return_df=False, verbose=True, precision=9)
+
+      Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate
+      and subtract background in chromatogram.
+
+      :param window: The approximate size of signal objects in the chromatogram in dimensions
+                     of time. This is related to the number of iterations undertaken by
+                     the SNIP algorithm.
+      :type window: `int`
+      :param return_df: If `True`, then chromatograms (before and after background correction) are returned
+      :type return_df: `bool`
+      :param verbose: If `True`, progress will be printed to screen as a progress bar.
+      :type verbose: `bool`
+      :param precision: The number of decimals to round the subtracted signal to. Default is 9.
+      :type precision: `int`
+
+      :returns: **corrected_df** -- If `return_df = True`, then the original and the corrected chromatogram are returned.
+      :rtype: `pandas.core.frame.DataFrame`
+
+      .. rubric:: Notes
+
+      This implements the SNIP algorithm as presented and summarized in `Morhác
+      and Matousek 2008 <https://doi.org/10.1366/000370208783412762>`_. The
+      implementation here also rounds to 9 decimal places in the subtracted signal
+      to avoid small values very near zero.
+
+
+   .. py:method:: map_peaks(params, loc_tolerance=0.5, include_unmapped=False)
+
+       Maps user-provided mappings to arbitrarily labeled peaks. If a linear
+       calibration curve is also provided, the concentration will be computed.
+
+       .. note::
+           As of `v0.1.0`, this function can only accommodate linear calibration
+           functions.
+
+       Parameters
+       ----------
+       params : `dict` of `dict`s
+           A dictionary mapping each peak to a slope and intercept used for
+           converting peak areas to units of concentraions. Each peak
+           should have a key that is the compound name (e.g. "glucose"). Each
+           key should have another dict as the key with `retention_time`, `slope`, and `intercept`
+           as keys. If only `retention_time` is given, concentration will
+           not be computed. The key `retention_time` will be used to map the compound to the
+           `peak_id`. If `unit` are provided, this will be added as a column
+      loc_tolerance : `float`
+          The tolerance for mapping the compounds to the retention time. The
+          default is 0.5 time units.
+      include_unmapped : `bool`
+           If True, unmapped compounds will remain in the returned peak dataframe,
+           but will be populated with Nan. Default is False.
+
+      :returns: **peaks** -- A modified peak table with the compound name and concentration
+                added as columns.
+      :rtype: `pandas.core.frame.DataFrame`
+
+
+   .. py:method:: _score_reconstruction()
+
+      Computes the reconstruction score on a per-window and total chromatogram
+      basis.
+
+      :param tol: The tolerance for a reconstruction to be valid. This is the tolerated
+                  deviation from a score of 1 which indicates a perfectly reconstructed
+                  chromatogram.
+      :type tol: `float`
+
+      :returns: **score_df** -- A DataFrame reporting the scoring statistic for each window as well
+                as for the entire chromatogram. A window value of `0` corresponds
+                to the chromatogram regions which don't have peaks. A window
+                value of `-1` corresponds to the chromatogram as a whole
+      :rtype: `pandas.core.frame.DataFrame`
+
+      .. rubric:: Notes
+
+      The reconstruction score is defined as
+      ..math::
+
+          R = \frac{\text{area of inferred mixture in window} + 1}{\text{area of observed signal in window} + 1} = \frac{\frac{\sum\limits_{i\in t}^t \sum\limits_{j \in N_\text{peaks}}^{N_\text{peaks}}2A_j \text{SkewNormal}(\alpha_j, r_{t_j}, \sigma_j) + 1}{\sum\limits_{i \in t}^t S_i + 1}
+
+      where :math:`t` is the total time of the region, :math:`A`is the inferred
+      peak amplitude, :math:`\alpha` is the inferred skew paramter, :math:`r_t` is
+      the inferred peak retention time, :math:`\sigma` is the inferred scale
+      parameter and :math:`S_i` is the observed signal intensity at time point
+      :math:`i`. Note that the signal and reconstruction is cast to be positive
+      to compute the score.
+
+
+   .. py:method:: assess_fit(tol=0.01, fano_tol=0.001, verbose=True)
+
+      Assesses whether the computed reconstruction score is adequate, given a tolerance.
+
+      :param tol: The tolerance for a reconstruction to be valid. This is the tolerated
+                  deviation from a score of 1 which indicates a perfectly reconstructed
+                  chromatogram.
+      :type tol: `float`
+      :param fano_tol: The tolerance away from zero for evaluating the Fano factor of
+                       inerpeak windows. See note below.
+      :type fano_tol: `float`
+      :param verbose: If True, a summary of the fit will be printed to screen indicating
+                      problematic regions if detected.
+      :type verbose: `bool`
+
+      :returns: **score_df** -- A DataFrame reporting the scoring statistic for each window as well
+                as for the entire chromatogram. A window value of `0` corresponds
+                to the entire chromatogram. A column `accepted` with a boolean
+                value represents whether the reconstruction is within tolerance (`True`)
+                or (`False`).
+      :rtype: `pandas.core.frame.DataFrame`
+
+      .. rubric:: Notes
+
+      The reconstruction score is defined as
+
+      .. math::
+          R = \frac{\text{area of inferred mixture in window} + 1}{\text{area of observed signal in window} + 1}
+
+      where :math:`t` is the total time of the region, :math:`A` is the inferred
+      peak amplitude, :math:`\alpha` is the inferred skew paramter, :math:`r_t` is
+      the inferred peak retention time, :math:`\sigma` is the inferred scale
+      parameter and :math:`S_i` is the observed signal intensity at time point
+      :math:`i`. Note that the signal and reconstruction is cast to be positive
+      to compute the score.
+
+      A reconstruction score of :math:`R = 1` indicates a perfect
+      reconstruction of the chromatogram. For practical purposes, a chromatogram
+      is deemed to be adequately reconstructed if :math:`R` is within a tolerance
+      :math:`\epsilon` of 1 such that
+
+      .. math::
+          \left| R - 1 \right| \leq \epsilon \Rightarrow \text{Valid Reconstruction}
+
+      Interpeak regions may have a poor reconstruction score due to noise or
+      short durations. To determine if this poor reconstruction score is due
+      to a missed peak, the signal Fano factor of the region is computed as
+
+      .. math::
+          F = \frac{\sigma^2_{S}}{\langle S \rangle}.
+
+      This is compared with the average Fano factor of :math:`N` peak windows such
+      that the Fano factor ratio is
+
+      .. math::
+          \frac{F}{\langle F_{peak} \rangle} = \frac{\sigma^2_{S} / \langle S \rangle}{\frac{1}{N} \sum\limits_{i}^N \frac{\sigma_{S,i}^2}{\langle S_i \rangle}}.
+
+      If the Fano factor ratio is below a tolerance `fano_tol`, then that
+      window is deemed to be noisy and peak-free.
+
+
+   .. py:method:: show(time_range=[])
+
+      Displays the chromatogram with mapped peaks if available.
+
+      :param time_range: Adjust the limits to show a restricted time range. Should
+                         be provided as two floats in the range of [`lower`, `upper`]. Note
+                         that this does not affect the chromatogram directly as in `crop`.
+      :type time_range: `List`
+
+      :returns: * **fig** (`matplotlib.figure.Figure`) -- The matplotlib figure object.
+                * **ax** (`matplotlib.axes._axes.Axes`) -- The matplotlib axis object.
+
+
+

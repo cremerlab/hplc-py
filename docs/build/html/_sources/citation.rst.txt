@@ -8,7 +8,7 @@ are both at Stanford University. Griffin Chure is supported by a National Scienc
 Foundation Postdoctoral Research Fellowship under the award number 2010807. 
 
 Citing `hplc-py`
-----------------
+================
 If you end up using `hplc-py` in your research, great! Please consider citing 
 the project. The package is being actively developed and improved, so please 
 ensure that you cite the version number you are using.
