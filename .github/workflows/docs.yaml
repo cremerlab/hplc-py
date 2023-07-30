@@ -13,9 +13,11 @@ jobs:
           pip install sphinx sphinx_rtd_theme
           pip install nbsphinx 
       - name: Sphinx build
-        run: |
-          pip install pandoc
-          sphinx-build docs/source _build
+          with:
+            pre-build-command: "apt install -y pandoc"
+            docs-folder: 'docs/'
+
+      uses: ammaraskar/sphinx-action@0.4
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
