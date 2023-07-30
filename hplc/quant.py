@@ -961,7 +961,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             raise RuntimeError("No reconstruction found! `.fit_peaks()` must be called first. Go do that.")
 
         # Compute the reconstruction score
-        _score_df = self.score_reconstruction() 
+        _score_df = self._score_reconstruction() 
 
         # Apply the tolerance parameter
         _score_df['applied_tolerance'] = tol
