@@ -85,7 +85,7 @@ def test_shouldered_peaks():
     for g, d in data.groupby('iter'):
         truth = peak_df[peak_df['iter']==g]
         chrom = hplc.quant.Chromatogram(d, cols={'time':'x', 'signal':'y'})
-        peaks = chrom.fit_peaks(enforced_locations=[11],# truth['retention_time'].values,
+        peaks = chrom.fit_peaks(enforced_locations=[11],
                                 correct_baseline=False,
                                 enforcement_tolerance=0.5)
 
@@ -103,7 +103,7 @@ def test_add_peak():
     props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
     peak_df = pd.read_csv('./tests/test_data/test_shallow_signal_peaks.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
-    peaks = chrom.fit_peaks(enforced_locations=[25.0], correct_baseline=False, prominence=0.5)
+    peaks = chrom.fit_peaks(enforced_locations=[50.0], correct_baseline=False, prominence=0.5)
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
 
@@ -120,9 +120,3 @@ def test_score_reconstruction():
     for g, d in scores.groupby(['window_id', 'window_type']):
         _d = fit_scores[(fit_scores['window_id']==g[0]) & (fit_scores['window_type']==g[1])]['status'].values
         assert (_d == d['status'].values).all()
-
-
-
-import importlib
-importlib.reload(hplc.quant)
-test_score_reconstruction()

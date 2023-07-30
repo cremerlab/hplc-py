@@ -36,4 +36,3 @@ for i in range(n_peaks):
 
 ax.plot(x, sig, color='k', linewidth=3, zorder=1000)
 plt.savefig('./page_logo_dists.pdf')
-e%%

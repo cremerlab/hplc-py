@@ -146,7 +146,7 @@ sig2 = 10 * scipy.stats.norm(50, 3).pdf(x)
 sig = sig1 + sig2
 df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
 df.to_csv('./test_data/test_shallow_signal_chrom.csv', index=False)
-peak_df = pd.DataFrame(np.array([[10, 25], [1, 3], [0, 0], [100, 10], 
+peak_df = pd.DataFrame(np.array([[10, 50], [1, 3], [0, 0], [100, 10], 
                                  [sig1.sum(), sig2.sum()], [1, 2]]).T,
                        columns = ['retention_time', 'scale', 'skew',
                                   'amplitude', 'area', 'peak_idx'])
