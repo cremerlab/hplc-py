@@ -1,20 +1,23 @@
-#%%
+# %%
 import hplc.quant
 import pandas as pd
 import numpy as np
+
 
 def compare(a, b, tol):
     """
     Compares all elements in a and b and assigns equality within a tolerance, 
     accounting for annoying values near zero.
     """
-    a = np.round(a, decimals=int(np.abs(np.round(np.log10(tol)))))
-    b = np.round(b, decimals=int(np.abs(np.round(np.log10(tol))))) 
-    _zeros = b == 0 
+    dec = int(np.abs(np.round(np.log10(tol))))
+    a = np.round(a, decimals=dec)
+    b = np.round(b, decimals=dec)
+    _zeros = b == 0
     b[_zeros] = np.sign(a[_zeros]) * tol
     assert np.isclose(a, b, rtol=tol).all()
 
-def fit_peaks(test_data, truth, colnames={'time':'x', 'signal':'y'}, tol=1.5E-2):
+
+def fit_peaks(test_data, truth, colnames={'time': 'x', 'signal': 'y'}, tol=1.5E-2):
     """
     Uses the `hplc.quant.Chromatogram.quantify` method to fit peaks in a chromatogram
     and compares the value with the ground truth.
@@ -26,12 +29,13 @@ def fit_peaks(test_data, truth, colnames={'time':'x', 'signal':'y'}, tol=1.5E-2)
     chrom = hplc.quant.Chromatogram(test_data, cols=colnames)
     peaks = chrom.fit_peaks(correct_baseline=False, prominence=1E-3)
 
-    # Enforce that the correct number of peaks have been identified    
+    # Enforce that the correct number of peaks have been identified
     assert len(peaks) == truth['peak_idx'].max()
 
     # Enforce that the inferred peak parameters are within a tolerance of 1%
-    for p in props:  
+    for p in props:
         compare(peaks[p].values, truth[p].values, tol)
+
 
 def test_peak_fitting():
     """
@@ -43,8 +47,9 @@ def test_peak_fitting():
     chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv')
     peak_df = pd.read_csv('./tests/test_data/test_fitting_peaks.csv')
     for g, d in chrom_df.groupby('iter'):
-        truth = peak_df[peak_df['iter']==g]
+        truth = peak_df[peak_df['iter'] == g]
         fit_peaks(d, truth)
+
 
 def test_peak_unmixing():
     """
@@ -56,7 +61,7 @@ def test_peak_unmixing():
     peak_df = pd.read_csv('./tests/test_data/test_unmix_peaks.csv')
     for g, d in chrom_df.groupby('iter'):
         # Select true peak info
-        truth = peak_df[peak_df['iter']==g]
+        truth = peak_df[peak_df['iter'] == g]
         fit_peaks(d, truth)
 
 
@@ -67,11 +72,12 @@ def test_bg_estimation():
     """
     tol = 1.5E-2
     data = pd.read_csv('./tests/test_data/test_SNIP_chrom.csv')
-    chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
+    chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
     chrom.correct_baseline(window=0.5)
     window = int(0.5 / np.mean(np.diff(data['x'].values)))
     assert np.isclose(chrom.df['estimated_background'].values[window:-window],
                       data['bg'].values[window:-window], rtol=tol).all()
+
 
 def test_shouldered_peaks():
     """
@@ -83,8 +89,8 @@ def test_shouldered_peaks():
     peak_df = pd.read_csv('./tests/test_data/test_manual_unmix_peaks.csv')
     props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
     for g, d in data.groupby('iter'):
-        truth = peak_df[peak_df['iter']==g]
-        chrom = hplc.quant.Chromatogram(d, cols={'time':'x', 'signal':'y'})
+        truth = peak_df[peak_df['iter'] == g]
+        chrom = hplc.quant.Chromatogram(d, cols={'time': 'x', 'signal': 'y'})
         peaks = chrom.fit_peaks(enforced_locations=[11],
                                 correct_baseline=False,
                                 enforcement_tolerance=0.5)
@@ -92,6 +98,7 @@ def test_shouldered_peaks():
         assert len(peaks) == len(truth)
         for p in props:
             compare(peaks[p].values, truth[p].values, tol)
+
 
 def test_add_peak():
     """
@@ -102,10 +109,12 @@ def test_add_peak():
     data = pd.read_csv('./tests/test_data/test_shallow_signal_chrom.csv')
     props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
     peak_df = pd.read_csv('./tests/test_data/test_shallow_signal_peaks.csv')
-    chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
-    peaks = chrom.fit_peaks(enforced_locations=[50.0], correct_baseline=False, prominence=0.5)
+    chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
+    peaks = chrom.fit_peaks(
+        enforced_locations=[50.0], enforced_widths=[3], prominence=0.5, correct_baseline=False)
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
+
 
 def test_score_reconstruction():
     """
@@ -114,9 +123,10 @@ def test_score_reconstruction():
     """
     data = pd.read_csv('./tests/test_data/test_assessment_chrom.csv')
     scores = pd.read_csv('./tests/test_data/test_assessment_scores.csv')
-    chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
-    _ = chrom.fit_peaks(prominence=0.5)
-    fit_scores =  chrom.assess_fit(tol=1E-3)
+    chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
+    _ = chrom.fit_peaks(prominence=0.9, rel_height=0.99)
+    fit_scores = chrom.assess_fit(tol=1E-3, verbose=False)
     for g, d in scores.groupby(['window_id', 'window_type']):
-        _d = fit_scores[(fit_scores['window_id']==g[0]) & (fit_scores['window_type']==g[1])]['status'].values
+        _d = fit_scores[(fit_scores['window_id'] == g[0]) & (
+            fit_scores['window_type'] == g[1])]['status'].values
         assert (_d == d['status'].values).all()
