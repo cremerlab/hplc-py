@@ -151,7 +151,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
     def _assign_windows(self, enforced_locations=[], enforced_widths=[],
                         enforcement_tolerance=0.5,
-                        prominence=0.01, rel_height=0.95, buffer=100):
+                        prominence=0.01, rel_height=1, buffer=100):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
 
@@ -174,7 +174,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             background. Default is 1%.
         rel_height : `float`, [0, 1]
             The relative height of the peak where the baseline is determined. 
-            Default is 95%.
+            Default is 1.
         buffer : positive `int`
             The padding of peak windows in units of number of time steps. Default 
             is 100 points on each side of the identified peak window.
@@ -188,13 +188,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             the window IDs. Window ID of -1 corresponds to area not assigned to 
             any peaks
         """
-        for param, param_name, param_type in zip([prominence, rel_height, buffer],
-                                                 ['prominence', 'rel_height',
-                                                     'buffer'],
-                                                 [float, float, int]):
-            if type(param) is not param_type:
-                raise TypeError(
-                    f'Parameter {param_name} must be of type `{param_type}`. Type `{type(param)}` was supplied.')
         if (prominence < 0) | (prominence > 1):
             raise ValueError(f'Parameter `prominence` must be [0, 1].')
         if (rel_height < 0) | (rel_height > 1):
@@ -241,7 +234,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
                     _, _, __left, __right = scipy.signal.peak_widths(_intensity,
                                                                      self._peak_indices,
-                                                                     rel_height=1)
+                                                                     rel_height=rel_height)
                     _left[inds] = __left[inds]
                     _right[inds] = __right[inds]
 
@@ -599,7 +592,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     'retention_time': p[1],
                     'scale': p[2],
                     'alpha': p[3],
-                    'area': self._compute_skewnorm(v['time_range'], *p).sum(),
+                    'area': self._compute_skewnorm(self.df[self.time_col].values, *p).sum(),
                     'reconstructed_signal': self._compute_skewnorm(v['time_range'], *p)}
             peak_props[k] = window_dict
 
@@ -607,7 +600,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         return peak_props
 
     def fit_peaks(self, enforced_locations=[], enforced_widths=[],
-                  enforcement_tolerance=0.5, prominence=1E-2, rel_height=1.0,
+                  enforcement_tolerance=0.5, prominence=1E-2, rel_height=1,
                   approx_peak_width=5, buffer=100, param_bounds={}, verbose=True, return_peaks=True,
                   correct_baseline=True, max_iter=1000000, precision=9,
                   **optimizer_kwargs):
@@ -792,12 +785,15 @@ check if the subtraction is acceptable!
         # Clip the signal if the median value is negative
         if (signal < 0).any():
             shift = np.median(signal[signal < 0])
-            warnings.warn("""
+            if np.round(np.abs(shift), decimals=1) != 0:
+                warnings.warn("""
 \x1b[30m\x1b[43m\x1b[1m
-Chromatogram has a negative median value, suggesting that the baseline is 
+Chromatogram many negative points larger than -0.01, suggesting that the baseline is 
 consistently negative. I'll try to correct this, but proceed with cauchin and visually
 check if the subtraction is acceptable!
 \x1b[0m""")
+            else:
+                shift = 0
         else:
             shift = 0
 
