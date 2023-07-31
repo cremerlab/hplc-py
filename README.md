@@ -3,6 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Run tests](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml/badge.svg)](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml)
 [![codecov](https://codecov.io/gh/cremerlab/hplc-py/branch/main/graph/badge.svg?token=WXL50JVR6C)](https://codecov.io/gh/cremerlab/hplc-py)
+[![PyPI version](https://badge.fury.io/py/hplc-py.svg)](https://badge.fury.io/py/hplc-py)
 # About
 
 **H**igh-**P**erformance **L**iquid **C**hromatography (HPLC) is an analytical
@@ -14,21 +15,11 @@ HPLC the most time-consuming part of the quantification.
 
 # Installation
 
-Hplc-Py is not yet *officially released*, but will installable via pip in the 
-very near future.
+You can install `hplc-py` on pip:
 
 ```
 $ pip install --upgrade hplc-py
 ``` 
-
-<!-- 
-If you like danger and think error messages make your terminal look cool, you
-can install the pre-release developer version 
-
-```
-$ pip install git+https://github.com/cremerlab/hplc-py.git@dev#egg=tqdm
-``` -->
-
 
 ## License
 This software is released under the GNU General Public License version 3 (GPLv3). The complete license is provided as `LICENSE.txt`, but a brief description is as follows:
