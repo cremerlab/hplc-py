@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import pathlib
 
-__version__ = "0.1.0.post1"
+__version__ = "0.1.01"
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -24,6 +24,7 @@ setup(
     ],
     author="Griffin Chure",
     author_email="griffinchure@gmail.com",
-    packages=find_packages(exclude=('docs', 'docs', 'hplc.egg-info')),
+    packages=find_packages(
+        exclude=('docs', 'doc', 'sandbox', 'dev', 'hplc.egg-info')),
     include_package_data=True
 )
