@@ -517,9 +517,10 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                  desc='Deconvolving mixture')
         else:
             iterator = self.window_props.items()
-        if (len(param_bounds)) > 0 & (param_bounds.keys() not in ['amplitude', 'location', 'scale', 'skew']):
-            raise ValueError(
-                f"`param_bounds` must have keys of `amplitude`, `location`, `scale`, and `skew`. Provided keys are {param_bounds.keys()}")
+
+        # if (len(param_bounds)) > 0 & (param_bounds.keys() not in ['amplitude', 'location', 'scale', 'skew']):
+        #     raise ValueError(
+        #         f"`param_bounds` must have keys of `amplitude`, `location`, `scale`, and `skew`. Provided keys are {param_bounds.keys()}")
         peak_props = {}
         for k, v in iterator:
             window_dict = {}
@@ -545,34 +546,29 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 p0.append(v['width'][i] / 2)  # scale parameter
                 p0.append(0)  # Skew parameter, starts with assuming Gaussian
 
-                if len(param_bounds) == 0:
-                    # Lower bounds
-                    bounds[0].append(
-                        np.min([0.1 * v['amplitude'][i], 10 * v['amplitude'][i]]))
-                    bounds[0].append(v['time_range'].min())
-                    bounds[0].append(self._dt)
-                    bounds[0].append(-np.inf)
-                    # Upper bounds
-                    bounds[1].append(
-                        np.max([10 * v['amplitude'][i], 0.1 * v['amplitude'][i]]))
-                    bounds[1].append(v['time_range'].max())
-                    bounds[1].append(
-                        (v['time_range'].max() - v['time_range'].min())/2)
-                    bounds[1].append(np.inf)
-                else:
-                    bounds[0].append(param_bounds['amplitude']
-                                     [0] * v['amplitude'][i])
-                    bounds[0].append(
-                        v['location'] - param_bounds['location'][0])
-                    bounds[0].append(param_bounds['scale'][0])
-                    bounds[0].append(param_bounds['skew'][0])
-                    # Upper bounds
-                    bounds[1].append(param_bounds['amplitude']
-                                     [1] * v['amplitude'][i])
-                    bounds[1].append(
-                        v['location'] + param_bounds['location'][1])
-                    bounds[1].append(param_bounds['scale'][1])
-                    bounds[1].append(param_bounds['skew'][1])
+                # Set default parameter bounds
+                _param_bounds = {'amplitude': np.sort([0.1 * v['amplitude'][i], 10 * v['amplitude'][i]]),
+                                 'location': [v['time_range'].min(), v['time_range'].max()],
+                                 'scale': [self._dt, (v['time_range'].max() - v['time_range'].min())/2],
+                                 'skew': [-np.inf, np.inf]}
+                # Modify the parameter bounds given arguments
+                if len(param_bounds) != 0:
+                    if 'amplitude' in param_bounds.keys():
+                        _amp = param_bounds['amplitude']
+                        _param_bounds['amplitude'] = np.sort(
+                            [_amp[0] * v['amplitude'][i], _amp[1] * v['amplitude'][i]])
+                    if 'location' in param_bounds.keys():
+                        _loc = param_bounds['location']
+                        _param_bounds['location'] = [v['location'][i] - _loc[0],
+                                                     v['location'][i] + _loc[1]]
+                    if 'scale' in param_bounds.keys():
+                        _param_bounds['scale'] = param_bounds['scale']
+                    if 'skew' in param_bounds.keys():
+                        _param_bounds['skew'] = param_bounds['skew']
+
+                for _, val in _param_bounds.items():
+                    bounds[0].append(val[0])
+                    bounds[1].append(val[1])
 
             # Perform the inference
             popt, pcov = scipy.optimize.curve_fit(self._fit_skewnorms, v['time_range'],
