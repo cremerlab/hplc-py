@@ -4,6 +4,9 @@
 [![Run tests](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml/badge.svg)](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml)
 [![codecov](https://codecov.io/gh/cremerlab/hplc-py/branch/main/graph/badge.svg?token=WXL50JVR6C)](https://codecov.io/gh/cremerlab/hplc-py)
 [![PyPI version](https://badge.fury.io/py/hplc-py.svg)](https://badge.fury.io/py/hplc-py)
+[![DOI](https://zenodo.org/badge/667610900.svg)](https://zenodo.org/badge/latestdoi/667610900)
+
+
 # About
 
 **H**igh-**P**erformance **L**iquid **C**hromatography (HPLC) is an analytical

@@ -1,6 +1,22 @@
 .. image:: _static/page_logo.svg
    :align: center
 
+.. image:: https://img.shields.io/badge/License-GPLv3-blue.svg
+   :target: https://www.gnu.org/licenses/gpl-3.0
+
+.. image:: https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml/badge.svg
+   :target: https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml
+
+.. image:: https://codecov.io/gh/cremerlab/hplc-py/branch/main/graph/badge.svg?token=WXL50JVR6C
+   :target: https://codecov.io/gh/cremerlab/hplc-py
+ 
+.. image:: https://badge.fury.io/py/hplc-py.svg
+   :target: https://pypi.org/project/hplc-py/#description 
+
+.. image:: https://zenodo.org/badge/667610900.svg
+   :target: https://zenodo.org/badge/latestdoi/667610900
+
+
 ----
 
 About
@@ -24,13 +40,7 @@ You can install `hplc-py` using pip::
    $ pip install --upgrade hplc-py
 
 
-If you like danger and think error messages make your terminal look pretty, you
-can install the pre-release developer version::
-
-$ pip install git+https://github.com/cremerlab/hplc-py.git@main#egg=hplc-py
-
-
-Hplc-py has the following dependencies:
+Dependencies for `hplc-py` are as follows:
 
 - Python 3.9 or newer
 - NumPy_ 

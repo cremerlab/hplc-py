@@ -13,6 +13,16 @@ If you end up using `hplc-py` in your research, great! Please consider citing
 the project. The package is being actively developed and improved, so please 
 ensure that you cite the version number you are using.
 
+.. code-block:: bibtex
+    @misc{#10.5281/zenodo.8197910,
+          doi = {10.5281/zenodo.8197910}
+          url = {https://doi.org/10.5281/zenodo.8197910},
+          author = {Chure, Griffin and Cremer, Jonas},
+          keywords = {Github},
+          title = {cremerlab/hplc-py: Version 0.1.01},
+          publisher = {Zenodo},
+          year = {2023}
+}
 
 .. note::
     A formal bibtex citation key will be included here when the repository is 

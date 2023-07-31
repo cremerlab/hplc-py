@@ -1,0 +1,14 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Chure"
+  given-names: "Griffin"
+  orcid: "https://orcid.org/0000-0002-2216-2057"
+- family-names: "Cremer"
+  given-names: "Jonas"
+  orcid: "https://orcid.org/0000-0003-2328-5152"
+title: "hplc-py v0.1.01"
+version: 0.1.01
+doi: 10.5281/zenodo.8197910
+date-released: 2023-07-30
+url: "https://github.com/cremerlab/hplc-py"
