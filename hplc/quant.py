@@ -807,10 +807,10 @@ check if the subtraction is acceptable!
             iter = tqdm.tqdm(range(1, n_iter),
                              desc="Performing baseline correction")
         else:
-            iter = range(1, n_iter)
+            iter = range(1, n_iter + 1)
         for i in iter:
             tform_new = tform.copy()
-            for j in range(i, len(tform) - i):
+            for j in range(1, len(tform) - i):
                 tform_new[j] = min(tform_new[j], 0.5 *
                                    (tform_new[j+i] + tform_new[j-i]))
             tform = tform_new
@@ -990,7 +990,7 @@ check if the subtraction is acceptable!
         self.scores = score_df
         return score_df
 
-    def assess_fit(self, tol=1E-2, fano_tol=1E-3, verbose=True):
+    def assess_fit(self, tol=1E-2, fano_tol=1E-2, verbose=True):
         R"""
         Assesses whether the computed reconstruction score is adequate, given a tolerance.
 

@@ -65,6 +65,8 @@ Dependencies for `hplc-py` are as follows:
    :hidden:
    
    getting_started/quickstart.ipynb
+   algorithm/methodology.ipynb
+   algorithm/baseline_correction.ipynb
 
 
 .. toctree::
