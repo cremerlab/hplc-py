@@ -8,4 +8,5 @@
 *.pdf
 *.svg
 *pytest*
+*.venv
 docs/build
