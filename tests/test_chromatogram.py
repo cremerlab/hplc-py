@@ -68,7 +68,7 @@ def test_peak_unmixing():
 def test_bg_estimation():
     """
     Tests that a background signal with a known profile can be correctly estimated 
-    within 2% of the ground truth with a fixed window size.
+    within 1.5% of the ground truth with a fixed window size.
     """
     tol = 1.5E-2
     data = pd.read_csv('./tests/test_data/test_SNIP_chrom.csv')
@@ -81,7 +81,7 @@ def test_bg_estimation():
 
 def test_shouldered_peaks():
     """
-    Tests that manually applied peaks can be properly deconvolved to within 2% 
+    Tests that manually applied peaks can be properly deconvolved to within 1.5% 
     of the known parameter values.
     """
     tol = 1.5E-2
@@ -103,7 +103,7 @@ def test_shouldered_peaks():
 def test_add_peak():
     """
     Tests that a peak that is not automatically detected that is not within 
-    an extant peak window can be identified and deconvolved to within 2% of
+    an extant peak window can be identified and deconvolved to within 1.5% of
     the known parameter values.    
     """
     data = pd.read_csv('./tests/test_data/test_shallow_signal_chrom.csv')
