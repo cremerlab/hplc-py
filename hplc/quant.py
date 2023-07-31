@@ -116,7 +116,6 @@ class Chromatogram(object):
         self._mapped_peaks = None
         self._added_peaks = None
         self.unmixed_chromatograms = None
-        self.warning_message = ''
 
     def crop(self, time_window=None, return_df=False):
         R"""
@@ -791,8 +790,8 @@ check if the subtraction is acceptable!
 \x1b[0m""")
 
         # Clip the signal if the median value is negative
-        if np.median(signal) < 0:
-            shift = np.median(signal)
+        if (signal < 0).any():
+            shift = np.median(signal[signal < 0])
             warnings.warn("""
 \x1b[30m\x1b[43m\x1b[1m
 Chromatogram has a negative median value, suggesting that the baseline is 
