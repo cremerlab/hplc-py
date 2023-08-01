@@ -1,4 +1,5 @@
 # %%
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
 import pandas as pd
@@ -88,16 +89,23 @@ peaks.to_csv('./test_data/test_unmix_peaks.csv', index=False)
 np.random.seed(666)
 n_peaks = 10
 x = np.arange(0, 40, dt)
-sig = np.zeros_like(x)
-amps = np.abs(np.random.normal(100, 30, n_peaks))
+bg = np.zeros_like(x)
+amps = np.abs(np.random.normal(200, 30, n_peaks))
 loc = np.abs(np.random.uniform(-10, 40, n_peaks))
 scale = np.abs(np.random.normal(10, 2, n_peaks))
 for i in range(n_peaks):
-    sig += amps[i] * scipy.stats.norm(loc[i], scale[i]).pdf(x)
+    bg += amps[i] * scipy.stats.norm(loc[i], scale[i]).pdf(x)
+
+
+for i in range(5):
+    if i == 0:
+        sig = 100 * scipy.stats.norm(5, 0.1).pdf(x)
+    else:
+        sig += 100 * scipy.stats.norm(5 + 7 * i, 0.1).pdf(x)
 
 # Add strong candidate signal
-noise = np.random.exponential(size=len(x))
-df = pd.DataFrame(np.array([x, sig, sig + noise]).T, columns=['x', 'bg', 'y'])
+noise = np.random.normal(size=len(x))
+df = pd.DataFrame(np.array([x, bg, sig + bg]).T, columns=['x', 'bg', 'y'])
 df.to_csv('./test_data/test_SNIP_chrom.csv', index=False)
 
 # %%

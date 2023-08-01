@@ -801,16 +801,17 @@ check if the subtraction is acceptable!
 
         # Compute the number of iterations given the window size.
         n_iter = int(((window / self._dt) - 1) / 2)
+        window_step = int(window / self._dt)
 
         # Iteratively filter the signal
         if verbose:
-            iter = tqdm.tqdm(range(1, n_iter),
+            iter = tqdm.tqdm(range(1, n_iter + 1),
                              desc="Performing baseline correction")
         else:
             iter = range(1, n_iter + 1)
         for i in iter:
             tform_new = tform.copy()
-            for j in range(1, len(tform) - i):
+            for j in range(i, len(tform) - i):
                 tform_new[j] = min(tform_new[j], 0.5 *
                                    (tform_new[j+i] + tform_new[j-i]))
             tform = tform_new
