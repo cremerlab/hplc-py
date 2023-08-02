@@ -138,12 +138,13 @@ class Chromatogram(object):
             raise RuntimeError("""
 You are trying to crop a chromatogram after it has been fit. Make sure that you 
 do this before calling `fit_peaks()` or provide the argument `time_window` to the `fit_peaks()`.""")
-        if type(time_window) != list:
-            raise TypeError(
-                f'`time_window` must be of type `list`. Type {type(time_window)} was proivided')
         if len(time_window) != 2:
             raise ValueError(
                 f'`time_window` must be of length 2 (corresponding to start and end points). Provided list is of length {len(time_window)}.')
+        if time_window[0] >= time_window[1]: 
+            raise RuntimeError(f'First index in `time_window` must be ≤ second index.')
+        
+        # Apply the crop and return
         self.df = self.df[(self.df[self.time_col] >= time_window[0]) &
                           (self.df[self.time_col] <= time_window[1])]
         if return_df:
@@ -192,8 +193,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             raise ValueError(f'Parameter `prominence` must be [0, 1].')
         if (rel_height < 0) | (rel_height > 1):
             raise ValueError(f' `rel_height` must be [0, 1].')
-        if (buffer < 0):
-            raise ValueError('Parameter `buffer` cannot be less than 0.')
 
         # Correct for a negative baseline
         df = self.df
@@ -518,9 +517,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         else:
             iterator = self.window_props.items()
 
-        # if (len(param_bounds)) > 0 & (param_bounds.keys() not in ['amplitude', 'location', 'scale', 'skew']):
-        #     raise ValueError(
-        #         f"`param_bounds` must have keys of `amplitude`, `location`, `scale`, and `skew`. Provided keys are {param_bounds.keys()}")
         peak_props = {}
         for k, v in iterator:
             window_dict = {}
@@ -853,6 +849,7 @@ check if the subtraction is acceptable!
         """
         # Create a mapper for peak id to compound
         mapper = {}
+        unmapped = {}
         peak_df = self.peaks.copy()
         for k, v in params.items():
             ret_time = v['retention_time']
@@ -864,8 +861,7 @@ check if the subtraction is acceptable!
                     f"Multiple compounds found within tolerance of retention time for {k}. Reduce the tolerance or correct the provided value.")
 
             if np.sum(peak_id) == 0:
-                warnings.warn(
-                    f"\nNo peak found for {k} (retention time {v['retention_time']}) within the provided tolerance.")
+                unmapped[k] = v['retention_time']
                 break
             peak_id = peak_df.peak_id.values[np.argmax(peak_id)]
             peak_df.loc[peak_df['peak_id'] == peak_id, 'compound'] = k
@@ -873,6 +869,11 @@ check if the subtraction is acceptable!
         if len(mapper) == 0:
             raise ValueError(
                 "No peaks could be properly mapped! Check your provided retention times.")
+        if len(unmapped) > 0:
+            for k, v in unmapped.items():
+               warnings.warn(
+                    f"\nNo peak found for {k} (retention time {v['retention_time']}) within the provided tolerance.")
+  
 
         # Iterate through the compounds and calculate the concentration.
         for g, d in peak_df.groupby('compound'):
