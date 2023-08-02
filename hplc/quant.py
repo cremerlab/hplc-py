@@ -780,19 +780,9 @@ check if the subtraction is acceptable!
 
         # Clip the signal if the median value is negative
         if (signal < 0).any():
-            shift = np.median(signal[signal < 0])
-            if np.round(np.abs(shift), decimals=1) != 0:
-                warnings.warn("""
-\x1b[30m\x1b[43m\x1b[1m
-Chromatogram many negative points larger than -0.01, suggesting that the baseline is 
-consistently negative. I'll try to correct this, but proceed with cauchin and visually
-check if the subtraction is acceptable!
-\x1b[0m""")
-            else:
-                shift = 0
+            shift = np.median(signal[signal < 0]) 
         else:
             shift = 0
-
         signal -= shift
         signal *= np.heaviside(signal, 0)
 
@@ -801,7 +791,6 @@ check if the subtraction is acceptable!
 
         # Compute the number of iterations given the window size.
         n_iter = int(((window / self._dt) - 1) / 2)
-        window_step = int(window / self._dt)
 
         # Iteratively filter the signal
         if verbose:
@@ -1069,7 +1058,9 @@ check if the subtraction is acceptable!
         mean_fano = _score_df[_score_df['window_type']
                               == 'peak']['signal_fano_factor'].mean()
         for g, d in _score_df.groupby(['window_type', 'window_id']):
-            tolpass = np.abs(d['reconstruction_score'].values[0] - 1) <= tol
+            
+            tolpass = np.round(np.abs(d['reconstruction_score'].values[0] - 1), 
+                        decimals=int(np.abs(np.ceil(np.log10(tol))))) <= tol
 
             d = d.copy()
             if g[0] == 'peak':
