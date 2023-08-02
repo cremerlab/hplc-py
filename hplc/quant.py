@@ -93,13 +93,7 @@ class Chromatogram(object):
         # but values will typically be identical.
         self._dt = np.mean(np.diff(dataframe[self.time_col].values))
 
-        # Prune to time window
-        if time_window is not None:
-            self.crop(time_window)
-        else:
-            self.df = dataframe
-
-        # Blank out vars that are used elsewhere
+       # Blank out vars that are used elsewhere
         self.window_props = None
         self.scores = None
         self._peak_indices = None
@@ -109,6 +103,14 @@ class Chromatogram(object):
         self._mapped_peaks = None
         self._added_peaks = None
         self.unmixed_chromatograms = None
+
+        # Prune to time window
+        if time_window is not None:
+            self.crop(time_window)
+        else:
+            self.df = dataframe
+
+ 
 
     def crop(self, time_window=None, return_df=False):
         R"""
