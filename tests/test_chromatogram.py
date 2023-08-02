@@ -1,9 +1,8 @@
 # %%
-import matplotlib.pyplot as plt
-import importlib
 import hplc.quant
 import pandas as pd
 import numpy as np
+import pytest
 
 def compare(a, b, tol):
     """
@@ -44,9 +43,18 @@ def test_peak_fitting():
     1% of the true value. If true parameter values are close to zero, victory is declared 
     if the estimated parameter is within 0.01.
     """
+    # Make sure it fails if anything other than a dataframe is given. 
+    try:
+        chrom = hplc.quant.Chromatogram('test', cols={'time':'x', 'signal':'y'})
+        assert False
+    except RuntimeError:
+        assert True
+
     # Load test data
     chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv')
     chrom = hplc.quant.Chromatogram(chrom_df, cols={'time':'x', 'signal':'y'})
+
+
     try:
         chrom._assign_windows(prominence=-1)
     except ValueError:
@@ -63,6 +71,13 @@ def test_peak_fitting():
         chrom._assign_windows(rel_height=2)
     except ValueError:
         assert True
+
+    # Make sure a warning is thrown if a given buffer is < 10
+    chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv') 
+    chrom = hplc.quant.Chromatogram(chrom_df[chrom_df['iter']==1], cols={'time':'x', 'signal':'y'})
+    with pytest.warns():
+        chrom.fit_peaks(buffer=9)
+
     peak_df = pd.read_csv('./tests/test_data/test_fitting_peaks.csv')
     for g, d in chrom_df.groupby('iter'):
         truth = peak_df[peak_df['iter'] == g]
@@ -95,6 +110,14 @@ def test_bg_estimation():
     window = int(0.5 / np.mean(np.diff(data['x'].values)))
     assert np.isclose(chrom.df['estimated_background'].values[window:-window],
                       data['bg'].values[window:-window], rtol=tol).all()
+
+    with pytest.warns():
+        chrom.correct_baseline(window=0.5)
+
+    data['y'] -= 100 
+    chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
+    with pytest.warns():
+        chrom.correct_baseline(window=0.5)
 
 
 def test_shouldered_peaks():
@@ -175,6 +198,11 @@ def test_crop():
     except RuntimeError:
         assert True
 
+    # Test that cropping happens if a time window is provided.
+    chrom = hplc.quant.Chromatogram(data, time_window=[10, 20], 
+                                    cols={'time':'x', 'signal':'y'})
+    assert (chrom.df.x.values[0] >= 10) & (chrom.df.x.values[-1] <= 20)
+
 def test_deconvolve_peaks():
     """
     Tests that exception is properly thrown if peak fitting hasn't been performed.
@@ -226,3 +254,15 @@ def test_map_peaks():
         assert False
     except ValueError:
         assert True
+    with pytest.warns():
+        params['test'] = {'retention_time': 1000}
+        peaks = chrom.map_peaks(params)
+
+def test_many_peaks():
+    """
+    Ensures that a warning is raised if there are 10 or more peaks in a given window. 
+    """
+    data = pd.read_csv('./tests/test_data/test_many_peaks.csv')
+    chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
+    with pytest.warns():  
+        chrom.fit_peaks()

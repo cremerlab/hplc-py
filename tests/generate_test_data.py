@@ -189,3 +189,15 @@ score_df['window_type'] = ['interpeak',
                            'interpeak', 'interpeak', 'peak', 'peak']
 score_df['status'] = ['needs review', 'invalid', 'valid', 'invalid', 'valid']
 score_df.to_csv('./test_data/test_assessment_scores.csv', index=False)
+
+#%%
+# ##############################################################################
+# TEST DATA FOR  MANY PEAKS IN A WINDOW
+# ##############################################################################
+x = np.arange(0, 70, dt)
+locs = np.linspace(10, 55, 10)
+sig = np.zeros_like(x)
+for i in range(len(locs)):
+    sig += 100 * scipy.stats.norm(locs[i], 1).pdf(x)
+df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
+df.to_csv('./test_data/test_many_peaks.csv', index=False)

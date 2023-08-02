@@ -77,16 +77,9 @@ class Chromatogram(object):
        """
 
         # Peform type checks and throw exceptions where necessary.
-        if (type(file) is not str) & (type(file) is not pd.core.frame.DataFrame):
+        if (type(file) is not pd.core.frame.DataFrame):
             raise RuntimeError(
-                f'Argument must be either a filepath or pandas DataFrame. Argument is of type {type(file)}')
-        if (time_window is not None):
-            if type(time_window) != list:
-                raise TypeError(
-                    f'`time_window` must be of type `list`. Type {type(time_window)} was proivided')
-            if len(time_window) != 2:
-                raise ValueError(
-                    f'`time_window` must be of length 2 (corresponding to start and end points). Provided list is of length {len(time_window)}.')
+                f'Argument must be a Pandas DataFrame. Argument is of type {type(file)}')
 
         # Assign class variables
         self.time_col = cols['time']
@@ -673,7 +666,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         """
         if buffer < 10:
             warnings.warn(
-                "Provided buffer  is {buffer}, but must be ≥ 10. Casting to 10.")
+                "Provided buffer  is {buffer}, but must be ≥ 10. Casting to 10.",
+                category=UserWarning)
             buffer = 10
         if correct_baseline and not self._bg_corrected:
             self.correct_baseline(window=approx_peak_width,
@@ -872,7 +866,7 @@ check if the subtraction is acceptable!
         if len(unmapped) > 0:
             for k, v in unmapped.items():
                warnings.warn(
-                    f"\nNo peak found for {k} (retention time {v['retention_time']}) within the provided tolerance.")
+                    f"\nNo peak found for {k} (retention time {v}) within the provided tolerance.")
   
 
         # Iterate through the compounds and calculate the concentration.
