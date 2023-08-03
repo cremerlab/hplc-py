@@ -110,8 +110,6 @@ class Chromatogram(object):
         else:
             self.df = dataframe
 
- 
-
     def crop(self, time_window=None, return_df=False):
         R"""
         Restricts the time dimension of the DataFrame in place.
@@ -198,7 +196,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         self.normint = int_sign * norm_int
         # Preform automated peak detection and set window ranges
         peaks, _ = scipy.signal.find_peaks(
-            int_sign * norm_int, prominence=prominence)
+            int_sign * norm_int, prominence=prominence, **peak_kwargs)
         self._peak_indices = peaks
 
         # Get the amplitudes and the indices of each peak
@@ -590,7 +588,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                   enforcement_tolerance=0.5, prominence=1E-2, rel_height=1,
                   approx_peak_width=5, buffer=100, param_bounds={}, verbose=True, return_peaks=True,
                   correct_baseline=True, max_iter=1000000, precision=9,
-                  **optimizer_kwargs):
+                  peak_kwargs={}, optimizer_kwargs={}):
         R"""
         Detects and fits peaks present in the chromatogram
 
@@ -613,8 +611,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             background. Default is 1%. If `locations` is provided, this is 
             not used.
         rel_height : `float`, [0, 1]
-            The relative height of the peak where the baseline is determined. 
-            Default is 100%. If `locations` is provided, this is not used.
+            The relative height of the peak where the baseline is determined. This
+            is used to split into windows and is *not* used for peak detection.
+            Default is 100%. 
         approx_peak_width: `float`, optional
             The approximate width of the signal you want to quantify. This is 
             used as filtering window for automatic baseline correction. If `correct_baseline==False`,
@@ -642,7 +641,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         precision : `int`
             The number of decimals to round the reconstructed signal to. Default
             is 9.
-        **optimizer_kwargs : `dict`
+        peak_kwargs : `dict`
+            Additional arguments to be passed to `scipy.signal.find_peaks`.
+        optimizer_kwargs : `dict`
             Additional arguments to be passed to `scipy.optimize.curve_fit`.
 
         Returns
