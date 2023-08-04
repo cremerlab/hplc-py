@@ -531,7 +531,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 | on how well resolved the peaks are. Reduce `buffer` if the peaks in this      
 | window should be separable by eye. Or maybe just go get something to drink.
 --------------------------------------------------------------------------------
-""") 
+""")        
+            adjusted_bounds = False 
             for i in range(v['num_peaks']):
                 p0.append(v['amplitude'][i])
                 p0.append(v['location'][i]),
@@ -552,7 +553,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                             [_amp[0] * v['amplitude'][i], _amp[1] * v['amplitude'][i]])
                     if 'location' in general_param_bounds.keys():
                         _loc = general_param_bounds['location']
-                        _param_bounds['location'] = [v['location'][i] - _loc[0],
+                        _param_bounds['location'] = [v['location'][i] + _loc[0],
                                                      v['location'][i] + _loc[1]]
                     if 'scale' in general_param_bounds.keys():
                         _param_bounds['scale'] = general_param_bounds['scale']
@@ -565,28 +566,34 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     if np.sum(peak_idx) > 1:
                         raise ValueError("Specific peak bounds encompass more than one peak. Reduce tolerance (current: {loc_tolerance} time units)")
                     if np.sum(peak_idx) == 1:
-                        newbounds = specific_param_bounds[_locs[np.nonzero(peak_idx)[0][0]]] 
+                        __loc = _locs[np.nonzero(peak_idx)[0][0]] 
+                        newbounds = specific_param_bounds[__loc] 
                         tweaked = False
                         if 'amplitude' in newbounds.keys():
                             _amp = newbounds['amplitude']
-                            _param_bounds['amplitude'] = _amp
+                            _param_bounds['amplitude'] = np.sort(_amp)
                             p0[-4] = np.mean(_amp)
                             tweaked = True
                         if 'location' in newbounds.keys(): 
                             _loc = newbounds['location']
-                            _param_bounds['location'] = [v['location'][i] - _loc[0],
-                                                        v['location'][i] + _loc[1]]
+                            _param_bounds['location'] = np.sort([__loc + _loc[0],
+                                                        __loc + _loc[1]])
+                            p0[-3] = __loc 
                             tweaked = True
-                        if 'scale' in general_param_bounds.keys():
-                            _param_bounds['scale'] = general_param_bounds['scale']
+                        if 'scale' in newbounds.keys():
+                            _param_bounds['scale'] = np.sort(newbounds['scale'])
+                            p0[-2] = np.mean(newbounds['scale'])
                             tweaked = True
-                        if 'skew' in general_param_bounds.keys():
-                            _param_bounds['skew'] = general_param_bounds['skew']  
+                        if 'skew' in newbounds.keys():
+                            _param_bounds['skew'] = np.sort(newbounds['skew'])
+                            p0[-1] = np.mean(newbounds['skew'])
                             tweaked = True
-
                         if tweaked==False:
-                            raise ValueError(f"Could not adjust bounds for peak at {_locs[np.nonzero(peak_idx)[0][0]]} because bound keys do not contain at least one of the following: `location`, `amplitude`, `scale`, `skew`. ")
-
+                            raise ValueError(f"Could not adjust bounds for peak at {_locs[__loc]} because bound keys do not contain at least one of the following: `location`, `amplitude`, `scale`, `skew`. ")
+                        else:
+                            adjusted_bounds = True
+                if (not adjusted_bounds) & (len(specific_param_bounds) != 0):
+                    raise RuntimeError(f"Could not adjust abounds for any specified peaks. Check supplied locations.")
 
                 for _, val in _param_bounds.items():
                     bounds[0].append(val[0])
@@ -724,6 +731,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Infer the distributions for the peaks
         peak_props = self.deconvolve_peaks(verbose=verbose, 
+                                           loc_tolerance=enforcement_tolerance,
                                            general_param_bounds=general_param_bounds, 
                                            specific_param_bounds=specific_param_bounds,
                                            max_iter=max_iter,
