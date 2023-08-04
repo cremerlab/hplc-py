@@ -451,7 +451,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             out += self._compute_skewnorm(x, *params[i])
         return out
 
-    def deconvolve_peaks(self, verbose=True, param_bounds={}, max_iter=1000000, **optimizer_kwargs):
+    def deconvolve_peaks(self, verbose=True, general_param_bounds={}, 
+                         specific_param_bounds={}, loc_tolerance=0.5,
+                         max_iter=1000000, optimizer_kwargs={}):
         R"""
         .. note::
            In most cases, this function should not be called directly. Instead, 
@@ -466,7 +468,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         verbose : `bool`
             If `True`, a progress bar will be printed during the inference.
 
-        param_bounds : `dict`
+        general_param_bounds : `dict`
             Modifications to the default parameter bounds (see Notes below) as 
             a dictionary for each parameter. A dict entry should be of the 
             form `parameter: [lower, upper]`. Modifications have the following effects:
@@ -530,7 +532,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 | window should be separable by eye. Or maybe just go get something to drink.
 --------------------------------------------------------------------------------
 """)
-
+            adjusted_bounds = 0
             for i in range(v['num_peaks']):
                 p0.append(v['amplitude'][i])
                 p0.append(v['location'][i]),
@@ -542,20 +544,50 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                  'location': [v['time_range'].min(), v['time_range'].max()],
                                  'scale': [self._dt, (v['time_range'].max() - v['time_range'].min())/2],
                                  'skew': [-np.inf, np.inf]}
+
                 # Modify the parameter bounds given arguments
-                if len(param_bounds) != 0:
-                    if 'amplitude' in param_bounds.keys():
-                        _amp = param_bounds['amplitude']
+                if len(general_param_bounds) != 0:
+                    if 'amplitude' in general_param_bounds.keys():
+                        _amp = general_param_bounds['amplitude']
                         _param_bounds['amplitude'] = np.sort(
                             [_amp[0] * v['amplitude'][i], _amp[1] * v['amplitude'][i]])
-                    if 'location' in param_bounds.keys():
-                        _loc = param_bounds['location']
+                    if 'location' in general_param_bounds.keys():
+                        _loc = general_param_bounds['location']
                         _param_bounds['location'] = [v['location'][i] - _loc[0],
                                                      v['location'][i] + _loc[1]]
-                    if 'scale' in param_bounds.keys():
-                        _param_bounds['scale'] = param_bounds['scale']
-                    if 'skew' in param_bounds.keys():
-                        _param_bounds['skew'] = param_bounds['skew']
+                    if 'scale' in general_param_bounds.keys():
+                        _param_bounds['scale'] = general_param_bounds['scale']
+                    if 'skew' in general_param_bounds.keys():
+                        _param_bounds['skew'] = general_param_bounds['skew']
+                
+                if len(specific_param_bounds) != 0:
+                    _locs = np.array(list(specific_param_bounds.keys()))
+                    peak_idx = np.abs(_locs - v['location'][i]) <= loc_tolerance
+                    if np.sum(peak_idx) > 1:
+                        raise ValueError("Specific peak bounds encompass more than one peak. Reduce tolerance (current: {loc_tolerance} time units)")
+                    if np.sum(peak_idx) == 1:
+                        peak_idx += 1
+                        newbounds = specific_param_bounds[_locs[np.nonzero(peak_idx)[0][0]]] 
+                        tweaked = False
+                        if 'amplitude' in newbounds.keys():
+                            _amp = newbounds['amplitude']
+                            _param_bounds['amplitude'] = np.sort([_amp[0] * v['amplitude'][i], _amp[1] * v['amplitude'][i]])  
+                            tweaked = True
+                        if 'location' in newbounds.keys(): 
+                            _loc = newbounds['location']
+                            _param_bounds['location'] = [v['location'][i] - _loc[0],
+                                                        v['location'][i] + _loc[1]]
+                            tweaked = True
+                        if 'scale' in general_param_bounds.keys():
+                            _param_bounds['scale'] = general_param_bounds['scale']
+                            tweaked = True
+                        if 'skew' in general_param_bounds.keys():
+                            _param_bounds['skew'] = general_param_bounds['skew']  
+                            tweaked = True
+
+                        if tweaked==False:
+                            raise ValueError(f"Could not adjust bounds for peak at {_locs[np.nonzero(peak_idx)[0][0]]} because bound keys do not contain at least one of the following: `location`, `amplitude`, `scale`, `skew`. ")
+
 
                 for _, val in _param_bounds.items():
                     bounds[0].append(val[0])
