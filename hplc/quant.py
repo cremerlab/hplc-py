@@ -134,9 +134,10 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         if len(time_window) != 2:
             raise ValueError(
                 f'`time_window` must be of length 2 (corresponding to start and end points). Provided list is of length {len(time_window)}.')
-        if time_window[0] >= time_window[1]: 
-            raise RuntimeError(f'First index in `time_window` must be ≤ second index.')
-        
+        if time_window[0] >= time_window[1]:
+            raise RuntimeError(
+                f'First index in `time_window` must be ≤ second index.')
+
         # Apply the crop and return
         self.df = self.df[(self.df[self.time_col] >= time_window[0]) &
                           (self.df[self.time_col] <= time_window[1])]
@@ -145,7 +146,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
     def _assign_windows(self, enforced_locations=[], enforced_widths=[],
                         enforcement_tolerance=0.5,
-                        prominence=0.01, rel_height=1, buffer=100):
+                        prominence=0.01, rel_height=1, buffer=100,
+                        peak_kwargs={}):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
 
@@ -681,7 +683,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                  enforced_widths=enforced_widths,
                                  enforcement_tolerance=enforcement_tolerance,
                                  prominence=prominence, rel_height=rel_height,
-                                 buffer=buffer)
+                                 buffer=buffer, peak_kwargs=peak_kwargs)
 
         # Infer the distributions for the peaks
         peak_props = self.deconvolve_peaks(verbose=verbose, param_bounds=param_bounds, max_iter=max_iter,
@@ -773,7 +775,7 @@ check if the subtraction is acceptable!
 
         # Clip the signal if the median value is negative
         if (signal < 0).any():
-            shift = np.median(signal[signal < 0]) 
+            shift = np.median(signal[signal < 0])
         else:
             shift = 0
         signal -= shift
@@ -868,9 +870,8 @@ check if the subtraction is acceptable!
                 "No peaks could be properly mapped! Check your provided retention times.")
         if len(unmapped) > 0:
             for k, v in unmapped.items():
-               warnings.warn(
+                warnings.warn(
                     f"\nNo peak found for {k} (retention time {v}) within the provided tolerance.")
-  
 
         # Iterate through the compounds and calculate the concentration.
         for g, d in peak_df.groupby('compound'):
@@ -1056,9 +1057,9 @@ check if the subtraction is acceptable!
         mean_fano = _score_df[_score_df['window_type']
                               == 'peak']['signal_fano_factor'].mean()
         for g, d in _score_df.groupby(['window_type', 'window_id']):
-            
-            tolpass = np.round(np.abs(d['reconstruction_score'].values[0] - 1), 
-                        decimals=int(np.abs(np.ceil(np.log10(tol))))) <= tol
+
+            tolpass = np.round(np.abs(d['reconstruction_score'].values[0] - 1),
+                               decimals=int(np.abs(np.ceil(np.log10(tol))))) <= tol
 
             d = d.copy()
             if g[0] == 'peak':
