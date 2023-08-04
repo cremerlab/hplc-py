@@ -531,8 +531,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 | on how well resolved the peaks are. Reduce `buffer` if the peaks in this      
 | window should be separable by eye. Or maybe just go get something to drink.
 --------------------------------------------------------------------------------
-""")
-            adjusted_bounds = 0
+""") 
             for i in range(v['num_peaks']):
                 p0.append(v['amplitude'][i])
                 p0.append(v['location'][i]),
@@ -566,12 +565,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     if np.sum(peak_idx) > 1:
                         raise ValueError("Specific peak bounds encompass more than one peak. Reduce tolerance (current: {loc_tolerance} time units)")
                     if np.sum(peak_idx) == 1:
-                        peak_idx += 1
                         newbounds = specific_param_bounds[_locs[np.nonzero(peak_idx)[0][0]]] 
                         tweaked = False
                         if 'amplitude' in newbounds.keys():
                             _amp = newbounds['amplitude']
-                            _param_bounds['amplitude'] = np.sort([_amp[0] * v['amplitude'][i], _amp[1] * v['amplitude'][i]])  
+                            _param_bounds['amplitude'] = _amp
+                            p0[-4] = np.mean(_amp)
                             tweaked = True
                         if 'location' in newbounds.keys(): 
                             _loc = newbounds['location']
@@ -620,7 +619,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
     def fit_peaks(self, enforced_locations=[], enforced_widths=[],
                   enforcement_tolerance=0.5, prominence=1E-2, rel_height=1,
-                  approx_peak_width=5, buffer=100, param_bounds={}, verbose=True, return_peaks=True,
+                  approx_peak_width=5, buffer=100, general_param_bounds={}, 
+                  specific_param_bounds={}, verbose=True, return_peaks=True,
                   correct_baseline=True, max_iter=1000000, precision=9,
                   peak_kwargs={}, optimizer_kwargs={}):
         R"""
@@ -658,9 +658,14 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             of at least 10.
         verbose : `bool`
             If True, a progress bar will be printed during the inference. 
-        param_bounds: `dict`, optional
-            Parameter boundary modifications to be used to constrain fitting. 
+        general_param_bounds: `dict`, optional
+            Parameter boundary modifications to be used to constrain fitting of 
+            all peaks. 
             See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
+            for more information.
+        specific_param_bounds: `dict`, optional
+            Parameter boundary modifications to be used to constrain fitting of 
+            specific peaks. See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
             for more information.
         correct_baseline : `bool`, optional
             If True, the baseline of the chromatogram will be automatically 
@@ -718,7 +723,10 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                  buffer=buffer, peak_kwargs=peak_kwargs)
 
         # Infer the distributions for the peaks
-        peak_props = self.deconvolve_peaks(verbose=verbose, param_bounds=param_bounds, max_iter=max_iter,
+        peak_props = self.deconvolve_peaks(verbose=verbose, 
+                                           general_param_bounds=general_param_bounds, 
+                                           specific_param_bounds=specific_param_bounds,
+                                           max_iter=max_iter,
                                            **optimizer_kwargs)
 
         # Set up a dataframe of the peak properties
