@@ -144,7 +144,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         if return_df:
             return self.df
 
-    def _assign_windows(self, enforced_locations=[], enforced_widths=[],
+    def _assign_windows(self, enforced_locations=[],
                         enforcement_tolerance=0.5,
                         prominence=0.01, rel_height=1, buffer=100,
                         peak_kwargs={}):
@@ -232,13 +232,70 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     _left[inds] = __left[inds]
                     _right[inds] = __right[inds]
 
+        # Determine if peaks should be added.
+        self._added_peaks = []
+        if len(enforced_locations) > 0:
+            # Get the enforced peak positions
+            if type(enforced_locations) == dict:
+                _enforced_locations = list(enforced_locations.keys())
+            else:
+                _enforced_locations = enforced_locations
+
+            # Find the nearest location in the time array given the user-specified time
+            enforced_location_inds = np.int_(
+                np.array(_enforced_locations) / self._dt)
+
+            # Update the user specified times with the nearest location
+            updated_loc = enforced_location_inds * self._dt
+            if type(enforced_locations) == dict:
+                for _new, _old in zip(updated_loc, _enforced_locations):
+                    enforced_locations[_new] = enforced_locations.pop(_old)
+                _enforced_locations = list(enforced_locations)
+            else:
+                for _old, _new in enumerate(updated_loc):
+                    enforced_locations[_old] = _new
+                _enforced_locations = enforced_locations
+            self._enforced_locations = enforced_locations
+
+            # Add the enforced peaks
+            for i, loc in enumerate(enforced_location_inds):
+                # Determine if a peak has been autodetected within a tolerance.
+                # If so, update its parameters
+                autodetected = np.nonzero(
+                    np.abs(self._peak_indices - loc) <= (enforcement_tolerance / self._dt))[0]
+
+                if len(autodetected) > 0:
+                    # Remove the autodetected peak
+                    self._peak_indices = np.delete(
+                        self._peak_indices, autodetected[0])
+                    _widths = np.delete(_widths, autodetected[0])
+                    _left = np.delete(_left, autodetected[0])
+                    _right = np.delete(_right, autodetected[0])
+
+            for i, loc in enumerate(enforced_location_inds):
+                self._peak_indices = np.append(self._peak_indices, loc)
+                self._added_peaks.append(loc * self._dt)
+                if type(enforced_locations) == dict:
+                    _sel_loc = enforced_locations[_enforced_locations[i]]
+                    if 'width' in _sel_loc.keys():
+                        _widths = np.append(
+                            _widths, _sel_loc['width'] / self._dt)
+                    else:
+                        _widths = np.append(_widths, 1 / self._dt)
+                else:
+                    _widths = np.append(_widths, 1 / self._dt)
+                _left = np.append(_left, loc - _widths[-1] - buffer)
+                _right = np.append(_right, loc + _widths[-1] + buffer)
+        else:
+            self._enforced_locations = enforced_locations
+
         # Set window ranges
         ranges = []
         for l, r in zip(_left, _right):
             _range = np.arange(int(l - buffer), int(r + buffer), 1)
             _range = _range[(_range >= 0) & (_range <= len(norm_int))]
             ranges.append(_range)
-        self._ranges = ranges
+
         # Identiy subset ranges and remove
         valid = [True] * len(ranges)
         if len(ranges) > 1:
@@ -250,56 +307,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Keep only valid ranges and baselines
         ranges = [r for i, r in enumerate(ranges) if valid[i] is True]
-
-        # If manual locations are provided, ensure that they are identified
-        if len(enforced_locations) != 0:
-            enforced_location_inds = np.int_(
-                np.array(enforced_locations) / self._dt)
-
-            # Keep track of what locations and widths need to be added.
-            added_peaks = []
-            added_peak_inds = []
-            for i, loc in enumerate(enforced_location_inds):
-                if np.sum(np.abs(self._peak_indices - loc) < enforcement_tolerance/self._dt) == 0:
-                    added_peaks.append(loc)
-                    added_peak_inds.append(i)
-
-            # Consider the edge case where all enforced locations have been automatically detected
-            if len(added_peaks) > 0:
-                self._peak_indices = np.append(self._peak_indices, added_peaks)
-                self._added_peaks = self.df[self.time_col].values[added_peaks]
-                if len(enforced_widths) == 0:
-                    _enforced_widths = np.ones_like(added_peaks) / self._dt
-                else:
-                    if type(enforced_widths) == list:
-                        enforced_widths = np.array(enforced_widths)
-                    _enforced_widths = enforced_widths[added_peak_inds] / self._dt
-                _widths = np.append(_widths, _enforced_widths)
-
-                # Ensure that the newly added peak is within one of the identified
-                # ranges
-                orphan_locs = []
-                orphan_widths = []
-                for i, p in enumerate(added_peaks):
-                    located = False
-                    for j, r in enumerate(ranges):
-                        if p in r:
-                            located = True
-                            break
-                    if not located:
-                        orphan_locs.append(p)
-                        orphan_widths.append(_enforced_widths[i])
-                # If there are orphan peaks, create ranges
-                if len(orphan_locs) > 0:
-                    for i, o in enumerate(orphan_locs):
-                        _added_range = np.arange(
-                            o - orphan_widths[i] - buffer, o + orphan_widths[i] + buffer, 1)
-                        _added_range = _added_range[(_added_range >= 0) & (
-                            _added_range <= len(norm_int))]
-                        ranges.append(_added_range)
-            else:
-                warnings.warn(
-                    f'All manually provided peaks are within {enforcement_tolerance} of an automatically identified peak. If this location is desired, decrease value of `enforcement_tolerance`.')
 
         # Copy the dataframe and return the windows
         window_df = df.copy(deep=True)
@@ -344,6 +351,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                         rng), 'window_type'] = 'interpeak'
                     win_idx += 1
         window_df = window_df[window_df['window_id'] > 0]
+
         # Convert this to a dictionary for easy parsing
         window_dict = {}
         for g, d in window_df[window_df['window_type'] == 'peak'].groupby('window_id'):
@@ -451,8 +459,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             out += self._compute_skewnorm(x, *params[i])
         return out
 
-    def deconvolve_peaks(self, verbose=True, general_param_bounds={}, 
-                         specific_param_bounds={}, loc_tolerance=0.5,
+    def deconvolve_peaks(self, verbose=True, enforced_locations=[], param_bounds={},
                          max_iter=1000000, optimizer_kwargs={}):
         R"""
         .. note::
@@ -531,8 +538,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 | on how well resolved the peaks are. Reduce `buffer` if the peaks in this      
 | window should be separable by eye. Or maybe just go get something to drink.
 --------------------------------------------------------------------------------
-""")        
-            adjusted_bounds = False 
+""")
+            if v['num_peaks'] == 0:
+                continue
             for i in range(v['num_peaks']):
                 p0.append(v['amplitude'][i])
                 p0.append(v['location'][i]),
@@ -546,54 +554,47 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                  'skew': [-np.inf, np.inf]}
 
                 # Modify the parameter bounds given arguments
-                if len(general_param_bounds) != 0:
-                    if 'amplitude' in general_param_bounds.keys():
-                        _amp = general_param_bounds['amplitude']
+                if len(param_bounds) != 0:
+                    if 'amplitude' in param_bounds.keys():
+                        _amp = param_bounds['amplitude']
                         _param_bounds['amplitude'] = np.sort(
                             [_amp[0] * v['amplitude'][i], _amp[1] * v['amplitude'][i]])
-                    if 'location' in general_param_bounds.keys():
-                        _loc = general_param_bounds['location']
+                    if 'location' in param_bounds.keys():
+                        _loc = param_bounds['location']
                         _param_bounds['location'] = [v['location'][i] + _loc[0],
                                                      v['location'][i] + _loc[1]]
-                    if 'scale' in general_param_bounds.keys():
-                        _param_bounds['scale'] = general_param_bounds['scale']
-                    if 'skew' in general_param_bounds.keys():
-                        _param_bounds['skew'] = general_param_bounds['skew']
-                
-                if len(specific_param_bounds) != 0:
-                    _locs = np.array(list(specific_param_bounds.keys()))
-                    peak_idx = np.abs(_locs - v['location'][i]) <= loc_tolerance
-                    if np.sum(peak_idx) > 1:
-                        raise ValueError("Specific peak bounds encompass more than one peak. Reduce tolerance (current: {loc_tolerance} time units)")
-                    if np.sum(peak_idx) == 1:
-                        __loc = _locs[np.nonzero(peak_idx)[0][0]] 
-                        newbounds = specific_param_bounds[__loc] 
+                    if 'scale' in param_bounds.keys():
+                        _param_bounds['scale'] = param_bounds['scale']
+                    if 'skew' in param_bounds.keys():
+                        _param_bounds['skew'] = param_bounds['skew']
+
+                if (type(enforced_locations) == dict) & (len(enforced_locations) != 0):
+                    if v['location'][i] in enforced_locations.keys():
+                        newbounds = enforced_locations[v['location'][i]]
                         tweaked = False
-                        if 'amplitude' in newbounds.keys():
-                            _amp = newbounds['amplitude']
-                            _param_bounds['amplitude'] = np.sort(_amp)
-                            p0[-4] = np.mean(_amp)
-                            tweaked = True
-                        if 'location' in newbounds.keys(): 
-                            _loc = newbounds['location']
-                            _param_bounds['location'] = np.sort([__loc + _loc[0],
-                                                        __loc + _loc[1]])
-                            p0[-3] = __loc 
-                            tweaked = True
-                        if 'scale' in newbounds.keys():
-                            _param_bounds['scale'] = np.sort(newbounds['scale'])
-                            p0[-2] = np.mean(newbounds['scale'])
-                            tweaked = True
-                        if 'skew' in newbounds.keys():
-                            _param_bounds['skew'] = np.sort(newbounds['skew'])
-                            p0[-1] = np.mean(newbounds['skew'])
-                            tweaked = True
-                        if tweaked==False:
-                            raise ValueError(f"Could not adjust bounds for peak at {_locs[__loc]} because bound keys do not contain at least one of the following: `location`, `amplitude`, `scale`, `skew`. ")
-                        else:
-                            adjusted_bounds = True
-                if (not adjusted_bounds) & (len(specific_param_bounds) != 0):
-                    raise RuntimeError(f"Could not adjust abounds for any specified peaks. Check supplied locations.")
+                        if len(newbounds) > 0:
+                            if 'location' in newbounds.keys():
+                                _loc = newbounds['location']
+                                _param_bounds['location'] = np.sort(_loc)
+                                tweaked = True
+                            if 'amplitude' in newbounds.keys():
+                                _amp = newbounds['amplitude']
+                                _param_bounds['amplitude'] = np.sort(_amp)
+                                p0[-4] = np.mean(_amp)
+                                tweaked = True
+                            if 'scale' in newbounds.keys():
+                                _param_bounds['scale'] = np.sort(
+                                    newbounds['scale'])
+                                p0[-2] = np.mean(newbounds['scale'])
+                                tweaked = True
+                            if 'skew' in newbounds.keys():
+                                _param_bounds['skew'] = np.sort(
+                                    newbounds['skew'])
+                                p0[-1] = np.mean(newbounds['skew'])
+                                tweaked = True
+                            if tweaked == False:
+                                raise ValueError(
+                                    f"Could not adjust bounds for peak at {v['location'][i]} because bound keys do not contain at least one of the following: `location`, `amplitude`, `scale`, `skew`. ")
 
                 for _, val in _param_bounds.items():
                     bounds[0].append(val[0])
@@ -626,8 +627,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
     def fit_peaks(self, enforced_locations=[], enforced_widths=[],
                   enforcement_tolerance=0.5, prominence=1E-2, rel_height=1,
-                  approx_peak_width=5, buffer=100, general_param_bounds={}, 
-                  specific_param_bounds={}, verbose=True, return_peaks=True,
+                  approx_peak_width=5, buffer=100, param_bounds={},
+                  verbose=True, return_peaks=True,
                   correct_baseline=True, max_iter=1000000, precision=9,
                   peak_kwargs={}, optimizer_kwargs={}):
         R"""
@@ -635,13 +636,11 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         Parameters
         ----------
-        enforced_locations : `list`
-            The approximate locations of the peaks. If this is not provided, 
-            peak locations will be automatically detected. 
-        enforced_widths : `list`
-            The approximate widths of the peaks. If this is not provided  but
-            `locations` is, approximate widths of one time unit (1 / dt)
-            will be assumed.
+        enforced_locations : `list` or `dict`
+            The approximate locations of peaks whose position is known. If 
+            provided as a list, only the locations wil be used as initial guesses. 
+            If provided as a dictionary, locations and parameter bounds will be 
+            set.
         enforce_tolerance: `float`, optional
             If an enforced peak location is within tolerance of an automatically 
             identified peak, the automatically identified peak will be preferred. 
@@ -665,14 +664,10 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             of at least 10.
         verbose : `bool`
             If True, a progress bar will be printed during the inference. 
-        general_param_bounds: `dict`, optional
+        param_bounds: `dict`, optional
             Parameter boundary modifications to be used to constrain fitting of 
             all peaks. 
             See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
-            for more information.
-        specific_param_bounds: `dict`, optional
-            Parameter boundary modifications to be used to constrain fitting of 
-            specific peaks. See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
             for more information.
         correct_baseline : `bool`, optional
             If True, the baseline of the chromatogram will be automatically 
@@ -724,16 +719,14 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Assign the window bounds
         _ = self._assign_windows(enforced_locations=enforced_locations,
-                                 enforced_widths=enforced_widths,
                                  enforcement_tolerance=enforcement_tolerance,
                                  prominence=prominence, rel_height=rel_height,
                                  buffer=buffer, peak_kwargs=peak_kwargs)
 
         # Infer the distributions for the peaks
-        peak_props = self.deconvolve_peaks(verbose=verbose, 
-                                           loc_tolerance=enforcement_tolerance,
-                                           general_param_bounds=general_param_bounds, 
-                                           specific_param_bounds=specific_param_bounds,
+        peak_props = self.deconvolve_peaks(verbose=verbose,
+                                           enforced_locations=self._enforced_locations,
+                                           param_bounds=param_bounds,
                                            max_iter=max_iter,
                                            **optimizer_kwargs)
 
