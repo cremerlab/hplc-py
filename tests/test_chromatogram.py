@@ -152,7 +152,7 @@ def test_add_peak():
     peak_df = pd.read_csv('./tests/test_data/test_shallow_signal_peaks.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
     peaks = chrom.fit_peaks(
-        enforced_locations=[50.0], enforced_widths=[3], prominence=0.5, correct_baseline=False)
+        enforced_locations={50.0 : {'width': 3}}, prominence=0.5, correct_baseline=False)
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
 
@@ -266,3 +266,8 @@ def test_many_peaks():
     chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
     with pytest.warns():  
         chrom.fit_peaks()
+
+#%%
+import importlib
+importlib.reload(hplc.quant)
+test_shouldered_peaks()
