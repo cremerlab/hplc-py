@@ -152,7 +152,7 @@ def test_add_peak():
     peak_df = pd.read_csv('./tests/test_data/test_shallow_signal_peaks.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
     peaks = chrom.fit_peaks(
-        enforced_locations=[50.0], enforced_widths=[3], prominence=0.5, correct_baseline=False)
+        enforced_locations={50.0 : {'width': 3}}, prominence=0.5, correct_baseline=False)
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
 
@@ -266,3 +266,40 @@ def test_many_peaks():
     chrom = hplc.quant.Chromatogram(data, cols={'time':'x', 'signal':'y'})
     with pytest.warns():  
         chrom.fit_peaks()
+
+def test_bounding():
+    """
+    Ensures that custom bounding of parameters can resolve heavily overlapping 
+    peaks within a tolerance of 5%. This higher tolerance is due to the 
+    difficulty of resolving heavily overlapping peaks. 
+    """
+    tol = 5E-2
+    data = pd.read_csv('./tests/test_data/test_bounding_chroms.csv')
+    true_peaks = pd.read_csv('./tests/test_data/test_bounding_peaks.csv')
+    bounding_factors = np.array([0.9, 1.1])
+    for g, d in data.groupby('iter'):
+        truth = true_peaks[true_peaks['iter']==g].copy()
+        truth.sort_values('peak_id', inplace=True)
+        peak2 = truth[truth['peak_id']==2]
+        peak1 = truth[truth['peak_id']==1]
+        bounds = {peak2['retention_time'].values[0]: {
+                    'amplitude': peak2['amplitude'].values[0] * bounding_factors,
+                    'scale' : peak2['scale'].values[0] * bounding_factors,
+                    'skew': peak2['skew'].values[0] * bounding_factors,
+                    'location': peak2['retention_time'].values[0] * bounding_factors},
+              peak1['retention_time'].values[0]: {}}
+            
+        # Assert that it fails without providing locations.
+        chrom = hplc.quant.Chromatogram(d,  cols={'time':'x', 'signal':'y'})
+        bad_peaks = chrom.fit_peaks(correct_baseline=False)
+        assert len(truth) != len(bad_peaks)
+
+        # Fit with provided bounding
+        peaks = chrom.fit_peaks(enforced_locations = bounds, correct_baseline=False)
+        assert len(truth) == len(peaks)
+
+        # Ensure that it's close to within tolerance
+        peaks.sort_values('peak_id', inplace=True)
+        props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
+        for p in props:
+            compare(peaks[p].values, truth[p].values, tol)
