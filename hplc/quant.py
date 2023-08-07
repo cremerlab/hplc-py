@@ -92,7 +92,7 @@ class Chromatogram(object):
         # Define the average timestep in the chromatogram. This computes a mean
         # but values will typically be identical.
         self._dt = np.mean(np.diff(dataframe[self.time_col].values))
-
+        self._time_precision = int(np.abs(np.ceil(np.log10(self._dt))))
        # Blank out vars that are used elsewhere
         self.window_props = None
         self.scores = None
@@ -103,6 +103,7 @@ class Chromatogram(object):
         self._mapped_peaks = None
         self._added_peaks = None
         self.unmixed_chromatograms = None
+        self._crop_offset = 0
 
         # Prune to time window
         if time_window is not None:
@@ -141,6 +142,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         # Apply the crop and return
         self.df = self.df[(self.df[self.time_col] >= time_window[0]) &
                           (self.df[self.time_col] <= time_window[1])]
+        # set the offset
+        self._crop_offset = int(time_window[0] / self._dt)
         if return_df:
             return self.df
 
@@ -196,6 +199,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         norm_int = (intensity - intensity.min()) / \
             (intensity.max() - intensity.min())
         self.normint = int_sign * norm_int
+
         # Preform automated peak detection and set window ranges
         peaks, _ = scipy.signal.find_peaks(
             int_sign * norm_int, prominence=prominence, **peak_kwargs)
@@ -243,19 +247,21 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
             # Find the nearest location in the time array given the user-specified time
             enforced_location_inds = np.int_(
-                np.array(_enforced_locations) / self._dt)
+                np.array(_enforced_locations) / self._dt) - self._crop_offset
 
             # Update the user specified times with the nearest location
-            updated_loc = enforced_location_inds * self._dt
+            updated_loc = np.round(self._dt * (enforced_location_inds  + self._crop_offset), decimals=self._time_precision)
             if type(enforced_locations) == dict:
+                updated_enforced_locations = enforced_locations.copy()
                 for _new, _old in zip(updated_loc, _enforced_locations):
-                    enforced_locations[_new] = enforced_locations.pop(_old)
-                _enforced_locations = list(enforced_locations)
+                    updated_enforced_locations[_new] = updated_enforced_locations.pop(_old)
+                _enforced_locations = list(updated_enforced_locations)
             else:
+                updated_enforced_locations = list(np.copy(enforced_locations))
                 for _old, _new in enumerate(updated_loc):
-                    enforced_locations[_old] = _new
-                _enforced_locations = enforced_locations
-            self._enforced_locations = enforced_locations
+                    updated_enforced_locations[_old] = _new
+                _enforced_locations = updated_enforced_locations
+            self._enforced_locations = updated_enforced_locations
 
             # Add the enforced peaks
             for i, loc in enumerate(enforced_location_inds):
@@ -272,11 +278,11 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     _left = np.delete(_left, autodetected[0])
                     _right = np.delete(_right, autodetected[0])
 
-
+            for i, loc in enumerate(enforced_location_inds):
                 self._peak_indices = np.append(self._peak_indices, loc)
-                self._added_peaks.append(loc * self._dt)
+                self._added_peaks.append((loc + self._crop_offset) * self._dt)
                 if type(enforced_locations) == dict:
-                    _sel_loc = enforced_locations[_enforced_locations[i]]
+                    _sel_loc = updated_enforced_locations[_enforced_locations[i]]
                     if 'width' in _sel_loc.keys():
                         _widths = np.append(
                             _widths, _sel_loc['width'] / self._dt)
@@ -365,7 +371,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                          'signal_area': d[self.int_col].values.sum(),
                          'num_peaks': len(_peaks),
                          'amplitude': [d[d['time_idx'] == p][self.int_col].values[0] for p in _peaks],
-                         'location': [d[d['time_idx'] == p][self.time_col].values[0] for p in _peaks],
+                         'location': [np.round(d[d['time_idx'] == p][self.time_col].values[0], decimals=self._time_precision) for p in _peaks],
                          'width':  [_widths[ind] * self._dt for ind in peak_inds]}
                 window_dict[int(g)] = _dict
 
@@ -548,6 +554,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 p0.append(v['width'][i] / 2)  # scale parameter
                 p0.append(0)  # Skew parameter, starts with assuming Gaussian
 
+
+                #TODO: Enforce ordering of parameters
                 # Set default parameter bounds
                 _param_bounds = {'amplitude': np.sort([0.1 * v['amplitude'][i], 10 * v['amplitude'][i]]),
                                  'location': [v['time_range'].min(), v['time_range'].max()],
@@ -570,7 +578,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                         _param_bounds['skew'] = param_bounds['skew']
 
                 if (type(enforced_locations) == dict) & (len(enforced_locations) != 0):
-                    if v['location'][i] in enforced_locations.keys():
+                    if v['location'][i] in enforced_locations.keys():  
                         newbounds = enforced_locations[v['location'][i]]
                         tweaked = False
                         if len(newbounds) > 0:
@@ -583,7 +591,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                 _loc = newbounds['location']
                                 _param_bounds['location'] = np.sort(_loc)
                                 tweaked = True
-
                             if 'scale' in newbounds.keys():
                                 _param_bounds['scale'] = np.sort(
                                     newbounds['scale'])
@@ -619,7 +626,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             for i, p in enumerate(popt):
                 window_dict[f'peak_{i + 1}'] = {
                     'amplitude': p[0],
-                    'retention_time': p[1],
+                    'retention_time': np.round(p[1], decimals=self._time_precision),
                     'scale': p[2],
                     'alpha': p[3],
                     'area': self._compute_skewnorm(self.df[self.time_col].values, *p).sum(),
@@ -1267,9 +1274,13 @@ to `fit_peaks()`."""
 
         if self._added_peaks is not None:
             ymax = ax.get_ylim()[1]
-            for loc in self._added_peaks:
+            for i, loc in enumerate(self._added_peaks):
+                if i == 0:
+                    label = 'suggested peak location'
+                else:
+                    label = '__nolegend__'
                 ax.vlines(loc, 0, ymax, linestyle='--',
-                          color='dodgerblue', label="suggested peak location")
+                          color='dodgerblue', label=label)
         ax.legend(bbox_to_anchor=(1.5, 1))
         fig.patch.set_facecolor((0, 0, 0, 0))
         if len(time_range) == 2:
