@@ -201,3 +201,38 @@ for i in range(len(locs)):
     sig += 100 * scipy.stats.norm(locs[i], 1).pdf(x)
 df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
 df.to_csv('./test_data/test_many_peaks.csv', index=False)
+
+#%%
+
+# ##############################################################################
+# TEST DATA FOR SPECIFIC BOUND SETTING
+# ##############################################################################
+x = np.arange(0, 20, dt)
+amps = np.linspace(100, 1000, 8)
+sig1_props = [1000, -5, 12, 2]
+sig1 = sig1_props[0] * scipy.stats.skewnorm(sig1_props[1], loc=sig1_props[2], 
+                                                 scale=sig1_props[3]).pdf(x)
+chrom_dfs = pd.DataFrame([])
+peak_dfs = pd.DataFrame([])
+for i, a in enumerate(amps): 
+    sig2 = a * scipy.stats.norm(11, 1).pdf(x)
+    sig = sig1 + sig2
+    _df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
+    _df['iter'] = i + 1
+    chrom_dfs = pd.concat([chrom_dfs, _df], sort=False)
+    _df = pd.DataFrame(np.array([[sig1_props[0], a], 
+                                      [sig1_props[1], 0],
+                                      [sig1_props[2], 11],
+                                      [sig1_props[3], 1],
+                                      [sig1.sum(), sig2.sum()],
+                                      [2, 1]]).T,
+                                      columns=['amplitude', 'skew', 
+                                               'retention_time', 'scale', 
+                                               'area',
+                                               'peak_id'])
+    _df['iter'] = i + 1
+    peak_dfs = pd.concat([peak_dfs, _df], sort=False)
+chrom_dfs.to_csv('./test_data/test_bounding_chroms.csv', index=False)
+peak_dfs.to_csv('./test_data/test_bounding_peaks.csv', index=False)
+
+
