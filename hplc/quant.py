@@ -263,13 +263,11 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 _known_peaks = updated_known_peaks
             self._known_peaks = updated_known_peaks
 
-            # Add the enforced peaks
+            # Clear peacks that are within a tolerance of the provided locations 
+            # of known peaks.
             for i, loc in enumerate(enforced_location_inds):
-                # Determine if a peak has been autodetected within a tolerance.
-                # If so, update its parameters
                 autodetected = np.nonzero(
                     np.abs(self._peak_indices - loc) <= (tolerance / self._dt))[0]
-
                 if len(autodetected) > 0:
                     # Remove the autodetected peak
                     self._peak_indices = np.delete(
@@ -278,6 +276,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     _left = np.delete(_left, autodetected[0])
                     _right = np.delete(_right, autodetected[0])
 
+            # Add the provided locations of known peaks and adjust parameters as necessary.
             for i, loc in enumerate(enforced_location_inds):
                 self._peak_indices = np.append(self._peak_indices, loc)
                 self._added_peaks.append((loc + self._crop_offset) * self._dt)
@@ -526,7 +525,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                  desc='Deconvolving mixture')
         else:
             iterator = self.window_props.items()
-
+        parorder = ['amplitude', 'location', 'scale', 'skew'] 
+        paridx = {k:-(i+1) for i, k in enumerate(reversed(parorder))}
+        print(paridx, parorder)
         peak_props = {}
         self._bounds = []
         for k, v in iterator:
@@ -554,8 +555,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 p0.append(v['width'][i] / 2)  # scale parameter
                 p0.append(0)  # Skew parameter, starts with assuming Gaussian
 
-
-                #TODO: Enforce ordering of parameters
                 # Set default parameter bounds
                 _param_bounds = {'amplitude': np.sort([0.1 * v['amplitude'][i], 10 * v['amplitude'][i]]),
                                  'location': [v['time_range'].min(), v['time_range'].max()],
@@ -564,44 +563,29 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
                 # Modify the parameter bounds given arguments
                 if len(param_bounds) != 0:
-                    if 'amplitude' in param_bounds.keys():
-                        _amp = param_bounds['amplitude']
-                        _param_bounds['amplitude'] = np.sort(
-                            [_amp[0] * v['amplitude'][i], _amp[1] * v['amplitude'][i]])
-                    if 'location' in param_bounds.keys():
-                        _loc = param_bounds['location']
-                        _param_bounds['location'] = [v['location'][i] + _loc[0],
-                                                     v['location'][i] + _loc[1]]
-                    if 'scale' in param_bounds.keys():
-                        _param_bounds['scale'] = param_bounds['scale']
-                    if 'skew' in param_bounds.keys():
-                        _param_bounds['skew'] = param_bounds['skew']
+                    for k in parorder:
+                        if k in param_bounds.keys():
+                            if k == 'amplitude':
+                                _param_bounds[k] = v['amplitude'][i] * np.sort(param_bounds[k])
+                            elif k == 'location':
+                                _param_bounds[k] = [v['location'][i] + p for p in param_bounds[k]]
+                            else:
+                                _param_bounds[k] = param_bounds[k]
 
+                # Add peak-specific bounds if provided
                 if (type(known_peaks) == dict) & (len(known_peaks) != 0):
                     if v['location'][i] in known_peaks.keys():  
                         newbounds = known_peaks[v['location'][i]]
                         tweaked = False
                         if len(newbounds) > 0:
-                            if 'amplitude' in newbounds.keys():
-                                _amp = newbounds['amplitude']
-                                _param_bounds['amplitude'] = np.sort(_amp)
-                                p0[-4] = np.mean(_amp)
-                                tweaked = True
-                            if 'location' in newbounds.keys():
-                                _loc = newbounds['location']
-                                _param_bounds['location'] = np.sort(_loc)
-                                tweaked = True
-                            if 'scale' in newbounds.keys():
-                                _param_bounds['scale'] = np.sort(
-                                    newbounds['scale'])
-                                p0[-2] = np.mean(newbounds['scale'])
-                                tweaked = True
-                            if 'skew' in newbounds.keys():
-                                _param_bounds['skew'] = np.sort(
-                                    newbounds['skew'])
-                                p0[-1] = np.mean(newbounds['skew'])
-                                tweaked = True
-                            # Check if width is the only key
+                            for k in parorder:
+                                if k in newbounds.keys():
+                                    _param_bounds[k] = np.sort(newbounds[k])
+                                    tweaked = True
+                                    if k != 'location':
+                                        p0[paridx[k]]= np.mean(newbounds[k])
+                                        
+                           # Check if width is the only key
                             if (len(newbounds) >= 1)  & ('width' not in newbounds.keys()):
                                 if tweaked == False:
                                     raise ValueError(
@@ -610,7 +594,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 for _, val in _param_bounds.items():
                     bounds[0].append(val[0])
                     bounds[1].append(val[1])
-            self._bounds.append(bounds)
+
             # Perform the inference
             popt, pcov = scipy.optimize.curve_fit(self._fit_skewnorms, v['time_range'],
                                                   v['signal'], p0=p0, bounds=bounds, maxfev=max_iter,
