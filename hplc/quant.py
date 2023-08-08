@@ -527,7 +527,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             iterator = self.window_props.items()
         parorder = ['amplitude', 'location', 'scale', 'skew'] 
         paridx = {k:-(i+1) for i, k in enumerate(reversed(parorder))}
-        print(paridx, parorder)
         peak_props = {}
         self._bounds = []
         for k, v in iterator:
