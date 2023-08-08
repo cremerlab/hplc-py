@@ -562,12 +562,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
                 # Modify the parameter bounds given arguments
                 if len(param_bounds) != 0:
-                    for k in parorder:
-                        if k in param_bounds.keys():
-                            if k == 'amplitude':
-                                _param_bounds[k] = v['amplitude'][i] * np.sort(param_bounds[k])
-                            elif k == 'location':
-                                _param_bounds[k] = [v['location'][i] + p for p in param_bounds[k]]
+                    for p in parorder:
+                        if p in param_bounds.keys():
+                            if p == 'amplitude':
+                                _param_bounds[k] = v['amplitude'][i] * np.sort(param_bounds[p])
+                            elif p == 'location':
+                                _param_bounds[k] = [v['location'][i] + p for p in param_bounds[p]]
                             else:
                                 _param_bounds[k] = param_bounds[k]
 
@@ -577,12 +577,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                         newbounds = known_peaks[v['location'][i]]
                         tweaked = False
                         if len(newbounds) > 0:
-                            for k in parorder:
-                                if k in newbounds.keys():
-                                    _param_bounds[k] = np.sort(newbounds[k])
+                            for p in parorder:
+                                if p in newbounds.keys():
+                                    _param_bounds[p] = np.sort(newbounds[p])
                                     tweaked = True
-                                    if k != 'location':
-                                        p0[paridx[k]]= np.mean(newbounds[k])
+                                    if p != 'location':
+                                        p0[paridx[p]]= np.mean(newbounds[p])
                                         
                            # Check if width is the only key
                             if (len(newbounds) >= 1)  & ('width' not in newbounds.keys()):
