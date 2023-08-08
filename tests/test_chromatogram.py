@@ -132,9 +132,9 @@ def test_shouldered_peaks():
     for g, d in data.groupby('iter'):
         truth = peak_df[peak_df['iter'] == g]
         chrom = hplc.quant.Chromatogram(d, cols={'time': 'x', 'signal': 'y'})
-        peaks = chrom.fit_peaks(enforced_locations=[11],
+        peaks = chrom.fit_peaks(known_peaks=[11],
                                 correct_baseline=False,
-                                enforcement_tolerance=0.5)
+                                tolerance=0.5)
 
         assert len(peaks) == len(truth)
         for p in props:
@@ -152,7 +152,7 @@ def test_add_peak():
     peak_df = pd.read_csv('./tests/test_data/test_shallow_signal_peaks.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
     peaks = chrom.fit_peaks(
-        enforced_locations={50.0 : {'width': 3}}, prominence=0.5, correct_baseline=False)
+        known_peaks={50.0 : {'width': 3}}, prominence=0.5, correct_baseline=False)
     for p in props:
         compare(peaks[p].values, peak_df[p].values, 1.5E-2)
 
@@ -166,7 +166,7 @@ def test_score_reconstruction():
     scores = pd.read_csv('./tests/test_data/test_assessment_scores.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
     _ = chrom.fit_peaks(prominence=0.9, rel_height=0.99)
-    fit_scores = chrom.assess_fit(tol=1E-3, verbose=False)
+    fit_scores = chrom.assess_fit(rtol=1E-3, verbose=False)
     for g, d in scores.groupby(['window_id', 'window_type']):
         _d = fit_scores[(fit_scores['window_id'] == g[0]) & (
             fit_scores['window_type'] == g[1])]['status'].values
@@ -295,7 +295,7 @@ def test_bounding():
         assert len(truth) != len(bad_peaks)
 
         # Fit with provided bounding
-        peaks = chrom.fit_peaks(enforced_locations = bounds, correct_baseline=False)
+        peaks = chrom.fit_peaks(known_peaks = bounds, correct_baseline=False)
         assert len(truth) == len(peaks)
 
         # Ensure that it's close to within tolerance
