@@ -60,19 +60,11 @@ Dependencies for `hplc-py` are as follows:
 
 
 .. toctree::
-   :maxdepth: 2
-   :caption: User Guides
+   :maxdepth: 1
+   :caption: Tutorials
    :hidden:
    
    getting_started/quickstart.ipynb
-   algorithm/methodology.ipynb
-   algorithm/baseline_correction.ipynb
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
-   :hidden:
 
 .. toctree::
    :maxdepth: 1
