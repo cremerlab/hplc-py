@@ -149,7 +149,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
     def _assign_windows(self, known_peaks=[],
                         tolerance=0.5,
-                        prominence=0.01, rel_height=1, buffer=100,
+                        prominence=0.01, rel_height=1, buffer=75,
                         peak_kwargs={}):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
@@ -167,10 +167,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             If an enforced peak location is within tolerance of an automatically 
             identified peak, the automatically identified peak will be preferred. 
             This parameter is in units of time. Default is one-half time unit.
-        prominence : `float`,  [0, 1]
+        prominence : `float`
             The promimence threshold for identifying peaks. Prominence is the 
-            relative height of the normalized signal relative to the local
-            background. Default is 1%.
+            relative height of signal relative to the local background. 
         rel_height : `float`, [0, 1]
             The relative height of the peak where the baseline is determined. 
             Default is 1.
@@ -187,8 +186,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             the window IDs. Window ID of -1 corresponds to area not assigned to 
             any peaks
         """
-        if (prominence < 0) | (prominence > 1):
-            raise ValueError(f'Parameter `prominence` must be [0, 1].')
         if (rel_height < 0) | (rel_height > 1):
             raise ValueError(f' `rel_height` must be [0, 1].')
 
@@ -621,7 +618,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
     def fit_peaks(self, known_peaks=[], 
                   tolerance=0.5, prominence=1E-2, rel_height=1,
-                  approx_peak_width=5, buffer=100, param_bounds={},
+                  approx_peak_width=5, buffer=75, param_bounds={},
                   verbose=True, return_peaks=True,
                   correct_baseline=True, max_iter=1000000, precision=9,
                   peak_kwargs={}, optimizer_kwargs={}):

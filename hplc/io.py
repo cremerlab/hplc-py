@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pd
 
-def load_chromatogram(fname, colnames=[], delimiter=',', dropna=False):
+def load_chromatogram(fname, cols=[], delimiter=',', dropna=False):
     R"""
     Parses a file containing a chromatogram and returns it as a Pandas DataFrame.
 
@@ -10,7 +10,7 @@ def load_chromatogram(fname, colnames=[], delimiter=',', dropna=False):
     fname: `str`
         The path to the file containing the chromatogram. This must be a text
         file (i.e. not `.xslx`!) 
-    colnames : `list` or `dict`
+    cols : `list` or `dict`
         The desired columns present in the file. If provided as a dict, columns will
         be renamed as `key` -> `value`. If not provided, it will be assumed 
         that the chromatogram begins without needing to skip any lines. 
@@ -24,10 +24,10 @@ def load_chromatogram(fname, colnames=[], delimiter=',', dropna=False):
     df : `pandas.core.frame.DataFrame`
         The chromatogram loaded as a Pandas DataFrame with the desired columns.
     """
-    if type(colnames) == dict:
-        _colnames = list(colnames.keys())
+    if type(cols) == dict:
+        _colnames = list(cols.keys())
     else:
-        _colnames = colnames
+        _colnames = cols
     skip = 0
     if len(_colnames) != 0:
         with open(fname, 'r') as f:
@@ -44,9 +44,9 @@ def load_chromatogram(fname, colnames=[], delimiter=',', dropna=False):
 
     # Given skips, load in dataframe and rename if necessary
     df = pd.read_csv(fname, skiprows=skip, delimiter=delimiter)
-    if type(colnames) == dict:
-        df.rename(columns=colnames, inplace=True)
-        _colnames = list(colnames.values())
+    if type(cols) == dict:
+        df.rename(columns=cols, inplace=True)
+        _colnames = list(cols.values())
     if dropna:
         df.dropna(inplace=True)
 

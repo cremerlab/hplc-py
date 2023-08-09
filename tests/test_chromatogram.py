@@ -53,16 +53,6 @@ def test_peak_fitting():
     # Load test data
     chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv')
     chrom = hplc.quant.Chromatogram(chrom_df, cols={'time':'x', 'signal':'y'})
-
-
-    try:
-        chrom._assign_windows(prominence=-1)
-    except ValueError:
-        assert True
-    try:
-        chrom._assign_windows(prominence=2)
-    except ValueError:
-        assert True 
     try: 
         chrom._assign_windows(rel_height=-1)
     except ValueError:
