@@ -12,6 +12,7 @@ jobs:
         run: |
           pip install sphinx sphinx_rtd_theme
           pip install nbsphinx
+          pip install ipython
           pip install -e ./
           pip install -r requirements.txt
       - name: Sphinx build 
