@@ -64,7 +64,18 @@ Dependencies for `hplc-py` are as follows:
    :caption: Tutorials
    :hidden:
    
-   getting_started/quickstart.ipynb
+   tutorials/quickstart.ipynb
+
+.. toctree::
+   :maxdepth: 1
+   :caption: How It Works
+   :hidden:
+
+   methodology/problem.ipynb
+   methodology/baseline.ipynb
+   methodology/peak_detection.ipynb
+   methodology/fitting.ipynb
+   methodology/scoring.ipynb
 
 .. toctree::
    :maxdepth: 1
