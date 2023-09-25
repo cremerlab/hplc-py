@@ -38,8 +38,11 @@ class Chromatogram(object):
         `assess_fit()` is called.
     """
 
-    def __init__(self, file, time_window=None,
-                 cols={'time': 'time', 'signal': 'signal'}):
+    def __init__(self,
+                 file,
+                 time_window=None,
+                 cols={'time': 'time',
+                       'signal': 'signal'}):
         """
         Instantiates a chromatogram object on which peak detection and quantification
         is performed.
@@ -97,7 +100,9 @@ class Chromatogram(object):
         else:
             self.df = dataframe
 
-    def crop(self, time_window=None, return_df=False):
+    def crop(self,
+             time_window=None,
+             return_df=False):
         R"""
         Restricts the time dimension of the DataFrame in place.
 
@@ -133,9 +138,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         if return_df:
             return self.df
 
-    def _assign_windows(self, known_peaks=[],
+    def _assign_windows(self,
+                        known_peaks=[],
                         tolerance=0.5,
-                        prominence=0.01, rel_height=1, buffer=0,
+                        prominence=0.01,
+                        rel_height=1,
+                        buffer=0,
                         peak_kwargs={}):
         R"""
         Breaks the provided chromatogram down to windows of likely peaks. 
@@ -362,7 +370,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         self.window_props = window_dict
         return window_df
 
-    def _compute_skewnorm(self, x, *params):
+    def _compute_skewnorm(self,
+                          x,
+                          *params):
         R"""
         Computes the lineshape of a skew-normal distribution given the shape,
         location, and scale parameters
@@ -381,7 +391,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 `scale` : positive `float`
                     The scale parameter of the distribution.
                 `alpha` : positive `float`
-                    The skew shape parater of the distribution.
+                    The skew shape parameter of the distribution.
 
         Returns
         -------
@@ -409,7 +419,9 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         cdf = 0.5 * (1 + scipy.special.erf(_x / np.sqrt(2)))
         return amp * 2 * norm * cdf
 
-    def _fit_skewnorms(self, x, *params):
+    def _fit_skewnorms(self,
+                       x,
+                       *params):
         R"""
         Estimates the parameters of the distributions which consititute the 
         peaks in the chromatogram. 
@@ -448,8 +460,13 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             out += self._compute_skewnorm(x, *params[i])
         return out
 
-    def deconvolve_peaks(self, verbose=True, known_peaks=[], param_bounds={},
-                         max_iter=1000000, optimizer_kwargs={}):
+    def deconvolve_peaks(self,
+                         verbose=True,
+                         known_peaks=[],
+                         param_bounds={},
+                         integration_window=[],
+                         max_iter=1000000,
+                         optimizer_kwargs={}):
         R"""
         .. note::
            In most cases, this function should not be called directly. Instead, 
@@ -474,7 +491,10 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                   added from the peak position for lower and upper bounds, respectively.
                 * Modifications to `scale` replace the default values. 
                 * Modifications to `skew` replace the default values. 
-
+        integration_window: `list`
+            The time window over which the integrated peak areas should be computed. 
+            If empty, the area will be integrated over the entire duration of the 
+            cropped chromatogram.
         max_iter : `int`
             The maximum number of iterations the optimization protocol should 
             take before erroring out. Default value is 10^6.
@@ -513,6 +533,18 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         paridx = {k: -(i+1) for i, k in enumerate(reversed(parorder))}
         peak_props = {}
         self._bounds = []
+
+        # Determine the areas over which to integrate the window
+        if len(integration_window) == 0:
+            t_range = self.df[self.time_col].values
+        elif (type(integration_window) == list):
+            if len(integration_window) == 2:
+                t_range = np.linspace(
+                    integration_window[0], integration_window[1], self._dt)
+            else:
+                raise RuntimeError(
+                    'Provided integration bounds has wrong dimensions. Should have a length of 2.')
+
         for k, v in iterator:
             window_dict = {}
 
@@ -596,19 +628,29 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     'retention_time': np.round(p[1], decimals=self._time_precision),
                     'scale': p[2],
                     'alpha': p[3],
-                    'area': self._compute_skewnorm(v['time_range'], *p).sum(),
+                    'area': self._compute_skewnorm(t_range, *p).sum(),
                     'reconstructed_signal': self._compute_skewnorm(v['time_range'], *p)}
             peak_props[k] = window_dict
 
         self._peak_props = peak_props
         return peak_props
 
-    def fit_peaks(self, known_peaks=[],
-                  tolerance=0.5, prominence=1E-2, rel_height=1,
-                  approx_peak_width=5, buffer=0, param_bounds={},
-                  verbose=True, return_peaks=True,
-                  correct_baseline=True, max_iter=1000000, precision=9,
-                  peak_kwargs={}, optimizer_kwargs={}):
+    def fit_peaks(self,
+                  known_peaks=[],
+                  tolerance=0.5,
+                  prominence=1E-2,
+                  rel_height=1,
+                  approx_peak_width=5,
+                  buffer=0,
+                  param_bounds={},
+                  integration_window=[],
+                  verbose=True,
+                  return_peaks=True,
+                  correct_baseline=True,
+                  max_iter=1000000,
+                  precision=9,
+                  peak_kwargs={},
+                  optimizer_kwargs={}):
         R"""
         Detects and fits peaks present in the chromatogram
 
@@ -647,6 +689,10 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             all peaks. 
             See docstring of :func:`~hplc.quant.Chromatogram.deconvolve_peaks`
             for more information.
+        integration_window: `list`
+            The time window over which the integrated peak areas should be computed. 
+            If empty, the area will be integrated over the entire duration of the 
+            cropped chromatogram.
         correct_baseline : `bool`, optional
             If True, the baseline of the chromatogram will be automatically 
             corrected using the SNIP algorithm. See :func:`~hplc.quant.Chromatogram.correct_baseline`
@@ -671,7 +717,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             A dataframe containing information for each detected peak. This is
             only returned if `return_peaks == True`. The peaks are always 
             stored as an attribute `peak_df`.
-
 
         Notes
         -----
@@ -701,6 +746,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                            known_peaks=self._known_peaks,
                                            param_bounds=param_bounds,
                                            max_iter=max_iter,
+                                           integration_window=integration_window,
                                            **optimizer_kwargs)
 
         # Set up a dataframe of the peak properties
@@ -735,7 +781,11 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         if return_peaks:
             return peak_df
 
-    def correct_baseline(self, window=5, return_df=False, verbose=True, precision=9):
+    def correct_baseline(self,
+                         window=5,
+                         return_df=False,
+                         verbose=True,
+                         precision=9):
         R"""
         Performs Sensitive Nonlinear Iterative Peak (SNIP) clipping to estimate 
         and subtract background in chromatogram.
@@ -825,7 +875,10 @@ check if the subtraction is acceptable!
         if return_df:
             return df
 
-    def map_peaks(self, params, loc_tolerance=0.5, include_unmapped=False):
+    def map_peaks(self,
+                  params,
+                  loc_tolerance=0.5,
+                  include_unmapped=False):
         R"""
         Maps user-provided mappings to arbitrarily labeled peaks. If a linear 
         calibration curve is also provided, the concentration will be computed.
@@ -986,7 +1039,10 @@ check if the subtraction is acceptable!
         self.scores = score_df
         return score_df
 
-    def assess_fit(self, rtol=1E-2, fano_tol=1E-2, verbose=True):
+    def assess_fit(self,
+                   rtol=1E-2,
+                   fano_tol=1E-2,
+                   verbose=True):
         R"""
         Assesses whether the computed reconstruction score is adequate, given a tolerance.
 
@@ -1167,7 +1223,8 @@ to `fit_peaks()`."""
 --------------------------------------------------------------------------------""")
         return score_df
 
-    def show(self, time_range=[]):
+    def show(self,
+             time_range=[]):
         """
         Displays the chromatogram with mapped peaks if available.
 
