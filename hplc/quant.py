@@ -539,7 +539,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             t_range = self.df[self.time_col].values
         elif (type(integration_window) == list):
             if len(integration_window) == 2:
-                t_range = np.linspace(
+                t_range = np.arange(
                     integration_window[0], integration_window[1], self._dt)
             else:
                 raise RuntimeError(
@@ -1270,7 +1270,10 @@ to `fit_peaks()`."""
                     if g in self._mapped_peaks.keys():
                         d = self.quantified_peaks[self.quantified_peaks['compound']
                                                   == self._mapped_peaks[g]]
-                        label = f"{self._mapped_peaks[g]}\n[{d.concentration.values[0]:0.3g}"
+                        if 'concentration' in d.keys():
+                            label = f"{self._mapped_peaks[g]}\n[{d.concentration.values[0]:0.3g}"
+                        else:
+                            label = f"{self._mapped_peaks[g]}"
                         if 'unit' in d.keys():
                             label += f" {d['unit'].values[0]}]"
                         else:
