@@ -304,3 +304,31 @@ def test_bounding():
         props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
         for p in props:
             compare(peaks[p].values, truth[p].values, tol)
+
+
+def test_variable_integration_area():
+    """
+    Tests that the integration window is adjusted correctly and measured peak 
+    area agrees with the ground truth to within a tolerance of 1.5%
+    """
+    df = pd.read_csv('./tests/test_data/test_integration_window_chrom.csv')
+    chrom = hplc.quant.Chromatogram(df)
+
+    # Ensure that the test fails if a nonsense integration window is supplied.
+    win = [1]
+    try:
+        _ = chrom.fit_peaks(integration_window=win)
+        assert False
+    except RuntimeError:
+        assert True
+
+    # Load the window area dataframe
+    areas = pd.read_csv('./tests/test_data/test_integration_window_areas.csv')
+    for g, d in areas.groupby(['t_start', 't_end', 'window']):
+        _area = d['area'].values[0]
+        if g[2] == 1:
+            peaks = chrom.fit_peaks()
+        else:
+            win = [g[0], g[1]]
+            peaks = chrom.fit_peaks(integration_window=win)
+        assert np.isclose(peaks['area'].values[0], _area, rtol=1.5E-2)
