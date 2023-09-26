@@ -190,7 +190,7 @@ score_df['window_type'] = ['interpeak',
 score_df['status'] = ['needs review', 'invalid', 'valid', 'invalid', 'valid']
 score_df.to_csv('./test_data/test_assessment_scores.csv', index=False)
 
-#%%
+# %%
 # ##############################################################################
 # TEST DATA FOR  MANY PEAKS IN A WINDOW
 # ##############################################################################
@@ -202,7 +202,7 @@ for i in range(len(locs)):
 df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
 df.to_csv('./test_data/test_many_peaks.csv', index=False)
 
-#%%
+# %%
 
 # ##############################################################################
 # TEST DATA FOR SPECIFIC BOUND SETTING
@@ -210,29 +210,52 @@ df.to_csv('./test_data/test_many_peaks.csv', index=False)
 x = np.arange(0, 20, dt)
 amps = np.linspace(100, 1000, 8)
 sig1_props = [1000, -5, 12, 2]
-sig1 = sig1_props[0] * scipy.stats.skewnorm(sig1_props[1], loc=sig1_props[2], 
-                                                 scale=sig1_props[3]).pdf(x)
+sig1 = sig1_props[0] * scipy.stats.skewnorm(sig1_props[1], loc=sig1_props[2],
+                                            scale=sig1_props[3]).pdf(x)
 chrom_dfs = pd.DataFrame([])
 peak_dfs = pd.DataFrame([])
-for i, a in enumerate(amps): 
+for i, a in enumerate(amps):
     sig2 = a * scipy.stats.norm(11, 1).pdf(x)
     sig = sig1 + sig2
     _df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
     _df['iter'] = i + 1
     chrom_dfs = pd.concat([chrom_dfs, _df], sort=False)
-    _df = pd.DataFrame(np.array([[sig1_props[0], a], 
-                                      [sig1_props[1], 0],
-                                      [sig1_props[2], 11],
-                                      [sig1_props[3], 1],
-                                      [sig1.sum(), sig2.sum()],
-                                      [2, 1]]).T,
-                                      columns=['amplitude', 'skew', 
-                                               'retention_time', 'scale', 
-                                               'area',
-                                               'peak_id'])
+    _df = pd.DataFrame(np.array([[sig1_props[0], a],
+                                 [sig1_props[1], 0],
+                                 [sig1_props[2], 11],
+                                 [sig1_props[3], 1],
+                                 [sig1.sum(), sig2.sum()],
+                                 [2, 1]]).T,
+                       columns=['amplitude', 'skew',
+                                'retention_time', 'scale',
+                                'area',
+                                'peak_id'])
     _df['iter'] = i + 1
     peak_dfs = pd.concat([peak_dfs, _df], sort=False)
 chrom_dfs.to_csv('./test_data/test_bounding_chroms.csv', index=False)
 peak_dfs.to_csv('./test_data/test_bounding_peaks.csv', index=False)
 
 
+# %%
+# ##############################################################################
+# TEST DATA FOR INTEGRATION WINDOWING
+# ##############################################################################
+x = np.arange(0, 20, dt)
+sig = 500 * scipy.stats.skewnorm(0, loc=10, scale=1.5).pdf(x)
+sig = np.round(sig, decimals=3)
+
+
+# Save the chromatogram
+chrom_df = pd.DataFrame(np.array([x, sig]).T, columns=['time', 'signal'])
+chrom_df.to_csv('./test_data/test_integration_window_chrom.csv', index=False)
+
+# Integrate the area over a range of windows
+windows = [[x[0], x[-1]], [2.5, 17.5], [5, 15], [7.5, 12.5], [9, 11]]
+df = pd.DataFrame([])
+for i, w in enumerate(windows):
+    area = chrom_df[(chrom_df['time'] >= w[0]) &
+                    (chrom_df['time'] <= w[1])]['signal'].sum()
+    _df = pd.DataFrame(
+        {'t_start': w[0], 't_end': w[1], 'area': area, 'window': i+1}, index=[0])
+    df = pd.concat([df, _df], sort=False)
+df.to_csv('./test_data/test_integration_window_areas.csv', index=False)
