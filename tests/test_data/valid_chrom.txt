@@ -1,0 +1,7 @@
+Test chromatogram with one csv
+Metadata line 1
+Metadata line 2
+
+column1,column2,column3
+0,1,2
+,,

@@ -10,7 +10,7 @@ import seaborn as sns
 import termcolor
 
 
-class Chromatogram(object):
+class Chromatogram:
     """
     Base class for the processing and quantification of an HPLC chromatogram.
 
@@ -82,6 +82,7 @@ class Chromatogram(object):
         # but values will typically be identical.
         self._dt = np.mean(np.diff(dataframe[self.time_col].values))
         self._time_precision = int(np.abs(np.ceil(np.log10(self._dt))))
+
        # Blank out vars that are used elsewhere
         self.window_props = None
         self.scores = None
@@ -99,6 +100,21 @@ class Chromatogram(object):
             self.crop(time_window)
         else:
             self.df = dataframe
+
+    def __repr__(self):
+        trange = f'(t: {self.df[self.time_col].values[0]} - {self.df[self.time_col].values[-1]})'
+        rep = f"""Chromatogram:"""
+        if self._crop_offset > 0:
+            rep += f'\n\t\u2713 Cropped {trange}'
+        if self._bg_corrected:
+            rep += f'\n\t\u2713 Baseline Subtracted'
+        if self.peaks is not None:
+            rep += f"\n\t\u2713 {self.peaks.peak_id.max()} Peak(s) Detected"
+            if self._added_peaks is not None:
+                rep += f'\n\t\u2713 Enforced Peak Location(s)'
+        if self._mapped_peaks is not None:
+            rep += f'\n\t\u2713 Compound(s) Assigned'
+        return rep
 
     def crop(self,
              time_window=None,
@@ -228,7 +244,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     _right[inds] = __right[inds]
 
         # Determine if peaks should be added.
-        self._added_peaks = []
         if len(known_peaks) > 0:
             # Get the enforced peak positions
             if type(known_peaks) == dict:
@@ -271,6 +286,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             # Add the provided locations of known peaks and adjust parameters as necessary.
             for i, loc in enumerate(enforced_location_inds):
                 self._peak_indices = np.append(self._peak_indices, loc)
+                if self._added_peaks is None:
+                    self._added_peaks = []
                 self._added_peaks.append((loc + self._crop_offset) * self._dt)
                 if type(known_peaks) == dict:
                     _sel_loc = updated_known_peaks[_known_peaks[i]]
