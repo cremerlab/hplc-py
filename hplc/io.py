@@ -1,7 +1,8 @@
-import numpy as np 
+import numpy as np
 import pandas as pd
 
-def load_chromatogram(fname, cols=[], delimiter=',', dropna=False):
+
+def load_chromatogram(fname, cols, delimiter=',', dropna=False):
     R"""
     Parses a file containing a chromatogram and returns it as a Pandas DataFrame.
 
@@ -29,18 +30,24 @@ def load_chromatogram(fname, cols=[], delimiter=',', dropna=False):
     else:
         _colnames = cols
     skip = 0
+    num = 0
     if len(_colnames) != 0:
         with open(fname, 'r') as f:
             _lines = f.readlines()
             halted = False
-            for line in _lines:   
+            for line in _lines:
                 if np.array([nom.lower() in line.lower() for nom in _colnames]).all():
                     halted = True
-                    break
+                    num += 1
                 else:
-                    skip += 1
+                    if num == 0:
+                        skip += 1
             if not halted:
-                raise ValueError("Provided column name(s) were not found in file. Check spelling?")
+                raise ValueError(
+                    "Provided column name(s) were not found in file. Check spelling?")
+    if num > 1:
+        raise RuntimeError(
+            "Provided file has more than one chromatogram. This is not yet supported.")
 
     # Given skips, load in dataframe and rename if necessary
     df = pd.read_csv(fname, skiprows=skip, delimiter=delimiter)
@@ -53,4 +60,3 @@ def load_chromatogram(fname, cols=[], delimiter=',', dropna=False):
     # Keep only the desired columns.
     df = df[_colnames]
     return df
-    

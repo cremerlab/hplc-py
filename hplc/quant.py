@@ -542,9 +542,11 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             raise RuntimeError(
                 'Function `_assign_windows` must be run first. Go do that.')
         if verbose:
+            self._fitting_progress_state = 1
             iterator = tqdm.tqdm(self.window_props.items(),
                                  desc='Deconvolving mixture')
         else:
+            self._fitting_progress_state = 0
             iterator = self.window_props.items()
         parorder = ['amplitude', 'location', 'scale', 'skew']
         paridx = {k: -(i+1) for i, k in enumerate(reversed(parorder))}
@@ -870,10 +872,13 @@ check if the subtraction is acceptable!
 
         # Iteratively filter the signal
         if verbose:
+            self._bg_correction_progress_state = 1
             iter = tqdm.tqdm(range(1, n_iter + 1),
                              desc="Performing baseline correction")
         else:
+            self._bg_correction_progress_state = 0
             iter = range(1, n_iter + 1)
+
         for i in iter:
             tform_new = tform.copy()
             for j in range(i, len(tform) - i):
@@ -1164,12 +1169,16 @@ check if the subtraction is acceptable!
                         'invalid': ('F, Failed: ', ('black', 'on_red')),
                         'needs review': ('C-, Needs Review: ', ('black', 'on_yellow'))}
         if verbose:
+            self._report_card_progress_state = 1
             print("""
 -------------------Chromatogram Reconstruction Report Card----------------------
 
 Reconstruction of Peaks
 ======================= 
 """)
+        else:
+            self._report_card_progress_state = 0
+
         for g, d in score_df[score_df['window_type'] == 'peak'].groupby('window_id'):
             status = d['status'].values[0]
             if status == 'valid':
@@ -1266,8 +1275,10 @@ to `fit_peaks()`."""
         fig, ax = plt.subplots(1, 1)
         ax.set_xlabel(self.time_col)
         if self._bg_corrected:
+            self._viz_ylabel_subtraction_indication = True
             ylabel = f"{self.int_col.split('_corrected')[0]} (baseline corrected)"
         else:
+            self._viz_ylabel_subtraction_indication = False
             ylabel = self.int_col
         ax.set_ylabel(ylabel)
 
@@ -1276,7 +1287,9 @@ to `fit_peaks()`."""
                 label='raw chromatogram')
 
         # Compute the skewnorm mix
+        self._viz_min_one_concentration = None
         if self.peaks is not None:
+            self._viz_peak_reconstruction = True
             time = self.df[self.time_col].values
             # Plot the mix
             convolved = np.sum(self.unmixed_chromatograms, axis=1)
@@ -1284,25 +1297,38 @@ to `fit_peaks()`."""
             for g, d in self.peaks.groupby('peak_id'):
                 label = f'peak {int(g)}'
                 if self._mapped_peaks is not None:
+                    self._viz_mapped_peaks = True
                     if g in self._mapped_peaks.keys():
                         d = self.quantified_peaks[self.quantified_peaks['compound']
                                                   == self._mapped_peaks[g]]
                         if 'concentration' in d.keys():
+                            self._viz_min_one_concentration = True
                             label = f"{self._mapped_peaks[g]}\n[{d.concentration.values[0]:0.3g}"
                         else:
+                            if self._viz_min_one_concentration is None:
+                                self._viz_min_one_concentration = False
                             label = f"{self._mapped_peaks[g]}"
                         if 'unit' in d.keys():
+                            self._viz_unit_display = True
                             label += f" {d['unit'].values[0]}]"
                         else:
+                            self._viz_unit_display = False
                             label += ']'
                     else:
+                        self._viz_mapped_peaks = False
                         label = f'peak {int(g)}'
-
+                else:
+                    self._viz_mapped_peaks = False
                 ax.fill_between(time, self.unmixed_chromatograms[:, int(g) - 1], label=label,
                                 alpha=0.5)
+        else:
+            self._viz_peak_reconstruction = False
         if 'estimated_background' in self.df.keys():
+            self._viz_subtracted_baseline = True
             ax.plot(self.df[self.time_col], self.df['estimated_background'],
                     color='dodgerblue', label='estimated background', zorder=1)
+        else:
+            self._viz_subtracted_baseline = False
 
         if self._added_peaks is not None:
             ymax = ax.get_ylim()[1]
@@ -1316,10 +1342,12 @@ to `fit_peaks()`."""
         ax.legend(bbox_to_anchor=(1.5, 1))
         fig.patch.set_facecolor((0, 0, 0, 0))
         if len(time_range) == 2:
+            self._viz_adjusted_xlim = True
             ax.set_xlim(time_range)
             # Determine the max min and max value of the chromatogram within range.
             _y = self.df[(self.df[self.time_col] >= time_range[0]) & (
                 self.df[self.time_col] <= time_range[1])][self.int_col].values
             ax.set_ylim([ax.get_ylim()[0], 1.1 * _y.max()])
-
+        else:
+            self._viz_adjusted_xlim = False
         return [fig, ax]
