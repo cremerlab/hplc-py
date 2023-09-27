@@ -1,7 +1,9 @@
 # %%
+
 import hplc.quant
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import pytest
 
 
@@ -29,6 +31,14 @@ def fit_peaks(test_data, truth, colnames={'time': 'x', 'signal': 'y'}, tol=1.5E-
     # Execute analysis
     chrom = hplc.quant.Chromatogram(test_data, cols=colnames)
     peaks = chrom.fit_peaks(correct_baseline=False, prominence=1E-3)
+    assert chrom._fitting_progress_state == 1
+
+    # Ensure that proper representation is applied.
+    assert 'Peak(s) Detected' in chrom.__repr__()
+    assert 'Baseline Subtracted' not in chrom.__repr__()
+    assert 'Enforced Peak Location(s)' not in chrom.__repr__()
+    assert 'Compoun(s) Assigned' not in chrom.__repr__()
+    assert 'Cropped' not in chrom.__repr__()
 
     # Enforce that the correct number of peaks have been identified
     assert len(peaks) == truth['peak_idx'].max()
@@ -65,7 +75,6 @@ def test_peak_fitting():
     except ValueError:
         assert True
 
-    # Make sure a warning is thrown if a given buffer is < 10
     chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv')
     chrom = hplc.quant.Chromatogram(chrom_df[chrom_df['iter'] == 1], cols={
                                     'time': 'x', 'signal': 'y'})
@@ -97,7 +106,14 @@ def test_bg_estimation():
     tol = 1.5E-2
     data = pd.read_csv('./tests/test_data/test_SNIP_chrom.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
-    chrom.correct_baseline(window=0.5)
+    _df = chrom.correct_baseline(window=0.5, return_df=True)
+    with pytest.warns():
+        __df = chrom.correct_baseline(window=0.5, return_df=False)
+
+    # Ensure that dataframe returning is working.
+    assert _df is not None
+    assert __df is None
+
     window = int(0.5 / np.mean(np.diff(data['x'].values)))
     assert np.isclose(chrom.df['estimated_background'].values[window:-window],
                       data['bg'].values[window:-window], rtol=tol).all()
@@ -156,6 +172,14 @@ def test_score_reconstruction():
     data = pd.read_csv('./tests/test_data/test_assessment_chrom.csv')
     scores = pd.read_csv('./tests/test_data/test_assessment_scores.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
+
+    # Test that proper RuntimeException is thrown if no reconstruction is present.
+    try:
+        chrom.assess_fit()
+        assert False
+    except RuntimeError:
+        assert True
+
     _ = chrom.fit_peaks(prominence=0.9, rel_height=0.99, buffer=100)
     fit_scores = chrom.assess_fit(rtol=1E-3, verbose=False)
     for g, d in scores.groupby(['window_id', 'window_type']):
@@ -181,6 +205,13 @@ def test_crop():
         assert False
     except RuntimeError:
         assert True
+
+    # Test that a dataframe is returned only if specified.
+    no_returned_df = chrom.crop([10, 20], return_df=False)
+    returned_df = chrom.crop([10, 20], return_df=True)
+    assert no_returned_df is None
+    assert returned_df is not None
+
     chrom.crop([10, 20])
     assert (chrom.df.x.values[0] >= 10) & (chrom.df.x.values[-1] <= 20)
     _ = chrom.fit_peaks()
@@ -193,6 +224,10 @@ def test_crop():
     # Test that cropping happens if a time window is provided.
     chrom = hplc.quant.Chromatogram(data, time_window=[10, 20],
                                     cols={'time': 'x', 'signal': 'y'})
+    assert 'Cropped' in chrom.__repr__()
+    assert 'Baseline Subtracted' not in chrom.__repr__()
+    assert 'Peak(s) Detected' not in chrom.__repr__()
+    assert 'Enforced Peak Location(s)' not in chrom.__repr__()
     assert (chrom.df.x.values[0] >= 10) & (chrom.df.x.values[-1] <= 20)
 
 
@@ -222,7 +257,10 @@ def test_map_peaks():
     params = {g: {'retention_time': d['retention_time'].values[0],
                   'intercept': 0, 'slope': 2} for g, d in orig_peaks.groupby('peak_id')}
     peaks = chrom.map_peaks(params)
-
+    assert 'Compound(s) Assigned' in chrom.__repr__()
+    assert 'Baseline Subtracted' in chrom.__repr__()
+    assert 'Cropped' not in chrom.__repr__()
+    assert 'Enforced Peak Location(s)' not in chrom.__repr__()
     assert (orig_peaks['peak_id'].values == peaks['compound'].values).all()
     assert (peaks['area'].values == 2 * peaks['concentration'].values).all()
 
@@ -297,6 +335,10 @@ def test_bounding():
         # Fit with provided bounding
         peaks = chrom.fit_peaks(
             known_peaks=bounds, correct_baseline=False, buffer=100)
+        assert 'Peak(s) Detected' in chrom.__repr__()
+        assert 'Enforced Peak Location(s)' in chrom.__repr__()
+        assert 'Baseline Subtracted' not in chrom.__repr__()
+        assert 'Compound(s) Assigned' not in chrom.__repr__()
         assert len(truth) == len(peaks)
 
         # Ensure that it's close to within tolerance
@@ -332,3 +374,99 @@ def test_variable_integration_area():
             win = [g[0], g[1]]
             peaks = chrom.fit_peaks(integration_window=win)
         assert np.isclose(peaks['area'].values[0], _area, rtol=1.5E-2)
+
+
+def test_verbosity():
+    """
+    Ensures that verbosity flags are respective 
+    """
+    df = pd.read_csv('./tests/test_data/test_integration_window_chrom.csv')
+
+    # Peak Fitting and Baseline Subtraction
+    chrom = hplc.quant.Chromatogram(df)
+    _ = chrom.fit_peaks(verbose=True)
+    assert chrom._fitting_progress_state == 1
+    assert chrom._bg_correction_progress_state == 1
+
+    chrom = hplc.quant.Chromatogram(df)
+    _ = chrom.fit_peaks(verbose=False)
+    assert chrom._fitting_progress_state == 0
+    assert chrom._bg_correction_progress_state == 0
+
+    # Reconstruction Reporting
+    _ = chrom.assess_fit(verbose=False)
+    assert chrom._report_card_progress_state == 0
+    _ = chrom.assess_fit(verbose=True)
+    assert chrom._report_card_progress_state == 1
+
+
+def test_show():
+    """
+    Ensures that chromatogram visualization is showing features as expected. 
+    """
+    df = pd.read_csv('./tests/test_data/test_integration_window_chrom.csv')
+    chrom = hplc.quant.Chromatogram(df)
+    _ = chrom.show()
+    plt.close()
+    assert chrom._viz_ylabel_subtraction_indication == False
+    assert chrom._viz_subtracted_baseline == False
+    assert chrom._viz_peak_reconstruction == False
+    assert chrom._viz_adjusted_xlim == False
+
+    _ = chrom.show(time_range=[2, 3])
+    plt.close()
+    assert chrom._viz_ylabel_subtraction_indication == False
+    assert chrom._viz_subtracted_baseline == False
+    assert chrom._viz_peak_reconstruction == False
+    assert chrom._viz_adjusted_xlim == True
+
+    chrom.correct_baseline()
+    _ = chrom.show()
+    plt.close()
+    assert chrom._viz_ylabel_subtraction_indication == True
+    assert chrom._viz_peak_reconstruction == False
+    assert chrom._viz_subtracted_baseline == True
+    assert chrom._viz_adjusted_xlim == False
+
+    _ = chrom.fit_peaks(verbose=False)
+    _ = chrom.show()
+    plt.close()
+    assert chrom._viz_peak_reconstruction == True
+    assert chrom._viz_ylabel_subtraction_indication == True
+    assert chrom._viz_subtracted_baseline == True
+    assert chrom._viz_adjusted_xlim == False
+    assert chrom._viz_mapped_peaks == False
+
+    _ = chrom.map_peaks({'test': {'retention_time': 10}},)
+    _ = chrom.show()
+    plt.close()
+    assert chrom._viz_peak_reconstruction == True
+    assert chrom._viz_ylabel_subtraction_indication == True
+    assert chrom._viz_subtracted_baseline == True
+    assert chrom._viz_adjusted_xlim == False
+    assert chrom._viz_mapped_peaks == True
+    assert chrom._viz_min_one_concentration == False
+
+    _ = chrom.map_peaks(
+        {'test': {'retention_time': 10, 'slope': 1, 'intercept': 1}})
+    _ = chrom.show()
+    plt.close()
+    assert chrom._viz_peak_reconstruction == True
+    assert chrom._viz_ylabel_subtraction_indication == True
+    assert chrom._viz_subtracted_baseline == True
+    assert chrom._viz_adjusted_xlim == False
+    assert chrom._viz_mapped_peaks == True
+    assert chrom._viz_min_one_concentration == True
+    assert chrom._viz_unit_display == False
+
+    _ = chrom.map_peaks(
+        {'test': {'retention_time': 10, 'slope': 1, 'intercept': 1, 'unit': 'test'}})
+    _ = chrom.show()
+    plt.close()
+    assert chrom._viz_peak_reconstruction == True
+    assert chrom._viz_ylabel_subtraction_indication == True
+    assert chrom._viz_subtracted_baseline == True
+    assert chrom._viz_adjusted_xlim == False
+    assert chrom._viz_mapped_peaks == True
+    assert chrom._viz_min_one_concentration == True
+    assert chrom._viz_unit_display == True
