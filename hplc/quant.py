@@ -564,6 +564,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 raise RuntimeError(
                     'Provided integration bounds has wrong dimensions. Should have a length of 2.')
 
+        # Instantiate a state variable to ensure that parameter bounds are being adjusted.
+        self._param_bounds = []
         for k, v in iterator:
             window_dict = {}
 
@@ -600,13 +602,13 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     for p in parorder:
                         if p in param_bounds.keys():
                             if p == 'amplitude':
-                                _param_bounds[k] = v['amplitude'][i] * \
+                                _param_bounds[p] = v['amplitude'][i] * \
                                     np.sort(param_bounds[p])
                             elif p == 'location':
-                                _param_bounds[k] = [v['location']
+                                _param_bounds[p] = [v['location']
                                                     [i] + p for p in param_bounds[p]]
                             else:
-                                _param_bounds[k] = param_bounds[k]
+                                _param_bounds[p] = param_bounds[p]
 
                 # Add peak-specific bounds if provided
                 if (type(known_peaks) == dict) & (len(known_peaks) != 0):
@@ -630,6 +632,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 for _, val in _param_bounds.items():
                     bounds[0].append(val[0])
                     bounds[1].append(val[1])
+            self._param_bounds.append(_param_bounds)
 
             # Perform the inference
             popt, _ = scipy.optimize.curve_fit(self._fit_skewnorms, v['time_range'],

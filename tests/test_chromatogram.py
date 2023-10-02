@@ -1,5 +1,6 @@
 # %%
 
+import importlib
 import hplc.quant
 import pandas as pd
 import numpy as np
@@ -470,3 +471,28 @@ def test_show():
     assert chrom._viz_mapped_peaks == True
     assert chrom._viz_min_one_concentration == True
     assert chrom._viz_unit_display == True
+
+
+def test_generic_param_bounding():
+    """
+    Tests that global parameter bounds can be maniupulated. 
+    """
+    df = pd.read_csv('./tests/test_data/test_integration_window_chrom.csv')
+    chrom = hplc.quant.Chromatogram(df)
+    # Adjust the parameters
+    adjustments = {'amplitude': [0.9, 1.1],
+                   'location': [-1, 1],
+                   'scale': [1, 3],
+                   'skew': [-10, 10]}
+    _ = chrom.fit_peaks(param_bounds=adjustments, verbose=False)
+    adj_pars = chrom._param_bounds[0]
+
+    # Make sure the adjustments match
+    _loc = chrom.df['time'].values[chrom._peak_indices]
+    _amp = chrom.df['signal_corrected'].values[chrom._peak_indices]
+    truth = {'amplitude': _amp * adjustments['amplitude'],
+             'location': _loc + adjustments['location'],
+             'scale': [1, 3],
+             'skew': [-10, 10]}
+    for k, v in adj_pars.items():
+        assert np.array(truth[k] == v).all()
