@@ -169,11 +169,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         known_peaks : `list`
             The approximate locations of the peaks. If this is not provided, 
             peak locations will be automatically detected. 
-        enforced_widths : `list`
-            The approximate widths of the peaks. If this is not provided  but
-            `locations` is, approximate widths of one time unit (0.5 / dt)
-            will be assumed.
-        enforce_tolerance: `float`, optional
+        tolerance: `float`, optional
             If an enforced peak location is within tolerance of an automatically 
             identified peak, the automatically identified peak will be preferred. 
             This parameter is in units of time. Default is one-half time unit.
@@ -683,7 +679,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             provided as a list, only the locations wil be used as initial guesses. 
             If provided as a dictionary, locations and parameter bounds will be 
             set.
-        enforce_tolerance: `float`, optional
+        tolerance: `float`, optional
             If an enforced peak location is within tolerance of an automatically 
             identified peak, the automatically identified peak will be preferred. 
             This parameter is in units of time. Default is one-half time unit.
