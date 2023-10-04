@@ -39,7 +39,6 @@ You can install `hplc-py` using pip::
 
    $ pip install --upgrade hplc-py
 
-
 Dependencies for `hplc-py` are as follows:
 
 - Python 3.9 or newer
@@ -49,6 +48,17 @@ Dependencies for `hplc-py` are as follows:
 - Seaborn_
 - Tqdm_
 - Termcolor_
+
+Contributing
+------------
+Development of `hplc-py` occurs on various feature branches which are merged and 
+released upon approval by Griffin.
+
+Please submit issues and bug reports using the [GitHub issue tracking
+system](https://github.com/cremerlab/hplc-py/issues).  When filing an issue,
+provide a reproducible example that demonstrates the bug or problem. Feature
+requests can also be made through the issue tracker, though it is up to the
+discretion of the maintainers what is worth implementing. 
 
 .. _NumPy: http://www.numpy.org/
 .. _SciPy: http://www.scipy.org/
@@ -65,6 +75,7 @@ Dependencies for `hplc-py` are as follows:
    :hidden:
    
    tutorials/quickstart.ipynb
+   tutorials/calibration_curve.ipynb
 
 .. toctree::
    :maxdepth: 1
