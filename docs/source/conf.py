@@ -9,13 +9,13 @@
 project = 'hplc-py'
 copyright = '2023, Griffin Chure & Jonas Cremer'
 author = 'Griffin Chure & Jonas Cremer'
-release = '0.1.00'
+release = '0.2.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.napoleon', 'nbsphinx', 'sphinx.ext.coverage', 
-              'sphinx.ext.autodoc'] 
+extensions = ['sphinx.ext.napoleon', 'nbsphinx', 'sphinx.ext.coverage',
+              'sphinx.ext.autodoc']
 
 templates_path = ['_templates']
 exclude_patterns = []
@@ -30,7 +30,7 @@ html_theme_options = {
     "logo_only": True,
     "sticky_navigation": True,
     "collapse_navigation": True,
-    "style_nav_header_background":"#3C3E47",
+    "style_nav_header_background": "#3C3E47",
 }
 
 html_css_files = ['css/custom.css']
@@ -40,7 +40,7 @@ html_css_files = ['css/custom.css']
 #         "image_light": '_static/logo_horizontal-01.svg',
 #     } ,
 #     "navbar_end": ["navbar-icon-links"]
-#     }   
+#     }
 # html_context = {"default_mode": "light"}
 
 
