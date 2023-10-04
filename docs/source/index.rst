@@ -54,8 +54,7 @@ Contributing
 Development of `hplc-py` occurs on various feature branches which are merged and 
 released upon approval by Griffin.
 
-Please submit issues and bug reports using the [GitHub issue tracking
-system](https://github.com/cremerlab/hplc-py/issues).  When filing an issue,
+Please submit issues and bug reports using the `issue tracker <https://github.com/cremerlab/hplc-py/issues>`_.  When filing an issue,
 provide a reproducible example that demonstrates the bug or problem. Feature
 requests can also be made through the issue tracker, though it is up to the
 discretion of the maintainers what is worth implementing. 
