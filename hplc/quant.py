@@ -881,8 +881,8 @@ check if the subtraction is acceptable!
         for i in iter:
             tform_new = tform.copy()
             for j in range(i, len(tform) - i):
-                tform_new[j] = min(tform_new[j], 0.5 *
-                                   (tform_new[j+i] + tform_new[j-i]))
+                tform_new[j] = min(tform[j], 0.5 *
+                                   (tform[j+i] + tform[j-i]))
             tform = tform_new
 
         # Perform the inverse of the LLS transformation and subtract

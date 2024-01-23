@@ -194,8 +194,12 @@ score_df.to_csv('./test_data/test_assessment_scores.csv', index=False)
 # ##############################################################################
 # TEST DATA FOR  MANY PEAKS IN A WINDOW
 # ##############################################################################
-x = np.arange(0, 70, dt)
-locs = np.linspace(10, 55, 10)
+x = np.arange(0, 100, dt)
+_locs = np.linspace(20, 55, 10)
+locs = [10]
+for _l in _locs:
+    locs.append(_l)
+locs.append(70)
 sig = np.zeros_like(x)
 for i in range(len(locs)):
     sig += 100 * scipy.stats.norm(locs[i], 1).pdf(x)
