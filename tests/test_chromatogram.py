@@ -1,6 +1,4 @@
 # %%
-
-import importlib
 import hplc.quant
 import pandas as pd
 import numpy as np
@@ -107,25 +105,26 @@ def test_bg_estimation():
     tol = 1.5E-2
     data = pd.read_csv('./tests/test_data/test_SNIP_chrom.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
-    _df = chrom.correct_baseline(window=0.5, return_df=True)
+    _df = chrom.correct_baseline(window=0.75, return_df=True)
+    # return (chrom, _df, data)
     with pytest.warns():
-        __df = chrom.correct_baseline(window=0.5, return_df=False)
+        __df = chrom.correct_baseline(window=0.75, return_df=False)
 
     # Ensure that dataframe returning is working.
     assert _df is not None
     assert __df is None
 
-    window = int(0.5 / np.mean(np.diff(data['x'].values)))
+    window = int(0.75 / np.mean(np.diff(data['x'].values)))
     assert np.isclose(chrom.df['estimated_background'].values[window:-window],
                       data['bg'].values[window:-window], rtol=tol).all()
 
     with pytest.warns():
-        chrom.correct_baseline(window=0.5)
+        chrom.correct_baseline(window=0.75)
 
     data['y'] -= 100
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
     with pytest.warns():
-        chrom.correct_baseline(window=0.5)
+        chrom.correct_baseline(window=0.75)
 
 
 def test_shouldered_peaks():
