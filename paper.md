@@ -159,7 +159,7 @@ lineshape (red) of the phosphate signal (purple) as computed by `hplc-py`. The i
 distributions of lactose (blue) and phosphate (purple) with constrained or unconstrained 
 phosphate parameters in (C) and (D), respectively. Inferred lactose concentration 
 compared to the known concentration in the mixture for the constrained and unconstrained
-phosphate parameters are shown in (E) and (F), respectively. Code used to perform this analysis and generate these figures is available on the [GitHub repository publication branch](https://github.com/cremerlab/hplc-py/blob/publication/Fig3_validation.py)](figures/Figure3.pdf)
+phosphate parameters are shown in (E) and (F), respectively. Code used to perform this analysis and generate these figures is available on the [GitHub repository publication branch](https://github.com/cremerlab/hplc-py/blob/publication/Fig3_overlap.py)](figures/Figure3.pdf)
 
 In total, `hplc-py` provides a programmatic interface that allows experimentalists 
 to rapidly quantify chemical signals from chromatograms, even when there is exceedingly
