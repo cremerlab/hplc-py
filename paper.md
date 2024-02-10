@@ -9,15 +9,15 @@ tags:
 authors:
   - name: Griffin Chure
     orcid: 0000-0002-2216-2057 
-    affiliation: "1, *"
+    affiliation: 1, 2
   - name: Jonas Cremer
     orcid: 0000-0003-2328-5152
-    affiliation: "1"
+    affiliation: 1
 affiliations:
  - name: Department of Biology, Stanford University, CA, USA
-   index: "1"
+   index: 1
  - name: For correspondence, contact `griffinchure@gmail.com`
-   index: "*"
+   index: 2
 date: "09 February 2024"
 bibliography: paper.bib
 ---
