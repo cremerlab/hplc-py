@@ -16,7 +16,7 @@ authors:
 affiliations:
  - name: Department of Biology, Stanford University, CA, USA
    index: 1
- - name: For correspondence, contact `griffinchure@gmail.com`
+ - name: For correspondence, contact griffinchure@gmail.com
    index: 2
 date: "09 February 2024"
 bibliography: paper.bib
