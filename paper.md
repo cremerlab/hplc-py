@@ -12,10 +12,10 @@ authors:
     affiliation: "1, *"
   - name: Jonas Cremer
     orcid: 0000-0003-2328-5152
-    affiliation: 1
+    affiliation: "1"
 affiliations:
  - name: Department of Biology, Stanford University, CA, USA
-   index: 1
+   index: "1"
  - name: For correspondence, contact `griffinchure@gmail.com`
    index: "*"
 date: "09 February 2024"
