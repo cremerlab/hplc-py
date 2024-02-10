@@ -9,7 +9,7 @@ tags:
 authors:
   - name: Griffin Chure
     orcid: 0000-0002-2216-2057 
-    affiliation: 1, 2
+    affiliation: "1, 2"
   - name: Jonas Cremer
     orcid: 0000-0003-2328-5152
     affiliation: 1
