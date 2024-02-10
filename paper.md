@@ -1,5 +1,5 @@
 ---
-title: 'hplc-py: A Python Utility for the Rapid Quantification of Complex Chemical Chromatograms'
+title: 'hplc-py: A Python Utility For Rapid Quantification of Complex Chemical Chromatograms'
 tags:
   - Python
   - Analytical Chemistry
@@ -18,7 +18,7 @@ affiliations:
    index: 1
  - name: For correspondence, contact `griffinchure@gmail.com`
    index: "*"
-date: "23 January 2024"
+date: "09 February 2024"
 bibliography: paper.bib
 ---
 # Summary
@@ -69,7 +69,7 @@ of individual signals which sum to reconstruct the observed
 chromatogram. Code used to generate panels (B) and (C) is available on the [GitHub repository publication branch](https://github.com/cremerlab/hplc-py/blob/publication/Fig1_summary.py)](figures/Figure1.pdf){label="fig:intro"}
 
 # Methodology 
-The major components of `hplc-py` are diagrammed in Figure 2 (A). A helper function,
+The major components of `hplc-py` are diagrammed in Figure 2(A). A helper function,
 `load_chromatogram`, can be used to read a raw text file, filter through the metadata in the 
 header, and retrieve the time and signal data, given user-supplied column names [Figure 2(B)]. 
 The resulting pandas DataFrame object can be passed to the `Chromatogram` object,
