@@ -14,11 +14,11 @@ authors:
     orcid: 0000-0003-2328-5152
     affiliation: 1
 affiliations:
- - name: Department of Biology, Stanford University, CA, USA
+ - name: Department of Biology, Stanford University, CA, United States of America
    index: 1
  - name: For correspondence, contact griffinchure@gmail.com
    index: 2
-date: "09 February 2024"
+date: "12 February 2024"
 bibliography: paper.bib
 ---
 # Summary
