@@ -116,7 +116,7 @@ you use along with our [descriptive paper in JOSS](https://joss.theoj.org/papers
 	author = {Chure, Griffin and Cremer, Jonas},
 	title = {hplc-py: A Python Utility For Rapid Quantification of Complex Chemical Chromatograms},
 	volume = 9,
-   number = 94,
+    number = 94,
 	url = {https://joss.theoj.org/papers/10.21105/joss.06270},
 	doi = {10.21105/joss.06270},
 	number = {94},
