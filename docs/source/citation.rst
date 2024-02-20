@@ -10,17 +10,20 @@ Foundation Postdoctoral Research Fellowship under the award number 2010807.
 Citing `hplc-py`
 ================
 If you end up using `hplc-py` in your research, great! Please consider citing 
-the project. The package is being actively developed and improved, so please 
-ensure that you cite the version number you are using.
+`our paper in JOSS <https://joss.theoj.org/papers/10.21105/joss.06270>`_ which
+describes the package.
 
 .. code-block:: bibtex
-    
-    @misc{#10.5281/zenodo.8197910,
-          doi = {10.5281/zenodo.8197910}
-          url = {https://doi.org/10.5281/zenodo.8197910},
-          author = {Chure, Griffin and Cremer, Jonas},
-          keywords = {Github},
-          title = {cremerlab/hplc-py: Version 0.2.00},
-          publisher = {Zenodo},
-          year = {2023}
-         }
+
+    @article{chure2024,
+	author = {Chure, Griffin and Cremer, Jonas},
+	title = {hplc-py: A Python Utility For Rapid Quantification of Complex Chemical Chromatograms},
+	volume = 9,
+    number = 94,
+	url = {https://joss.theoj.org/papers/10.21105/joss.06270},
+	doi = {10.21105/joss.06270},
+	number = {94},
+	urldate = {2024-02-16},
+	journal = {Journal of Open Source Software},
+	year = {2024}
+   } 

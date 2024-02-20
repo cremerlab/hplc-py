@@ -4,8 +4,7 @@
 [![Run tests](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml/badge.svg)](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml)
 [![codecov](https://codecov.io/gh/cremerlab/hplc-py/branch/main/graph/badge.svg?token=WXL50JVR6C)](https://codecov.io/gh/cremerlab/hplc-py)
 [![PyPI version](https://badge.fury.io/py/hplc-py.svg)](https://badge.fury.io/py/hplc-py)
-[![DOI](https://zenodo.org/badge/667610900.svg)](https://zenodo.org/badge/latestdoi/667610900)
-
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.06270/status.svg)](https://doi.org/10.21105/joss.06270)
 
 # About
 
@@ -108,6 +107,24 @@ Out[8]:[<Figure size 640x480 with 1 Axes>,
 ```
 ![](example/reconstructed_chromatogram.png)
 
+# Citation
+If you use `hplc-py` in your research please cite the version of the software
+you use along with our [descriptive paper in JOSS](https://joss.theoj.org/papers/10.21105/joss.06270):
+
+```
+@article{chure2024,
+	author = {Chure, Griffin and Cremer, Jonas},
+	title = {hplc-py: A Python Utility For Rapid Quantification of Complex Chemical Chromatograms},
+	volume = 9,
+   number = 94,
+	url = {https://joss.theoj.org/papers/10.21105/joss.06270},
+	doi = {10.21105/joss.06270},
+	number = {94},
+	urldate = {2024-02-16},
+	journal = {Journal of Open Source Software},
+	year = {2024}
+   }
+```
 
 # Contributing
 Development of hplc-py occurs on various feature branches which are merged and released upon approval by Griffin Chure (@gchure), the primary maintainer of the software.

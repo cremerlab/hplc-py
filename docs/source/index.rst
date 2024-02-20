@@ -13,8 +13,8 @@
 .. image:: https://badge.fury.io/py/hplc-py.svg
    :target: https://pypi.org/project/hplc-py/#description 
 
-.. image:: https://zenodo.org/badge/667610900.svg
-   :target: https://zenodo.org/badge/latestdoi/667610900
+.. image:: https://joss.theoj.org/papers/10.21105/joss.06270/status.svg
+   :target: https://doi.org/10.21105/joss.06270
 
 
 ----
