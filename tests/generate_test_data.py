@@ -27,6 +27,7 @@ for i, sig in enumerate(scales):
         _scales = []
         _skews = []
         _amps = []
+        _maxes = []
         for ell, loc in enumerate(locs):
             _pdf = amps[ell] * \
                 scipy.stats.skewnorm.pdf(x, skew, loc=loc, scale=sig)
@@ -35,9 +36,11 @@ for i, sig in enumerate(scales):
             _scales.append(sig)
             _skews.append(skew)
             _amps.append(amps[ell])
+            _maxes.append(_pdf.max())
         # Generate the peak table
-        _peaks = pd.DataFrame(np.array([locs, _areas, _scales, _skews, _amps, np.arange(len(locs)) + 1]).T,
-                              columns=['retention_time', 'area', 'scale', 'skew', 'amplitude', 'peak_idx'])
+        _peaks = pd.DataFrame(np.array([locs, _areas, _scales, _skews, _amps, _maxes, np.arange(len(locs)) + 1]).T,
+                              columns=['retention_time', 'area', 'scale', 'skew', 'amplitude',
+                                       'signal_maximum', 'peak_idx'])
         _peaks['iter'] = _iter
         _peaks['peak_idx'] = np.int_(_peaks['peak_idx'])
         _chrom = pd.DataFrame(np.array([x, signal]).T, columns=['x', 'y'])
@@ -73,9 +76,11 @@ for n in range(n_mixes):
     # Save the peak info
     _df = pd.DataFrame(np.array([[8, 10.5 + n * 0.2], [1, 1], [0, 0],
                                 [100, 70], [peak1.sum(), peak2.sum()],
+                                [peak1.max(), peak2.max()],
                                 [1, 2], [n, n]]).T,
                        columns=['retention_time', 'scale', 'skew',
-                                'amplitude', 'area', 'peak_idx', 'iter'])
+                                'amplitude', 'area', 'signal_maximum',
+                                'peak_idx', 'iter'])
     peaks = pd.concat([peaks, _df])
 chroms.to_csv('./test_data/test_unmix_chrom.csv', index=False)
 peaks.to_csv('./test_data/test_unmix_peaks.csv', index=False)
@@ -134,9 +139,10 @@ for n in range(n_mixes):
     # Save the peak info
     _df = pd.DataFrame(np.array([[8, loc], [1, scale], [0, 0],
                                 [100, amp], [peak1.sum(), peak2.sum()],
+                                [peak1.max(), peak2.max()],
                                 [1, 2], [n, n]]).T,
                        columns=['retention_time', 'scale', 'skew',
-                                'amplitude', 'area', 'peak_idx', 'iter'])
+                                'amplitude', 'area', 'signal_maximum', 'peak_idx', 'iter'])
     peaks = pd.concat([peaks, _df])
 chroms.to_csv('./test_data/test_manual_unmix_chrom.csv', index=False)
 peaks.to_csv('./test_data/test_manual_unmix_peaks.csv', index=False)
@@ -154,9 +160,10 @@ sig = sig1 + sig2
 df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
 df.to_csv('./test_data/test_shallow_signal_chrom.csv', index=False)
 peak_df = pd.DataFrame(np.array([[10, 50], [1, 3], [0, 0], [100, 10],
-                                 [sig1.sum(), sig2.sum()], [1, 2]]).T,
+                                 [sig1.sum(), sig2.sum()],
+                                 [sig1.max(), sig2.max()], [1, 2]]).T,
                        columns=['retention_time', 'scale', 'skew',
-                                'amplitude', 'area', 'peak_idx'])
+                                'amplitude', 'area', 'signal_maximum', 'peak_idx'])
 peak_df.to_csv('./test_data/test_shallow_signal_peaks.csv', index=False)
 
 # %%
@@ -177,9 +184,11 @@ sig = sig1 + sig2 + sig3 + sig4
 sig[0:int(7/dt)] += np.random.normal(0, 0.01, len(sig[0:int(7/dt)]))
 df = pd.DataFrame(np.array([x, sig]).T, columns=['x', 'y'])
 peak_df = pd.DataFrame(np.array([[10, 25], [1, 3], [0, 0], [100, 10],
-                                 [sig1.sum(), sig2.sum()], [1, 2]]).T,
+                                 [sig1.sum(), sig2.sum()],
+                                 [sig1.max(), sig2.max()],
+                                 [1, 2]]).T,
                        columns=['retention_time', 'scale', 'skew',
-                                'amplitude', 'area', 'peak_idx'])
+                                'amplitude', 'area', 'signal_maximum', 'peak_idx'])
 df.to_csv('./test_data/test_assessment_chrom.csv', index=False)
 peak_df.to_csv('./test_data/test_assessment_peaks.csv', index=False)
 
@@ -229,10 +238,11 @@ for i, a in enumerate(amps):
                                  [sig1_props[2], 11],
                                  [sig1_props[3], 1],
                                  [sig1.sum(), sig2.sum()],
+                                 [sig1.max(), sig2.max()],
                                  [2, 1]]).T,
                        columns=['amplitude', 'skew',
                                 'retention_time', 'scale',
-                                'area',
+                                'area', 'signal_maximum',
                                 'peak_id'])
     _df['iter'] = i + 1
     peak_dfs = pd.concat([peak_dfs, _df], sort=False)

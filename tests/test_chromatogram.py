@@ -25,7 +25,8 @@ def fit_peaks(test_data, truth, colnames={'time': 'x', 'signal': 'y'}, tol=1.5E-
     and compares the value with the ground truth.
     """
     # Define constants
-    props = ['retention_time', 'amplitude', 'area', 'scale', 'skew']
+    props = ['retention_time', 'amplitude',
+             'area', 'scale', 'skew', 'signal_maximum']
 
     # Execute analysis
     chrom = hplc.quant.Chromatogram(test_data, cols=colnames)

@@ -1,3 +1,3 @@
-retention_time,scale,skew,amplitude,area,peak_idx
-10.0,1.0,0.0,100.0,10000.0,1.0
-50.0,3.0,0.0,10.0,1000.0000000000001,2.0
+retention_time,scale,skew,amplitude,area,signal_maximum,peak_idx
+10.0,1.0,0.0,100.0,10000.0,39.89422804014327,1.0
+50.0,3.0,0.0,10.0,1000.0000000000001,1.329807601338109,2.0
