@@ -641,13 +641,15 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             else:
                 popt = [popt]
             for i, p in enumerate(popt):
+                recon_signal = self._compute_skewnorm(t_range, *p)
                 window_dict[f'peak_{i + 1}'] = {
                     'amplitude': p[0],
                     'retention_time': np.round(p[1], decimals=self._time_precision),
                     'scale': p[2],
                     'alpha': p[3],
                     'area': self._compute_skewnorm(t_range, *p).sum(),
-                    'reconstructed_signal': self._compute_skewnorm(v['time_range'], *p)}
+                    'reconstructed_signal': recon_signal,
+                    'signal_max': np.max(recon_signal)}
             peak_props[k] = window_dict
 
         self._peak_props = peak_props
@@ -776,7 +778,8 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                          'scale': params['scale'],
                          'skew': params['alpha'],
                          'amplitude': params['amplitude'],
-                         'area': params['area']}
+                         'area': params['area'],
+                         'signal_maximum': params['signal_max']}
                 iter += 1
                 peak_df = pd.concat([peak_df, pd.DataFrame(_dict, index=[0])])
 
