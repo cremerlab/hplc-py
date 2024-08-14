@@ -567,7 +567,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         into non-realistic regimes that can seriously slow down the inference. The
         default parameter boundaries for each peak are as follows.
 
-            * `amplitude`: The lower and upper peak amplitude boundaries correspond to one-tenth and ten-times the value of the peak at the peak location in the chromatogram.
+            * `amplitude`: The lower and upper peak amplitude boundaries correspond to one-hundredth and one-hundred-times the value of the peak at the peak location in the chromatogram.
 
             * `location`: The lower and upper location bounds correspond to the minimum and maximum time values of the chromatogram.
 
