@@ -101,7 +101,7 @@ The resulting chromatogram reconstruction can be seen by again calling the `show
 method, this time restricting the plotted time region between 10 and 20 minutes.
 
 ```python
-In[8]: chrom.show()
+In[8]: chrom.show([10, 20])
 Out[8]:[<Figure size 640x480 with 1 Axes>,
  <Axes: xlabel='time', ylabel='signal (baseline corrected)'>]
 ```
