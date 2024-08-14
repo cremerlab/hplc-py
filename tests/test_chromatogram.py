@@ -127,6 +127,14 @@ def test_bg_estimation():
     with pytest.warns():
         chrom.correct_baseline(window=0.75)
 
+    # Test that the correct exception is thrown if the window is too small.
+    try:
+        with pytest.warns():
+            chrom.correct_baseline(window=np.diff(_df['x'].values)[0])
+            assert False
+    except ValueError:
+        assert True
+
 
 def test_shouldered_peaks():
     """
@@ -479,6 +487,7 @@ def test_generic_param_bounding():
     """
     df = pd.read_csv('./tests/test_data/test_integration_window_chrom.csv')
     chrom = hplc.quant.Chromatogram(df)
+
     # Adjust the parameters
     adjustments = {'amplitude': [0.9, 1.1],
                    'location': [-1, 1],
@@ -496,3 +505,13 @@ def test_generic_param_bounding():
              'skew': [-10, 10]}
     for k, v in adj_pars.items():
         assert np.array(truth[k] == v).all()
+
+    # Make sure that incorrect bounds throw a value error.
+    adjustments = {'scale': [10, 11]}
+    try:
+        _ = chrom.fit_peaks(param_bounds=adjustments,
+                            correct_baseline=False,
+                            verbose=False)
+        assert False
+    except ValueError:
+        assert True
