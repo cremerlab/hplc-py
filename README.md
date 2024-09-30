@@ -4,6 +4,7 @@
 [![Run tests](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml/badge.svg)](https://github.com/cremerlab/hplc-py/actions/workflows/pytest.yaml)
 [![codecov](https://codecov.io/gh/cremerlab/hplc-py/branch/main/graph/badge.svg?token=WXL50JVR6C)](https://codecov.io/gh/cremerlab/hplc-py)
 [![PyPI version](https://badge.fury.io/py/hplc-py.svg)](https://badge.fury.io/py/hplc-py)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/hplc-py)](https://pypistats.org/packages/hplc-py)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.06270/status.svg)](https://doi.org/10.21105/joss.06270)
 
 # About
