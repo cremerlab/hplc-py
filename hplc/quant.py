@@ -195,7 +195,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             Default is 1.
         buffer : positive `int`
             The padding of peak windows in units of number of time steps. Default
-            is 100 points on each side of the identified peak window.
+            is 0 (no padding).
 
         Returns
         -------
@@ -773,8 +773,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
             approximate peak width or ii) set `correct_baseline=False`.
         buffer : positive `int`
             The padding of peak windows in units of number of time steps. Default
-            is 100 points on each side of the identified peak window. Must have a value
-            of at least 10.
+            is 0 (no padding).
         verbose : `bool`
             If True, a progress bar will be printed during the inference.
         param_bounds: `dict`, optional
