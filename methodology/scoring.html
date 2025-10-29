@@ -1,0 +1,386 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step 4: Scoring the Reconstruction &mdash; hplc-py 0.2.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=f553e99a" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=37f418d5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hplc.quant" href="../quant.html" />
+    <link rel="prev" title="Step 3: Fitting Peaks" href="fitting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3C3E47" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_horizontal-02.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/calibration_curve.html">Absolute Quantitation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How It Works</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="problem.html">The Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="baseline.html">Step 1: Baseline Correction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="peak_detection.html">Step 2: Detecting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting.html">Step 3: Fitting Peaks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Step 4: Scoring the Reconstruction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#The-Reconstruction-Score">The Reconstruction Score</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Scoring-the-regions-between-peaks">Scoring the regions between peaks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Generating-a-chromatogram-report-card">Generating a chromatogram report card</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Assessing-the-fit-≠-computing-uncertainty">Assessing the fit ≠ computing uncertainty</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quant.html"><cite>hplc.quant</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html"><cite>hplc.io</cite></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Credit &amp; Citation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">Credit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #3C3E47" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hplc-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Step 4: Scoring the Reconstruction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/methodology/scoring.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Step-4:-Scoring-the-Reconstruction">
+<h1>Step 4: Scoring the Reconstruction<a class="headerlink" href="#Step-4:-Scoring-the-Reconstruction" title="Link to this heading"></a></h1>
+<p>Notebook Code: <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License: MIT" src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a> Notebook Prose: <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg" /></a></p>
+<hr class="docutils" />
+<p>After estimation and subtraction of the baseline, detection of peaks, splitting into windows, and fitting the peaks to a phenomenological function, we are left with the irritating problem of assessing how well we have done. Consider the following chromatogram:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">hplc.quant</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chromatogram</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Load the sample chromatogram and fit the peaks using default parameters.</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/sample_chromatogram.txt&#39;</span><span class="p">)</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span><span class="s1">&#39;time_min&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">:</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">},</span>
+                     <span class="n">time_window</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">()</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 299/299 [00:00&lt;00:00, 3630.80it/s]
+Deconvolving mixture: 100%|██████████| 2/2 [00:08&lt;00:00,  4.23s/it]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;,
+ &lt;Axes: xlabel=&#39;time_min&#39;, ylabel=&#39;intensity_mV (baseline corrected)&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_scoring_2_2.png" src="../_images/methodology_scoring_2_2.png" />
+</div>
+</div>
+<p>By eye, this looks like a very good reconstruction of the chromatogram, but it would be nice to have a quantitative measure.</p>
+<section id="The-Reconstruction-Score">
+<h2>The Reconstruction Score<a class="headerlink" href="#The-Reconstruction-Score" title="Link to this heading"></a></h2>
+<p>Quantifying concentrations from HPLC data requires a measure of the <strong>A</strong>rea <strong>U</strong>nder the <strong>C</strong>urve (AUC), or more correctly stated, the integrated signal over a given time interval. A perfect reconstruction of the chromatogram, resulting from summing over all constituent peaks in a mixture, would yield an identical AUC over any given time interval as the integrated signal of the original chromatogram. This can be defined mathematically as</p>
+<div class="math notranslate nohighlight">
+\[\frac{\sum\limits_i^{N_\text{peaks}} \sum\limits_{t=0}^{t_\text{max}}S_i(t)}{\sum\limits_{t=0}^{t_\text{max}}S(t)^\text{(observed)}} = \frac{\text{AUC}^\text{(inferred)}}{\text{AUC}^\text{(observed)}} = 1, \tag{1}\]</div>
+<p>where <span class="math notranslate nohighlight">\(i\)</span> represents the <span class="math notranslate nohighlight">\(i\)</span>-th component signal, <span class="math notranslate nohighlight">\(N_\text{peaks}\)</span> denotes the number of peaks in a given peak window, and <span class="math notranslate nohighlight">\(t\)</span> denotes the discrete time point. In peak windows where the constituent signal is very small <span class="math notranslate nohighlight">\(S_{i}^\text{(observed)} \rightarrow 0\)</span>, even small deviations between the inferred mixture and the observed signal can cause this quantity to be much larger or much smaller than one, even if the total integrated signal difference is small.</p>
+<p>To account for this fact, we can modify Eq. 1 as</p>
+<div class="math notranslate nohighlight">
+\[R = \frac{1 + \text{AUC}^\text{(inferred)}}{1 + \text{AUC}^{(observed)}}, \tag{2}\]</div>
+<p>which we term a <em>reconstruction score</em> or <span class="math notranslate nohighlight">\(R\)</span>-score for short.</p>
+<p>In practice, you’ll never get an <span class="math notranslate nohighlight">\(R\)</span>-score of exactly 1, but you can get close. For example, an <span class="math notranslate nohighlight">\(R\)</span>-score can be computed for the chromatogram reconstruction shown above by calling the <code class="docutils literal notranslate"><span class="pre">_score_reconstruction</span></code> method of a <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> object:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute the R_score for the above chromatogram</span>
+<span class="n">scores</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">_score_reconstruction</span><span class="p">()</span>
+<span class="n">scores</span><span class="p">[[</span><span class="s1">&#39;window_type&#39;</span><span class="p">,</span> <span class="s1">&#39;window_id&#39;</span><span class="p">,</span> <span class="s1">&#39;reconstruction_score&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>window_type</th>
+      <th>window_id</th>
+      <th>reconstruction_score</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>peak</td>
+      <td>1</td>
+      <td>0.998430</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>peak</td>
+      <td>2</td>
+      <td>0.995222</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>interpeak</td>
+      <td>1</td>
+      <td>0.390153</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>interpeak</td>
+      <td>2</td>
+      <td>0.000200</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>interpeak</td>
+      <td>3</td>
+      <td>0.084916</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>For the two peak windows (rows 1 &amp; 2), the <span class="math notranslate nohighlight">\(R\)</span>-score is very close to one, within 0.01. Whether that is sufficient for your case or not is up to you, dear reader. My job is just to give you that number.</p>
+</section>
+<section id="Scoring-the-regions-between-peaks">
+<h2>Scoring the regions between peaks<a class="headerlink" href="#Scoring-the-regions-between-peaks" title="Link to this heading"></a></h2>
+<p>But what about the interpeak regions? These windows correspond to the chromatogram signal that lies outside of peak windows – thus, an <span class="math notranslate nohighlight">\(R\)</span>-score is a measure of how well you are reconstructing the subtracted baseline. As there will almost always be 0 inferred signal in this region, your <span class="math notranslate nohighlight">\(R\)</span>-scores will typically be terrible and close to 0.</p>
+<p>While this will <em>usually</em> mean you are just not reconstructing the signal noise, a terrible <span class="math notranslate nohighlight">\(R\)</span>-score in an interpeak region may mean that there are peaks present, but your choice of a prominence filter is not detecting them. In this case, it is better to have a measure of what the noise-to-signal ratio is in these regions.</p>
+<p>Mathematically, we can compute this as the <a class="reference external" href="https://en.wikipedia.org/wiki/Fano_factor">Fano factor</a> of the region, which can be thought of as a measure of the “predictability” of the signal in this sequence. This can be computed as</p>
+<div class="math notranslate nohighlight">
+\[F = \frac{\langle S^2 \rangle - \langle S \rangle^2}{\langle S \rangle}, \tag{3}\]</div>
+<p>where <span class="math notranslate nohighlight">\(S\)</span> is the signal within a peak window. If the Fano factor is small, then the region is likely background noise whereas a large Fano factor would indicate there may be a peak present and you need to adjust your peak detection criteria.</p>
+<p>But what determines if it’s big or small? As all chromatograms have a peak (why else would you be using <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code>?), we can compare the Fano factor of the interpeak regions to the average Fano factors of the regions where we know there is signal. If this quantity, which term the <em>Fano ratio</em>, is close to zero, then it is likely the interpeak region is just noise and you are not missing anything substantive. However, if the Fano ratio is <em>not</em> close to zero, there may be a peak present. Again,
+what determines “close” to zero is arbitrary.</p>
+</section>
+<section id="Generating-a-chromatogram-report-card">
+<h2>Generating a chromatogram report card<a class="headerlink" href="#Generating-a-chromatogram-report-card" title="Link to this heading"></a></h2>
+<p>In <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code>, you can automatically generate “report” cards by calling the <code class="docutils literal notranslate"><span class="pre">assess_fit</span></code> method of a Chromatogram object. For the chromatogram above, the report card looks pretty good!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate a report card with the default tolerances</span>
+<span class="n">scores</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">assess_fit</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+=======================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Peak Window 1 (t: 10.558 - 11.758) R-Score = 0.9984</span>
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Peak Window 2 (t: 12.117 - 19.817) R-Score = 0.9952</span>
+
+Signal Reconstruction of Interpeak Windows
+==========================================
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 1 (t: 10.000 - 10.550) R-Score = 0.3902 &amp; Fano Ratio = 0.0024</span>
+Interpeak window 1 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 2 (t: 11.767 - 12.108) R-Score = 10^-3 &amp; Fano Ratio = 0.0012</span>
+Interpeak window 2 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 3 (t: 19.825 - 20.000) R-Score = 10^-1 &amp; Fano Ratio = 0.0000</span>
+Interpeak window 3 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>This report card is telling you that the two peak windows seem to be really well reconstructed, whereas the interpeak regions <em>may</em> be poorly reconstructed and you should take a look. If you have a sense of what the relative tolerances should be (meaning, you have made a subjective decision of how close or far from 1.0 you deem to be successful), you can pass different tolerances to <code class="docutils literal notranslate"><span class="pre">assess_fit</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Assess the fit, but with different tolerances.</span>
+<span class="n">scores</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">assess_fit</span><span class="p">(</span><span class="n">rtol</span><span class="o">=</span><span class="mf">1E-3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+=======================
+
+<span class="ansi-black-intense-fg ansi-red-bg ansi-bold">F, Failed:  Peak Window 1 (t: 10.558 - 11.758) R-Score = 0.9984</span>
+Peak mixture poorly reconstructs signal. You many need to adjust parameter bounds
+or add manual peak positions (if you have a shouldered pair, for example). If
+you have a very noisy signal, you may need to increase the reconstruction
+tolerance `rtol`.
+<span class="ansi-black-intense-fg ansi-red-bg ansi-bold">F, Failed:  Peak Window 2 (t: 12.117 - 19.817) R-Score = 0.9952</span>
+Peak mixture poorly reconstructs signal. You many need to adjust parameter bounds
+or add manual peak positions (if you have a shouldered pair, for example). If
+you have a very noisy signal, you may need to increase the reconstruction
+tolerance `rtol`.
+
+Signal Reconstruction of Interpeak Windows
+==========================================
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 1 (t: 10.000 - 10.550) R-Score = 0.3902 &amp; Fano Ratio = 0.0024</span>
+Interpeak window 1 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 2 (t: 11.767 - 12.108) R-Score = 10^-3 &amp; Fano Ratio = 0.0012</span>
+Interpeak window 2 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 3 (t: 19.825 - 20.000) R-Score = 10^-1 &amp; Fano Ratio = 0.0000</span>
+Interpeak window 3 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>In either case, <code class="docutils literal notranslate"><span class="pre">assess_fit</span></code> will still print out the <span class="math notranslate nohighlight">\(R\)</span>-scores and Fano ratios for you to make your own call on what is good or bad.</p>
+</section>
+<section id="Assessing-the-fit-≠-computing-uncertainty">
+<h2>Assessing the fit ≠ computing uncertainty<a class="headerlink" href="#Assessing-the-fit-≠-computing-uncertainty" title="Link to this heading"></a></h2>
+<p>If you take one thing away from this page, please let it be that an <span class="math notranslate nohighlight">\(R\)</span>-score is <strong>not</strong> a measure of the uncertainty in your reconstruction. It is solely to be used as discriminator for you to make a judgement call of whether you are properly reconstructing the signal.</p>
+<hr class="docutils" />
+<p>© Griffin Chure, 2024. This notebook and the code within are released under a <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/">Creative-Commons CC-BY 4.0</a> and <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0">GPLv3</a> license, respectively.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fitting.html" class="btn btn-neutral float-left" title="Step 3: Fitting Peaks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../quant.html" class="btn btn-neutral float-right" title="hplc.quant" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Griffin Chure &amp; Jonas Cremer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

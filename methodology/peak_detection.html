@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step 2: Detecting Peaks &mdash; hplc-py 0.2.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=f553e99a" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=37f418d5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 3: Fitting Peaks" href="fitting.html" />
+    <link rel="prev" title="Step 1: Baseline Correction" href="baseline.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3C3E47" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_horizontal-02.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/calibration_curve.html">Absolute Quantitation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How It Works</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="problem.html">The Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="baseline.html">Step 1: Baseline Correction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Step 2: Detecting Peaks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Selecting-peaks-by-topographic-prominence">Selecting peaks by topographic prominence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Clipping-the-signal-into-peak-windows">Clipping the signal into peak windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fitting.html">Step 3: Fitting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scoring.html">Step 4: Scoring the Reconstruction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quant.html"><cite>hplc.quant</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html"><cite>hplc.io</cite></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Credit &amp; Citation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">Credit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #3C3E47" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hplc-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Step 2: Detecting Peaks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/methodology/peak_detection.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Step-2:-Detecting-Peaks">
+<h1>Step 2: Detecting Peaks<a class="headerlink" href="#Step-2:-Detecting-Peaks" title="Link to this heading"></a></h1>
+<p>Notebook Code: <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License: MIT" src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a> Notebook Prose: <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg" /></a></p>
+<hr class="docutils" />
+<p>Peak detection is a common problem in time-series analysis. In some cases, they are very easy to spot by eye, but that can be difficult to define mathematically. This is particularly true for signals that are “noisy” or have pronounced variations in their baseline values. There are several Python libraries out there for automatically identifying peaks in time-series data, such as <a class="reference external" href="https://erdogant.github.io/findpeaks/pages/html/index.html">findpeaks.py</a> and
+<a class="reference external" href="https://peakutils.readthedocs.io/en/latest/">PeakUtils</a>. In <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code>, peak detection is executed using the <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/signal.html">scipy.signal</a> which is very mature and actively maintained. In this notebook, we won’t cover the algorithms used under-the-hood for peak detection, but will outline how <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> leverages <code class="docutils literal notranslate"><span class="pre">scipy.signal.find_peaks</span></code> and <code class="docutils literal notranslate"><span class="pre">scipy.signal.peak_widths</span></code> to 1) identify peaks in chromatographic data and 2) clip the chromatogram
+into discrete peak windows which are used in the fitting procedure.</p>
+<section id="Selecting-peaks-by-topographic-prominence">
+<h2>Selecting peaks by topographic prominence<a class="headerlink" href="#Selecting-peaks-by-topographic-prominence" title="Link to this heading"></a></h2>
+<p>Peaks are defined by a handful of quantitative properties. The most relevant to <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> is the <a class="reference external" href="https://en.wikipedia.org/wiki/Topographic_prominence">topographic prominence</a>, which is a measure of the relative height of a maxima in the signal to its nearest baseline. For chromatographic data, peaks are often highly pronounced relative to their surrounding signal, except in two limits:</p>
+<ol class="arabic simple">
+<li><p>The concentration of the analyte is close to the sensitivity limit of the detector</p></li>
+<li><p>The peak overlaps with a nearby peak which is much higher in concentration, drowning out or completely subsuming the signal.</p></li>
+</ol>
+<p>As an example, we can load a real chromatogram of a <a class="reference external" href="https://www.sigmaaldrich.com/US/en/product/sigma/m9956">minimal medium for bacterial growth</a> which has a slew of compounds, some of which overlap.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+<span class="c1"># Load a sample chromatogram and show the trace, cropped between 10 and 20 minutes</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/sample_chromatogram.txt&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">],</span> <span class="s1">&#39;k-&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [min]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal intensity [mV]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(10.0, 20.0)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_peak_detection_2_1.png" src="../_images/methodology_peak_detection_2_1.png" />
+</div>
+</div>
+<p>With this signal, the location of peaks (meaning, the index where a local maxima is detected) can be identified using <code class="docutils literal notranslate"><span class="pre">scipy.signal.find_peaks</span></code>, even with a very low prominence filter. TO allow prominence filters to be comparable between chromatograms, we normalize the chromatogram first between 0 and 1.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">scipy.signal</span>
+
+<span class="c1"># Create a normalized signal</span>
+<span class="n">signal_norm</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+
+<span class="c1"># Find peaks with a low prominence filter of 0.01</span>
+<span class="n">peak_locations</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">find_peaks</span><span class="p">(</span><span class="n">signal_norm</span><span class="p">,</span> <span class="n">prominence</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+
+<span class="c1"># Plot the  original trace and overlay vertical lines with location of peaks</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">signal_norm</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;normalized chromatogram&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">peak_locations</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+           <span class="n">color</span><span class="o">=</span><span class="s1">&#39;dodgerblue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;peak location&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [min]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;normalized signal intensity&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;prominence filter = 0.01&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x17f722140&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_peak_detection_4_1.png" src="../_images/methodology_peak_detection_4_1.png" />
+</div>
+</div>
+<p>These maxima have prominence values greater than or equal to 0.01, meaning that maxima with prominences as low as 0.01 units above the local background are considered to be bonafide peaks. Increasing the prominence filter begins to remove peaks we would otherwise care about.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the  original trace and overlay vertical lines with location of peaks</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">:</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">signal_norm</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;normalized</span><span class="se">\n</span><span class="s1">signal intensity&#39;</span><span class="p">)</span>
+
+<span class="c1"># Plot for a few prominecne values</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]):</span>
+    <span class="n">peak_locations</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">find_peaks</span><span class="p">(</span><span class="n">signal_norm</span><span class="p">,</span> <span class="n">prominence</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">peak_locations</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;dodgerblue&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;prominence filter = </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="c1"># Add necessary labels</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;time [min]&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_peak_detection_6_0.png" src="../_images/methodology_peak_detection_6_0.png" />
+</div>
+</div>
+<p>The choice of a prominence filter is going to be dependent on the size of peaks that you care to resolve in your chromatogram, their degree of overlap, and how noisy your signal is. The prominence filter can be passed as a keyword argument in the <code class="docutils literal notranslate"><span class="pre">fit_peaks</span></code> method of a <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code>. For example, passing a restrictive prominence filter of <code class="docutils literal notranslate"><span class="pre">0.1</span></code> can be done as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">hplc.quant</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chromatogram</span>
+
+<span class="c1"># Load the signal trace as a Chromatogram object and crop between 10 and 20 min.</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span><span class="s1">&#39;time_min&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">:</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">},</span>
+                     <span class="n">time_window</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+
+<span class="c1"># Pass a prominence filter, fit the peaks, and show the result</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">prominence</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 299/299 [00:00&lt;00:00, 2412.60it/s]
+Deconvolving mixture: 100%|██████████| 2/2 [00:06&lt;00:00,  3.20s/it]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;,
+ &lt;Axes: xlabel=&#39;time_min&#39;, ylabel=&#39;intensity_mV (baseline corrected)&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_peak_detection_8_2.png" src="../_images/methodology_peak_detection_8_2.png" />
+</div>
+</div>
+<p>Note that even though the small peak at ≈ 13 minutes was not detected by the prominence filter, <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> still attempted to fit its signal as if it was part of the peak with a maximum at ≈ 14.2 min. This because the small peak was considered part of the same window of the major peak, as we will explore next.</p>
+</section>
+<section id="Clipping-the-signal-into-peak-windows">
+<h2>Clipping the signal into peak windows<a class="headerlink" href="#Clipping-the-signal-into-peak-windows" title="Link to this heading"></a></h2>
+<p>Once peak maxima are identified, <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> slices the chromatograms into <em>windows</em>–regions of the chromatogram where peaks are overlapping or <em>nearly</em> overlapping. This is achieved by measuring the widths of each peak at the lowest <a class="reference external" href="https://en.wikipedia.org/wiki/Contour_line">contour line</a>. Peaks which have overlapping contour lines are considered to be close enough that their signals may be influencing one another. This is achieved under the hood in a method <code class="docutils literal notranslate"><span class="pre">_assign_peak_windows</span></code> of a
+<code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> which is called as part of <code class="docutils literal notranslate"><span class="pre">fit_peaks</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fit the peaks using a permissive prominence filter</span>
+<span class="n">window_df</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">_assign_windows</span><span class="p">(</span><span class="n">prominence</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+
+<span class="c1"># Plot each window</span>
+<span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">window_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;window_id&#39;</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39; window: </span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [min]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal [mV]&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x17f5e5690&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_peak_detection_10_1.png" src="../_images/methodology_peak_detection_10_1.png" />
+</div>
+</div>
+<p>Peaks within each colored region are considered to be interacting signals, and are fit together as one unit. In the above example, the peak at ≈ 11 min (in window 1) is considered to be isolated from the peaks at ≈ 13 min onward.</p>
+<p>The extent of each peak window can be controlled by a buffer parameter passed to <code class="docutils literal notranslate"><span class="pre">fit_peaks</span></code> and <code class="docutils literal notranslate"><span class="pre">_assign_windows</span></code>. This, given in units of time points, extends each peak window on to account for nearby baseline signal. The above windows can be expanded by increasing this parameter, which has a default value of 0.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Increase the buffer and plot the change in the peak window.</span>
+<span class="n">buffer</span> <span class="o">=</span> <span class="mi">75</span>
+<span class="n">window_df</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">_assign_windows</span><span class="p">(</span><span class="n">prominence</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">)</span>
+
+<span class="c1"># Plot each window</span>
+<span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">window_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;window_id&#39;</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39; window: </span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [min]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal [mV]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;buffer size = </span><span class="si">{</span><span class="n">buffer</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x17f9390c0&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_peak_detection_12_1.png" src="../_images/methodology_peak_detection_12_1.png" />
+</div>
+</div>
+<p>Note that increasing the buffer size expanded the extent of the orange window by half a minute or so.</p>
+<p>Once the chromatogram is clipped into peak windows, each window is passed to an inference stage where the peak mixture is inferred.</p>
+<hr class="docutils" />
+<p>© Griffin Chure, 2024. This notebook and the code within are released under a <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/">Creative-Commons CC-BY 4.0</a> and <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0">GPLv3</a> license, respectively.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="baseline.html" class="btn btn-neutral float-left" title="Step 1: Baseline Correction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fitting.html" class="btn btn-neutral float-right" title="Step 3: Fitting Peaks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Griffin Chure &amp; Jonas Cremer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step 1: Baseline Correction &mdash; hplc-py 0.2.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=f553e99a" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=37f418d5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 2: Detecting Peaks" href="peak_detection.html" />
+    <link rel="prev" title="The Problem" href="problem.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3C3E47" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_horizontal-02.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/calibration_curve.html">Absolute Quantitation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How It Works</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="problem.html">The Problem</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Step 1: Baseline Correction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#What's-in-a-baseline?">What’s in a baseline?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Subtraction-using-the-SNIP-algorithm">Subtraction using the SNIP algorithm</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Log-transformation-of-the-signal">Log-transformation of the signal</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Iterative-Minimum-Filtering">Iterative Minimum Filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Inverse-Transformation-and-Subtraction">Inverse Transformation and Subtraction</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#How-many-iterations?">How many iterations?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Implementation-in-hplc-py">Implementation in <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="peak_detection.html">Step 2: Detecting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting.html">Step 3: Fitting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scoring.html">Step 4: Scoring the Reconstruction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quant.html"><cite>hplc.quant</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html"><cite>hplc.io</cite></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Credit &amp; Citation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">Credit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #3C3E47" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hplc-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Step 1: Baseline Correction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/methodology/baseline.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Step-1:-Baseline-Correction">
+<h1>Step 1: Baseline Correction<a class="headerlink" href="#Step-1:-Baseline-Correction" title="Link to this heading"></a></h1>
+<p>Notebook Code: <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License: MIT" src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a> Notebook Prose: <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg" /></a></p>
+<hr class="docutils" />
+<section id="What's-in-a-baseline?">
+<h2>What’s in a baseline?<a class="headerlink" href="#What's-in-a-baseline?" title="Link to this heading"></a></h2>
+<div class="line-block">
+<div class="line">In liquid chromatographic analysis, compounds are carried through an absorptive substrate (termed a stationary phase) by a solvent (termed the mobile phase). In an ideal world, the column is saturated with the mobile phase and is held at a stable temperature and pressure. This sets baseline signal that can be subtracted from</div>
+<div class="line">the signal detected over the course of the chromatographic separation, allowing for quantitation.</div>
+</div>
+<p>However, we don’t live in a perfect world. Often, variations in the column temperature or ineffective equilibration of the column with the solvent, resulting in a drifting baseline. For complex samples, such as whole-cell metabolomic extracts, a drifting baseline may result from the sheer number of compounds present in the sample at low abundance that convolve to a “bumpy” baseline.</p>
+<p>For quantitative analysis, we would like to correct for a drifting baseline, so we can more effectively tease out what signal is due to our compound of interest and what is due to nuisance. Take for example the following chromatogram with a known “true” drifting baseline.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+<span class="c1"># Load a dataset with a known drifting baseline</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/sample_baseline.csv&#39;</span><span class="p">)</span>
+
+<span class="c1"># Plot the convolved signal and the known baseline</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;signal&#39;</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;observed signal&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;true_background&#39;</span><span class="p">],</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;dodgerblue&#39;</span><span class="p">,</span>
+         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;known baseline&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;signal&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_baseline_2_1.png" src="../_images/methodology_baseline_2_1.png" />
+</div>
+</div>
+<p>This chromatogram was simulated as a mixture of three peaks with a known (large) drifting baseline (dashed blue line). But what if we don’t know what the baseline is?</p>
+</section>
+<section id="Subtraction-using-the-SNIP-algorithm">
+<h2>Subtraction using the SNIP algorithm<a class="headerlink" href="#Subtraction-using-the-SNIP-algorithm" title="Link to this heading"></a></h2>
+<p>In reality, we don’t know this baseline, so we have to use clever filtering tricks to <em>infer</em> what this baseline signal may be and subtract it from our observed signal. There are many ways one can do this, ranging from <a class="reference external" href="https://www.sciencedirect.com/science/article/pii/S0169743905001589?via%3Dihub">fitting of polynomial functions</a> to <a class="reference external" href="https://pubs.rsc.org/en/content/articlelanding/2022/an/d2an00868h">machine learning models</a> and beyond. In <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code>, we employ a method known as
+<a class="reference external" href="https://www.sciencedirect.com/science/article/pii/0168583X88900638">Statistical Non-linear Iterative Peak (SNIP) clipping</a>. his is implemented in the <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> package as method <code class="docutils literal notranslate"><span class="pre">correct_baseline</span></code> to the <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> class. The SNIP algorithm works as follows.</p>
+<section id="Log-transformation-of-the-signal">
+<h3>Log-transformation of the signal<a class="headerlink" href="#Log-transformation-of-the-signal" title="Link to this heading"></a></h3>
+<p>First, the dynamic range of the signal <span class="math notranslate nohighlight">\(S\)</span> is reduced through the application of an <a class="reference external" href="https://cds.cern.ch/record/264009/files/P00023745.pdf">LLS operator</a>. This prevents enormous peaks from dominating the filtering, leading to the erasure of smaller (yet still important) peaks. Mathematically, the compression <span class="math notranslate nohighlight">\(S \rightarrow S_{LLS}'\)</span> is achieved by computing</p>
+<div class="math notranslate nohighlight">
+\[S_{LLS} =  \ln\left[\ln\left(\sqrt{S + 1} + 1 \right) + 1\right] \tag{1},\]</div>
+<p>where the application of the square-root operator selectively enhances small peaks while the log operator compresses the signal across orders of magnitude. Applying this operator to signal in our simulated chromatogram yields the following</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Apply the LLS operator to the signal and visualize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;signal&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="n">S_LLS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">S</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">S_LLS</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;$S_</span><span class="si">{LLS}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;signal&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_baseline_5_1.png" src="../_images/methodology_baseline_5_1.png" />
+</div>
+</div>
+<p>Note that the y-axis has been compressed to a small range and that the first peak is now comparable in size to the other two peaks.</p>
+</section>
+<section id="Iterative-Minimum-Filtering">
+<h3>Iterative Minimum Filtering<a class="headerlink" href="#Iterative-Minimum-Filtering" title="Link to this heading"></a></h3>
+<p>With a compressed signal, we can now apply a minimum filter over a given window of time <span class="math notranslate nohighlight">\(W\)</span> over several iterations <span class="math notranslate nohighlight">\(M\)</span>. For each time point <span class="math notranslate nohighlight">\(t\)</span> in the compressed signal, the filtered value <span class="math notranslate nohighlight">\(S'_{LLS}\)</span> for iteration <span class="math notranslate nohighlight">\(m\)</span> is computed as</p>
+<div class="math notranslate nohighlight">
+\[S'_{LLS_m}(t) = \min\left[S_{LLS_{m-1}}(t), \frac{S_{LLS_{m-1}}(t-m) + S_{LLS_{m-1}}(t + m)}{2}\right] \tag{2}\]</div>
+<p>Note that the average value of the signal at time <span class="math notranslate nohighlight">\(t\)</span> is compared to the average of the window boundaries, with the window increasing in size from one iteration to the next. To see this in action, we can plot the filtering result over the first 200 iterations of this procedure applied to the above compressed signal.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define a function to compute the minimum filter</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">min_filt</span><span class="p">(</span><span class="n">S_LLS</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies the SNIP minimum filter defined in Eq. 2&quot;&quot;&quot;</span>
+    <span class="n">S_LLS_filt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">S_LLS</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">S_LLS</span><span class="p">)</span> <span class="o">-</span> <span class="n">m</span><span class="p">):</span>
+        <span class="n">S_LLS_filt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">S_LLS</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">(</span><span class="n">S_LLS</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">m</span><span class="p">]</span> <span class="o">+</span> <span class="n">S_LLS</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">m</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">S_LLS_filt</span>
+
+<span class="c1"># Apply the filter for the first 100 iterations and plot</span>
+<span class="n">S_LLS_filt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">S_LLS</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">200</span><span class="p">):</span>
+    <span class="n">S_LLS_filt</span> <span class="o">=</span> <span class="n">min_filt</span><span class="p">(</span><span class="n">S_LLS_filt</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+    <span class="c1"># Plot every ten iterations</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">m</span> <span class="o">%</span> <span class="mi">20</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">S_LLS_filt</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;iteration </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;signal&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_baseline_7_1.png" src="../_images/methodology_baseline_7_1.png" />
+</div>
+</div>
+<p>As the number of iterations increases in the above example, the actual peak signals become smaller and smaller, eventually approaching the baseline.</p>
+</section>
+<section id="Inverse-Transformation-and-Subtraction">
+<h3>Inverse Transformation and Subtraction<a class="headerlink" href="#Inverse-Transformation-and-Subtraction" title="Link to this heading"></a></h3>
+<p>Once the signal has been filtered across <span class="math notranslate nohighlight">\(M\)</span> iterations, the filtered signal <span class="math notranslate nohighlight">\(S'_{LLS}\)</span> can be passed through the inverse LLS operator to expand the dynamic range back to the scale of the observed data. This inverse operator, converting <span class="math notranslate nohighlight">\(S'_{LLS} \rightarrow S'\)</span> is defined as</p>
+<div class="math notranslate nohighlight">
+\[S' = \left(\exp\left[\exp\left(S'_{LLS}\right)-1\right] - 1\right)^2 - 1. \tag{3}\]</div>
+<p>Performing the subtraction <span class="math notranslate nohighlight">\(S - S'\)</span> effectively removes the baseline signal leaving only the “true” signal</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute the inverse transform</span>
+<span class="n">S_prime</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">S_LLS_filt</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="c1"># Perform the subtraction and plot the reconstructed signal over the known signal</span>
+<span class="n">S_subtracted</span> <span class="o">=</span> <span class="n">S</span> <span class="o">-</span> <span class="n">S_prime</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;true_signal&#39;</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;true signal&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">S_subtracted</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;baseline-subtracted signal&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;signal&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_baseline_9_1.png" src="../_images/methodology_baseline_9_1.png" />
+</div>
+</div>
+<p>With 200 iterations of the filtering, the baseline-subtracted signal is almost exactly overlapping the known signal, demonstrating the power of the SNIP algorithm.</p>
+</section>
+</section>
+<section id="How-many-iterations?">
+<h2>How many iterations?<a class="headerlink" href="#How-many-iterations?" title="Link to this heading"></a></h2>
+<p>The above is dependent on how many iterations are run. As described by Morhác and Matousek (2008), a good rule of thumb for choosing the number of iterations <span class="math notranslate nohighlight">\(M\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[M = \frac{W - 1}{2} \tag{4},\]</div>
+<p>where <span class="math notranslate nohighlight">\(W\)</span> is the typical width (in number of time points) of the preserved peaks. Choosing <span class="math notranslate nohighlight">\(W\)</span> is dependent on your particular signal. In HPLC chromatograms, the observed peaks are typically on the order of a minute or two wide. In general, it’s advisable to be generous with the approximate peak widths as an underestimation can result in subtracting actual signal.</p>
+</section>
+<section id="Implementation-in-hplc-py">
+<h2>Implementation in <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code><a class="headerlink" href="#Implementation-in-hplc-py" title="Link to this heading"></a></h2>
+<p>The above SNIP background subtraction algorithm is included as a method <code class="docutils literal notranslate"><span class="pre">correct_baseline</span></code> of a Chromatogram object. The above steps can be called in a few lines of code as in the following:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">hplc.quant</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chromatogram</span>
+
+<span class="c1"># Load the dataframe as a chromatogram object</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+<span class="c1"># Subtract the background given a peak width of ≈ 3 min</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">correct_baseline</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="c1"># Show the chromatogram</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Plot the true signal</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;true_signal&#39;</span><span class="p">],</span> <span class="s1">&#39;r--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;true signal&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 187/187 [00:00&lt;00:00, 477.28it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x16ac59ba0&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_baseline_11_2.png" src="../_images/methodology_baseline_11_2.png" />
+</div>
+</div>
+<hr class="docutils" />
+<p>© Griffin Chure, 2024. This notebook and the code within are released under a <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/">Creative-Commons CC-BY 4.0</a> and <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0">GPLv3</a> license, respectively.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="problem.html" class="btn btn-neutral float-left" title="The Problem" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="peak_detection.html" class="btn btn-neutral float-right" title="Step 2: Detecting Peaks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Griffin Chure &amp; Jonas Cremer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

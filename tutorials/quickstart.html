@@ -1,0 +1,1128 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quickstart &mdash; hplc-py 0.2.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=f553e99a" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=37f418d5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Absolute Quantitation" href="calibration_curve.html" />
+    <link rel="prev" title="About" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3C3E47" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_horizontal-02.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Loading-and-viewing-chromatograms">Loading and viewing chromatograms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Detecting-and-Fitting-Peaks">Detecting and Fitting Peaks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Quantifying-Peaks">Quantifying Peaks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Deconvolving-Overlapping-and-Subtle-Peaks">Deconvolving Overlapping and Subtle Peaks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Constraining-Peaks-With-Known-Parameters">Constraining Peaks With Known Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="calibration_curve.html">Absolute Quantitation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How It Works</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/problem.html">The Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/baseline.html">Step 1: Baseline Correction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/peak_detection.html">Step 2: Detecting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/fitting.html">Step 3: Fitting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/scoring.html">Step 4: Scoring the Reconstruction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quant.html"><cite>hplc.quant</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html"><cite>hplc.io</cite></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Credit &amp; Citation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">Credit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #3C3E47" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hplc-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/quickstart.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Quickstart">
+<h1>Quickstart<a class="headerlink" href="#Quickstart" title="Link to this heading"></a></h1>
+<p>Notebook Code: <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License: MIT" src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a> Notebook Prose: <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg" /></a></p>
+<hr class="docutils" />
+<p>This package is meant to get you from chromatogram to quantified peaks as rapidly as possible. Below is a brief example of how to go from a raw, off-the-machine data set to a list of compounds and their absolute concentrations.</p>
+<section id="Loading-and-viewing-chromatograms">
+<h2>Loading and viewing chromatograms<a class="headerlink" href="#Loading-and-viewing-chromatograms" title="Link to this heading"></a></h2>
+<p>Text files containing chromatograms with time and signal information can be intelligently read into a pandas DataFrame using <code class="docutils literal notranslate"><span class="pre">hplc.io.load_chromatogram()</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the chromatogram as a dataframe</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hplc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_chromatogram</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/sample.txt&#39;</span><span class="p">,</span>
+                                 <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;R.Time (min)&#39;</span><span class="p">,</span> <span class="s1">&#39;Intensity&#39;</span><span class="p">])</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>R.Time (min)</th>
+      <th>Intensity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.00000</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.00833</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.01667</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.02500</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.03333</td>
+      <td>-1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>By providing the column names as a dictionary, you can rename the (often annoying) default column names to something easier to work with, such as “time” and “signal” as</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load chromatogram and rename the columns</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/sample.txt&#39;</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;R.Time (min)&#39;</span><span class="p">:</span><span class="s1">&#39;time&#39;</span><span class="p">,</span>
+                                                              <span class="s1">&#39;Intensity&#39;</span><span class="p">:</span> <span class="s1">&#39;signal&#39;</span><span class="p">})</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>time</th>
+      <th>signal</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.00000</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.00833</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.01667</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.02500</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.03333</td>
+      <td>-1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>This dataframe can now be loaded passed to the <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> class, which has a variety of methods for quantification, cropping, and visualization and more.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Instantiate the Chromatogram class with the loaded chromatogram.</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hplc.quant</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chromatogram</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+<span class="c1"># Show the chromatogram</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_7_1.png" src="../_images/tutorials_quickstart_7_1.png" />
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">crop</span></code> method allows you to crop the chromatogram <em>in place</em> to restrict the signal to a specific time range.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Crop the chromatogram in place between 8 and 21 min.</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">crop</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_9_1.png" src="../_images/tutorials_quickstart_9_1.png" />
+</div>
+</div>
+<p>Note that the crop function operates <strong>in place</strong> and modifies the loaded as data within the <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> object.</p>
+</section>
+<section id="Detecting-and-Fitting-Peaks">
+<h2>Detecting and Fitting Peaks<a class="headerlink" href="#Detecting-and-Fitting-Peaks" title="Link to this heading"></a></h2>
+<p>The real meat of the package comes in the deconvolution of signal into discrete peaks and measurement of their properties. This typically involves the automated estimation and subtraction of the baseline, detection of peaks, and fitting of skew-normal distributions to reconstitute the signal. Luckily for you, all of this is done in a single method call <code class="docutils literal notranslate"><span class="pre">Chromatogram.fit_peaks()</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Automatically detect and fit the peaks</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">buffer</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">peaks</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 299/299 [00:00&lt;00:00, 2748.97it/s]
+Deconvolving mixture: 100%|██████████| 2/2 [00:13&lt;00:00,  6.72s/it]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>retention_time</th>
+      <th>scale</th>
+      <th>skew</th>
+      <th>amplitude</th>
+      <th>area</th>
+      <th>signal_maximum</th>
+      <th>peak_id</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>10.90</td>
+      <td>0.158768</td>
+      <td>0.691959</td>
+      <td>23380.386567</td>
+      <td>2.805646e+06</td>
+      <td>66064.360632</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.17</td>
+      <td>0.594721</td>
+      <td>3.905474</td>
+      <td>43163.899447</td>
+      <td>5.179668e+06</td>
+      <td>50341.309150</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>14.45</td>
+      <td>0.349615</td>
+      <td>-2.995742</td>
+      <td>34698.949105</td>
+      <td>4.163874e+06</td>
+      <td>65264.917575</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>15.53</td>
+      <td>0.313999</td>
+      <td>1.621137</td>
+      <td>15061.414974</td>
+      <td>1.807370e+06</td>
+      <td>26771.463046</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>16.52</td>
+      <td>0.347276</td>
+      <td>1.990206</td>
+      <td>10936.994323</td>
+      <td>1.312439e+06</td>
+      <td>18651.421484</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>17.29</td>
+      <td>0.348001</td>
+      <td>1.703716</td>
+      <td>12525.283275</td>
+      <td>1.503034e+06</td>
+      <td>20381.895605</td>
+      <td>6</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>To see how well the deconvolution worked, you can once again call the <code class="docutils literal notranslate"><span class="pre">show</span></code> method to see the composite compound chromatograms.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># View the result of the fitting.</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;,
+ &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal (baseline corrected)&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_15_1.png" src="../_images/tutorials_quickstart_15_1.png" />
+</div>
+</div>
+<p>You can also call <code class="docutils literal notranslate"><span class="pre">assess_fit()</span></code> to see how well the chromatogram is described by the inferred mixture. This is done through computing a reconstruction score <span class="math notranslate nohighlight">\(R\)</span> defined as</p>
+<div class="math notranslate nohighlight">
+\[R = \frac{\text{Area estimated through inference} + 1}{\text{Area observed in signal} + 1}.\]</div>
+<p>This is computed for regions with peaks (termed “peak windows”) and regions of background (termed “interpeak windows”) if they are present.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Print out the assessment statistics.</span>
+<span class="n">scores</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">assess_fit</span><span class="p">()</span>
+<span class="n">scores</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+=======================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Peak Window 1 (t: 10.558 - 11.758) R-Score = 0.9984</span>
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Peak Window 2 (t: 12.117 - 19.817) R-Score = 0.9952</span>
+
+Signal Reconstruction of Interpeak Windows
+==========================================
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 1 (t: 10.000 - 10.550) R-Score = 0.3902 &amp; Fano Ratio = 0.0024</span>
+Interpeak window 1 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 2 (t: 11.767 - 12.108) R-Score = 10^-3 &amp; Fano Ratio = 0.0012</span>
+Interpeak window 2 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 3 (t: 19.825 - 20.000) R-Score = 10^-1 &amp; Fano Ratio = 0.0000</span>
+Interpeak window 3 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>window_id</th>
+      <th>time_start</th>
+      <th>time_end</th>
+      <th>signal_area</th>
+      <th>inferred_area</th>
+      <th>signal_variance</th>
+      <th>signal_mean</th>
+      <th>signal_fano_factor</th>
+      <th>reconstruction_score</th>
+      <th>window_type</th>
+      <th>applied_tolerance</th>
+      <th>status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>10.00000</td>
+      <td>10.55000</td>
+      <td>9.112041e+03</td>
+      <td>3.555093e+03</td>
+      <td>8.564681e+03</td>
+      <td>135.985685</td>
+      <td>62.982224</td>
+      <td>0.390153</td>
+      <td>interpeak</td>
+      <td>0.01</td>
+      <td>needs review</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>11.76667</td>
+      <td>12.10833</td>
+      <td>5.779000e+03</td>
+      <td>1.155479e+00</td>
+      <td>4.298102e+03</td>
+      <td>137.571429</td>
+      <td>31.242694</td>
+      <td>0.000200</td>
+      <td>interpeak</td>
+      <td>0.01</td>
+      <td>needs review</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>19.82500</td>
+      <td>20.00000</td>
+      <td>1.177637e+01</td>
+      <td>1.000001e+00</td>
+      <td>2.048615e-01</td>
+      <td>0.489835</td>
+      <td>0.418226</td>
+      <td>0.084916</td>
+      <td>interpeak</td>
+      <td>0.01</td>
+      <td>needs review</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>10.55833</td>
+      <td>11.75833</td>
+      <td>2.810059e+06</td>
+      <td>2.805647e+06</td>
+      <td>5.279468e+08</td>
+      <td>19379.710827</td>
+      <td>27242.244966</td>
+      <td>0.998430</td>
+      <td>peak</td>
+      <td>0.01</td>
+      <td>valid</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>12.11667</td>
+      <td>19.81667</td>
+      <td>1.403344e+07</td>
+      <td>1.396639e+07</td>
+      <td>3.854511e+08</td>
+      <td>15171.281774</td>
+      <td>25406.628617</td>
+      <td>0.995222</td>
+      <td>peak</td>
+      <td>0.01</td>
+      <td>valid</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</section>
+<section id="Quantifying-Peaks">
+<h2>Quantifying Peaks<a class="headerlink" href="#Quantifying-Peaks" title="Link to this heading"></a></h2>
+<p>If you know the parameters of the linear calibration curve, which relates peak area to a known concentration, you can use the <code class="docutils literal notranslate"><span class="pre">map_compounds</span></code> method which will map user provided compound names to peaks.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the two peaks of interest and their calibration curves</span>
+<span class="n">calibration</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;compound A&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;retention_time&#39;</span><span class="p">:</span> <span class="mf">15.5</span><span class="p">,</span>
+                              <span class="s1">&#39;slope&#39;</span><span class="p">:</span> <span class="mf">10547.6</span><span class="p">,</span>
+                              <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">205.6</span><span class="p">,</span>
+                              <span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="s1">&#39;µM&#39;</span><span class="p">},</span>
+               <span class="s1">&#39;compound B&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;retention_time&#39;</span><span class="p">:</span> <span class="mf">17.2</span><span class="p">,</span>
+                              <span class="s1">&#39;slope&#39;</span><span class="p">:</span> <span class="mf">26401.2</span><span class="p">,</span>
+                              <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="mf">54.2</span><span class="p">,</span>
+                              <span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="s1">&#39;nM&#39;</span><span class="p">}}</span>
+<span class="n">quant_peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">map_peaks</span><span class="p">(</span><span class="n">calibration</span><span class="p">)</span>
+<span class="n">quant_peaks</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>retention_time</th>
+      <th>scale</th>
+      <th>skew</th>
+      <th>amplitude</th>
+      <th>area</th>
+      <th>signal_maximum</th>
+      <th>peak_id</th>
+      <th>compound</th>
+      <th>concentration</th>
+      <th>unit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>15.53</td>
+      <td>0.313999</td>
+      <td>1.621137</td>
+      <td>15061.414974</td>
+      <td>1.807370e+06</td>
+      <td>26771.463046</td>
+      <td>4</td>
+      <td>compound A</td>
+      <td>171.373146</td>
+      <td>µM</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>17.29</td>
+      <td>0.348001</td>
+      <td>1.703716</td>
+      <td>12525.283275</td>
+      <td>1.503034e+06</td>
+      <td>20381.895605</td>
+      <td>6</td>
+      <td>compound B</td>
+      <td>56.928465</td>
+      <td>nM</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Successfully mapping compounds to peak ID’s will also be reflected in the <code class="docutils literal notranslate"><span class="pre">show</span></code> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show the chromatogram with mapped compounds</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;,
+ &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal (baseline corrected)&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_22_1.png" src="../_images/tutorials_quickstart_22_1.png" />
+</div>
+</div>
+</section>
+<section id="Deconvolving-Overlapping-and-Subtle-Peaks">
+<h2>Deconvolving Overlapping and Subtle Peaks<a class="headerlink" href="#Deconvolving-Overlapping-and-Subtle-Peaks" title="Link to this heading"></a></h2>
+<p>Often, compounds will have similar retention times leading to heavily overlapping peaks. If one of the compounds dominates the signal, the other compounds may only show up as a “shoulder” on the predominant peak. In this case, automatic peak detection will fail and will fit only a single peak, as in the following example.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load, fit, and display a chromatogram with heavily overlapping peaks</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/example_overlap.txt&#39;</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">()</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">assess_fit</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 249/249 [00:00&lt;00:00, 1014.14it/s]
+Deconvolving mixture: 100%|██████████| 1/1 [00:00&lt;00:00, 106.46it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+=======================
+
+<span class="ansi-black-intense-fg ansi-red-bg ansi-bold">F, Failed:  Peak Window 1 (t: 2.230 - 20.430) R-Score = 0.9788</span>
+Peak mixture poorly reconstructs signal. You many need to adjust parameter bounds
+or add manual peak positions (if you have a shouldered pair, for example). If
+you have a very noisy signal, you may need to increase the reconstruction
+tolerance `rtol`.
+
+Signal Reconstruction of Interpeak Windows
+==========================================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Interpeak Window 1 (t: 0.000 - 2.220) R-Score = 0.9952 &amp; Fano Ratio = 10^-5</span>
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 2 (t: 20.440 - 24.990) R-Score = 1.6283 &amp; Fano Ratio = 10^-5</span>
+Interpeak window 2 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_24_2.png" src="../_images/tutorials_quickstart_24_2.png" />
+</div>
+</div>
+<p>However, if you <em>know</em> there is a second peak, and you know its approximate retention time, you can manually add an approximate peak position, forcing the algorithm to estimate the peak convolution including more than one peak.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enforce a manual peak position at around 11 time units</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">known_peaks</span><span class="o">=</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">assess_fit</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Deconvolving mixture: 100%|██████████| 1/1 [00:01&lt;00:00,  1.07s/it]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+=======================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Peak Window 1 (t: 2.230 - 20.430) R-Score = 1.0000</span>
+
+Signal Reconstruction of Interpeak Windows
+==========================================
+
+<span class="ansi-black-intense-fg ansi-yellow-bg ansi-bold">C-, Needs Review:  Interpeak Window 1 (t: 0.000 - 2.220) R-Score = 1.0442 &amp; Fano Ratio = 10^-5</span>
+Interpeak window 1 is not well reconstructed by mixture, but has a small Fano factor
+compared to peak region(s). This is likely acceptable, but visually check this region.
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Interpeak Window 2 (t: 20.440 - 24.990) R-Score = 1.0077 &amp; Fano Ratio = 10^-5</span>
+
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_26_2.png" src="../_images/tutorials_quickstart_26_2.png" />
+</div>
+</div>
+<p>Note that even though we provided a guess of ≈ 12 time units for the position of the second peak, the algorithm did not force the peak to be exactly there. If <code class="docutils literal notranslate"><span class="pre">enforced_locations</span></code> are provided, these are used as initial guesses when performing the fitting.</p>
+<p>This approach can also be used if there is a shallow, isolated peak that is not automatically detected.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load and fit a sample with a shallow peak</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/example_shallow.csv&#39;</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">prominence</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span> <span class="c1"># Prominence is to exclude shallow peak</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">assess_fit</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 249/249 [00:00&lt;00:00, 441.84it/s]
+Deconvolving mixture: 100%|██████████| 1/1 [00:00&lt;00:00,  7.30it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+=======================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Peak Window 1 (t: 3.530 - 16.460) R-Score = 1.0000</span>
+
+Signal Reconstruction of Interpeak Windows
+==========================================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Interpeak Window 1 (t: 0.000 - 3.520) R-Score = 1.0000 &amp; Fano Ratio = 0</span>
+<span class="ansi-black-intense-fg ansi-red-bg ansi-bold">F, Failed:  Interpeak Window 2 (t: 16.470 - 79.990) R-Score = 10^-2 &amp; Fano Ratio = 0.0382</span>
+Interpeak window 2 is not well reconstructed by mixture and has an appreciable Fano
+factor compared to peak region(s). This suggests you have missed a peak in this
+region. Consider adding manual peak positioning by passing `known_peaks`
+to `fit_peaks()`.
+
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_29_2.png" src="../_images/tutorials_quickstart_29_2.png" />
+</div>
+</div>
+<p>As the second peak is broad, you can provide an estimate of the width of the peak at the half maximum value to provide a better initial guess.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add the location of the second peak</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">known_peaks</span><span class="o">=</span><span class="p">{</span><span class="mi">50</span> <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">}},</span> <span class="n">prominence</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">assess_fit</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Deconvolving mixture: 100%|██████████| 2/2 [00:00&lt;00:00, 13.19it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+-------------------Chromatogram Reconstruction Report Card----------------------
+
+Reconstruction of Peaks
+=======================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Peak Window 1 (t: 3.530 - 16.460) R-Score = 1.0000</span>
+<span class="ansi-black-intense-fg ansi-red-bg ansi-bold">F, Failed:  Peak Window 2 (t: 45.000 - 54.990) R-Score = 1.1050</span>
+Peak mixture poorly reconstructs signal. You many need to adjust parameter bounds
+or add manual peak positions (if you have a shouldered pair, for example). If
+you have a very noisy signal, you may need to increase the reconstruction
+tolerance `rtol`.
+
+Signal Reconstruction of Interpeak Windows
+==========================================
+
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Interpeak Window 1 (t: 0.000 - 3.520) R-Score = 1.0000 &amp; Fano Ratio = 0</span>
+<span class="ansi-black-intense-fg ansi-red-bg ansi-bold">F, Failed:  Interpeak Window 2 (t: 16.470 - 44.990) R-Score = 1.0151 &amp; Fano Ratio = 0.0160</span>
+Interpeak window 2 is not well reconstructed by mixture and has an appreciable Fano
+factor compared to peak region(s). This suggests you have missed a peak in this
+region. Consider adding manual peak positioning by passing `known_peaks`
+to `fit_peaks()`.
+<span class="ansi-black-intense-fg ansi-green-bg ansi-bold">A+, Success:  Interpeak Window 3 (t: 55.000 - 79.990) R-Score = 1.0119 &amp; Fano Ratio = 0.0158</span>
+
+--------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_31_2.png" src="../_images/tutorials_quickstart_31_2.png" />
+</div>
+</div>
+</section>
+<section id="Constraining-Peaks-With-Known-Parameters">
+<h2>Constraining Peaks With Known Parameters<a class="headerlink" href="#Constraining-Peaks-With-Known-Parameters" title="Link to this heading"></a></h2>
+<p>If you have a chromatogram with two <em>completely</em> overlapping peaks, it can be very, very difficult to deconvolve the mixture. However, if you happen to know the parameters of one of the constituents (say, from characterization of an isolated aqueous mixture of that compound), you can apply more stringent bounds to that particular peak. Say for example we have a mixture of two compounds with retention times of <code class="docutils literal notranslate"><span class="pre">10</span></code> and <code class="docutils literal notranslate"><span class="pre">10.6</span></code> and you know that the first peak has an amplitude of <code class="docutils literal notranslate"><span class="pre">100</span></code> units.
+If you were to only supply the locations of the known peaks, you would underestimate the contribution from the first peak.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load a chromatogram that is very heavily overlapping</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="s1">&#39;data/bounding_example.csv&#39;</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+<span class="c1"># Fit the peaks providing only the known retention times</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">known_peaks</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mf">10.6</span><span class="p">])</span>
+<span class="n">inferred_amplitude</span> <span class="o">=</span> <span class="n">peaks</span><span class="p">[</span><span class="n">peaks</span><span class="p">[</span><span class="s1">&#39;peak_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;amplitude&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">known_amplitude</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c1"># Print a summary statement demonstrating the underestimation</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Inferred amplitude for peak 1 is </span><span class="si">{</span><span class="n">inferred_amplitude</span><span class="si">:</span><span class="s1">0.3f</span><span class="si">}</span><span class="s1">. Known value is </span><span class="si">{</span><span class="n">known_amplitude</span><span class="si">:</span><span class="s1">0.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 249/249 [00:00&lt;00:00, 1954.58it/s]
+Deconvolving mixture: 100%|██████████| 2/2 [00:00&lt;00:00, 15.32it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Inferred amplitude for peak 1 is 94.971. Known value is 100.000
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;,
+ &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal (baseline corrected)&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_33_4.png" src="../_images/tutorials_quickstart_33_4.png" />
+</div>
+</div>
+<p>You can constrain the parameter bounds for the amplitude of peak 1 more narrowly than the other peak by passing a dictionary to the <code class="docutils literal notranslate"><span class="pre">known_peaks</span></code> parameter of <code class="docutils literal notranslate"><span class="pre">fit_peaks()</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define more stringent bounds as a dictionary with the retention time as the key</span>
+<span class="c1"># and the parameter bounds as a value.</span>
+<span class="n">bounds</span> <span class="o">=</span> <span class="p">{</span><span class="mi">10</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;amplitude&#39;</span><span class="p">:[</span><span class="mi">99</span><span class="p">,</span> <span class="mi">101</span><span class="p">]},</span> <span class="c1"># Known parameters for peak 1</span>
+          <span class="mf">10.6</span> <span class="p">:</span> <span class="p">{}</span> <span class="c1"># Allow free inference for second peak</span>
+          <span class="p">}</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">known_peaks</span><span class="o">=</span><span class="n">bounds</span><span class="p">)</span>
+<span class="n">inferred_amplitude</span> <span class="o">=</span> <span class="n">peaks</span><span class="p">[</span><span class="n">peaks</span><span class="p">[</span><span class="s1">&#39;peak_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;amplitude&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Print a summary statement demonstrating the improvement.</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Inferred amplitude for peak 1 is </span><span class="si">{</span><span class="n">inferred_amplitude</span><span class="si">:</span><span class="s1">0.3f</span><span class="si">}</span><span class="s1">. Known value is </span><span class="si">{</span><span class="n">known_amplitude</span><span class="si">:</span><span class="s1">0.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Deconvolving mixture: 100%|██████████| 2/2 [00:00&lt;00:00,  2.19it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Inferred amplitude for peak 1 is 99.000. Known value is 100.000
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;,
+ &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal (baseline corrected)&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_quickstart_35_4.png" src="../_images/tutorials_quickstart_35_4.png" />
+</div>
+</div>
+<p>Here, we’ve only bounded the <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> parameter, but you can also provide bounds for <code class="docutils literal notranslate"><span class="pre">location</span></code>, <code class="docutils literal notranslate"><span class="pre">scale</span></code>, and <code class="docutils literal notranslate"><span class="pre">skew</span></code>.</p>
+<hr class="docutils" />
+<p>© Griffin Chure, 2024. This notebook and the code within are released under a <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/">Creative-Commons CC-BY 4.0</a> and <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0">GPLv3</a> license, respectively.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="About" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="calibration_curve.html" class="btn btn-neutral float-right" title="Absolute Quantitation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Griffin Chure &amp; Jonas Cremer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

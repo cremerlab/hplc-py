@@ -1,0 +1,609 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Absolute Quantitation &mdash; hplc-py 0.2.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=f553e99a" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=37f418d5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The Problem" href="../methodology/problem.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3C3E47" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_horizontal-02.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Absolute Quantitation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Generating-a-Calibration-Curve">Generating a Calibration Curve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Testing-the-Calibration">Testing the Calibration</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How It Works</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/problem.html">The Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/baseline.html">Step 1: Baseline Correction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/peak_detection.html">Step 2: Detecting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/fitting.html">Step 3: Fitting Peaks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../methodology/scoring.html">Step 4: Scoring the Reconstruction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quant.html"><cite>hplc.quant</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html"><cite>hplc.io</cite></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Credit &amp; Citation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">Credit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #3C3E47" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hplc-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Absolute Quantitation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/calibration_curve.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Absolute-Quantitation">
+<h1>Absolute Quantitation<a class="headerlink" href="#Absolute-Quantitation" title="Link to this heading"></a></h1>
+<p>Notebook Code: <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License: MIT" src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a> Notebook Prose: <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg" /></a></p>
+<hr class="docutils" />
+<p>A common goal in chromatography is to quantify with physically meaningful units the concentration of an analyte in a solution. While Chromatography will not give that to you directly off the instrument, you can prepare a “standard curve”–a set of solutions where you <em>know</em> the concentration of the analyte of interest. With a properly configured machine, one can make a direct linear relation between the integrated area of a peak and the concentration of the analyte. In this tutorial, we will use
+<code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> to quantify a standard curve of a lactose solution and then use the <code class="docutils literal notranslate"><span class="pre">.map_peaks</span></code> method of the <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> object to test our calibration curve.</p>
+<section id="Generating-a-Calibration-Curve">
+<h2>Generating a Calibration Curve<a class="headerlink" href="#Generating-a-Calibration-Curve" title="Link to this heading"></a></h2>
+<p>Here, we will use <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> to quantify aqueous solutions of lactose in different concentrations. These files have been preprocessed to have the known lactose concentration in the file name.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+
+<span class="c1"># Get the list of files</span>
+<span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;data/calibration/lactose*.csv&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+data/calibration/lactose_mM_6.csv
+</pre></div></div>
+</div>
+<p>We can load this file into memory as a chromatogram using the <code class="docutils literal notranslate"><span class="pre">load_chromatogram</span></code> function from the <code class="docutils literal notranslate"><span class="pre">io</span></code> module and instantiate a <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code> object.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">hplc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_chromatogram</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hplc.quant</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chromatogram</span>
+
+<span class="c1"># Load and display the first file.</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+<span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;Figure size 640x480 with 1 Axes&gt;, &lt;Axes: xlabel=&#39;time&#39;, ylabel=&#39;signal&#39;&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_calibration_curve_5_1.png" src="../_images/tutorials_calibration_curve_5_1.png" />
+</div>
+</div>
+<p>As a reminder, we can quickly quantify this single peak by calling the <code class="docutils literal notranslate"><span class="pre">.fit_peaks</span></code> method.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quantify the peak</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">peaks</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>retention_time</th>
+      <th>scale</th>
+      <th>skew</th>
+      <th>amplitude</th>
+      <th>area</th>
+      <th>signal_maximum</th>
+      <th>peak_id</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.281228</td>
+      <td>1.654595</td>
+      <td>8004.240816</td>
+      <td>960508.897906</td>
+      <td>15977.970977</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_calibration_curve_7_1.png" src="../_images/tutorials_calibration_curve_7_1.png" />
+</div>
+</div>
+<p>While it’s useful to know the various parameters returned by the fitting, we are fundamen We are interested in the integrated area of the peak (integrated over the entire duration of the chromatogram). Using a for loop and getting the concentration of lactose from each file name, we can generate a new Pandas DataFrame which will hold the calibration information.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="c1"># Set up a blank dataframe for the calibration curve.</span>
+<span class="n">cal_curve</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([])</span>
+
+<span class="c1"># Iterate through each file and perform the quantitation</span>
+<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+    <span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Get the concentration of lactose from the file name</span>
+    <span class="n">conc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span>
+
+    <span class="c1"># Add the concentration to the peak table and add it</span>
+    <span class="c1"># to the instantiated calibration dataframe</span>
+    <span class="n">peaks</span><span class="p">[</span><span class="s1">&#39;conc_mM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">conc</span>
+    <span class="n">cal_curve</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">cal_curve</span><span class="p">,</span> <span class="n">peaks</span><span class="p">])</span>
+
+<span class="n">cal_curve</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>retention_time</th>
+      <th>scale</th>
+      <th>skew</th>
+      <th>amplitude</th>
+      <th>area</th>
+      <th>signal_maximum</th>
+      <th>peak_id</th>
+      <th>conc_mM</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.281228</td>
+      <td>1.654595</td>
+      <td>8004.240816</td>
+      <td>960508.897906</td>
+      <td>15977.970977</td>
+      <td>1</td>
+      <td>6.0</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.278886</td>
+      <td>1.627672</td>
+      <td>747.107260</td>
+      <td>89652.871210</td>
+      <td>1496.949321</td>
+      <td>1</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.278874</td>
+      <td>1.629961</td>
+      <td>1540.315414</td>
+      <td>184837.849638</td>
+      <td>3087.620065</td>
+      <td>1</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.280349</td>
+      <td>1.644179</td>
+      <td>3896.489630</td>
+      <td>467578.755562</td>
+      <td>7787.982871</td>
+      <td>1</td>
+      <td>3.0</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>We can now plot the peak area as a function of time, which we expect to appear linear.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="c1"># Plot the calibration curve.</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cal_curve</span><span class="p">[</span><span class="s1">&#39;conc_mM&#39;</span><span class="p">],</span> <span class="n">cal_curve</span><span class="p">[</span><span class="s1">&#39;amplitude&#39;</span><span class="p">],</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;lactose concentration [mM]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;integrated peak area [a.u.]&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;integrated peak area [a.u.]&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_calibration_curve_11_1.png" src="../_images/tutorials_calibration_curve_11_1.png" />
+</div>
+</div>
+<p>We can perform a simple regression on these data to get a calibration curve.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">linregress</span>
+
+<span class="c1">#  Compute the best fit calibration curve</span>
+<span class="n">fit_params</span> <span class="o">=</span> <span class="n">linregress</span><span class="p">(</span><span class="n">cal_curve</span><span class="p">[</span><span class="s1">&#39;conc_mM&#39;</span><span class="p">],</span> <span class="n">cal_curve</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])</span>
+<span class="n">slope</span> <span class="o">=</span> <span class="n">fit_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">intercept</span> <span class="o">=</span> <span class="n">fit_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Plot the fit over the data</span>
+<span class="n">conc_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">cal</span> <span class="o">=</span> <span class="n">intercept</span> <span class="o">+</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">conc_range</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cal_curve</span><span class="p">[</span><span class="s1">&#39;conc_mM&#39;</span><span class="p">],</span> <span class="n">cal_curve</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">],</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;measurement&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">conc_range</span><span class="p">,</span> <span class="n">cal</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;fit&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;lactose concentration [mM]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;integrated peak area [a.u.]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x14fca6860&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_calibration_curve_13_1.png" src="../_images/tutorials_calibration_curve_13_1.png" />
+</div>
+</div>
+</section>
+<section id="Testing-the-Calibration">
+<h2>Testing the Calibration<a class="headerlink" href="#Testing-the-Calibration" title="Link to this heading"></a></h2>
+<p>We also have a set of lactose solutions with known concentrations that we did not use when fitting the calibration curve. We can use the <code class="docutils literal notranslate"><span class="pre">.map_peaks</span></code> method when quantifying these test data to see if we get the same concentrations out that we know the peaks represent.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the test data</span>
+<span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;data/test/lactose*.csv&#39;</span><span class="p">)</span>
+
+<span class="c1"># Instantiate a dataframe to store the results</span>
+<span class="n">test_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([])</span>
+
+<span class="c1"># Iterate through each file and quantify the peaks</span>
+<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">load_chromatogram</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">])</span>
+    <span class="n">chrom</span> <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">peaks</span> <span class="o">=</span>  <span class="n">chrom</span><span class="o">.</span><span class="n">fit_peaks</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Now, use the map_peaks method to quantify the signal based off our</span>
+    <span class="c1"># calibration curve</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lactose&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;retention_time&#39;</span><span class="p">:</span> <span class="mf">13.56</span><span class="p">,</span>
+                           <span class="s1">&#39;slope&#39;</span><span class="p">:</span> <span class="n">slope</span><span class="p">,</span>
+                           <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="n">intercept</span><span class="p">,</span>
+                           <span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="s1">&#39;mM&#39;</span><span class="p">}}</span>
+    <span class="n">measured_conc</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">map_peaks</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">mapping</span><span class="p">)</span>
+
+    <span class="c1"># Parse the known concentration from the file name</span>
+    <span class="n">known_conc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span>
+
+    <span class="c1"># Add it to the dataframe and concatenate</span>
+    <span class="n">measured_conc</span><span class="p">[</span><span class="s1">&#39;true_conc_mM&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">known_conc</span>
+    <span class="n">test_data</span>  <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">test_data</span><span class="p">,</span> <span class="n">measured_conc</span><span class="p">])</span>
+<span class="n">test_data</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>retention_time</th>
+      <th>scale</th>
+      <th>skew</th>
+      <th>amplitude</th>
+      <th>area</th>
+      <th>signal_maximum</th>
+      <th>peak_id</th>
+      <th>compound</th>
+      <th>concentration</th>
+      <th>unit</th>
+      <th>true_conc_mM</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.281437</td>
+      <td>1.664340</td>
+      <td>10715.395193</td>
+      <td>1.285847e+06</td>
+      <td>21414.173961</td>
+      <td>1</td>
+      <td>lactose</td>
+      <td>8.118513</td>
+      <td>mM</td>
+      <td>8.0</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.280571</td>
+      <td>1.649106</td>
+      <td>5316.475249</td>
+      <td>6.379770e+05</td>
+      <td>10627.640549</td>
+      <td>1</td>
+      <td>lactose</td>
+      <td>3.981019</td>
+      <td>mM</td>
+      <td>4.0</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.279941</td>
+      <td>1.638944</td>
+      <td>2600.265354</td>
+      <td>3.120318e+05</td>
+      <td>5201.011260</td>
+      <td>1</td>
+      <td>lactose</td>
+      <td>1.899435</td>
+      <td>mM</td>
+      <td>2.0</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>13.56</td>
+      <td>0.279515</td>
+      <td>1.636055</td>
+      <td>2154.007783</td>
+      <td>2.584809e+05</td>
+      <td>4312.738273</td>
+      <td>1</td>
+      <td>lactose</td>
+      <td>1.557443</td>
+      <td>mM</td>
+      <td>1.5</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>It looks like it’s in good agreement! We can confirm this by plotting the measured value versus the true value. If in agreement, everything should fall on the identity line.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the measured versus known value of the test set</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;true_conc_mM&#39;</span><span class="p">],</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;concentration&#39;</span><span class="p">],</span> <span class="s1">&#39;o&#39;</span><span class="p">,</span>
+         <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;measurements&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;equivalence&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;true lactose concentration [mM]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;measured lactose concentration [mM]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x14fd33f40&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_calibration_curve_17_1.png" src="../_images/tutorials_calibration_curve_17_1.png" />
+</div>
+</div>
+<hr class="docutils" />
+<p>© Griffin Chure, 2024. This notebook and the code within are released under a <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/">Creative-Commons CC-BY 4.0</a> and <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0">GPLv3</a> license, respectively.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../methodology/problem.html" class="btn btn-neutral float-right" title="The Problem" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Griffin Chure &amp; Jonas Cremer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

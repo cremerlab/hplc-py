@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Step 3: Fitting Peaks &mdash; hplc-py 0.2.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=f553e99a" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=37f418d5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Step 4: Scoring the Reconstruction" href="scoring.html" />
+    <link rel="prev" title="Step 2: Detecting Peaks" href="peak_detection.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #3C3E47" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/logo_horizontal-02.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/calibration_curve.html">Absolute Quantitation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How It Works</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="problem.html">The Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="baseline.html">Step 1: Baseline Correction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="peak_detection.html">Step 2: Detecting Peaks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Step 3: Fitting Peaks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#The-Skew-Normal-Distribution">The Skew-Normal Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Fitting-Peak-Windows">Fitting Peak Windows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Default-settings-for-initial-guesses-of-parameters">Default settings for initial guesses of parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Default-bounds-for-parameters">Default bounds for parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Optimization-of-parameters">Optimization of parameters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scoring.html">Step 4: Scoring the Reconstruction</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quant.html"><cite>hplc.quant</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html"><cite>hplc.io</cite></a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Credit &amp; Citation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../citation.html">Credit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #3C3E47" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hplc-py</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Step 3: Fitting Peaks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/methodology/fitting.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Step-3:-Fitting-Peaks">
+<h1>Step 3: Fitting Peaks<a class="headerlink" href="#Step-3:-Fitting-Peaks" title="Link to this heading"></a></h1>
+<p>Notebook Code: <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License: MIT" src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a> Notebook Prose: <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg" /></a></p>
+<hr class="docutils" />
+<p>The meat of <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> is its ability to take in windowed regions of a chromatogram and fit a number of peaks such that the chromatogram in that region is well reconstructed. As is the theme in these notebooks, it’s easier to look at a chromatogram and see what the reconstituted signals should like than to do it quantitatively.</p>
+<p>Ideally, one would have a physical model that would describe how an analyte interacts with the stationary phase of the chromatography column and a generative model that would capture the statistical distribution of the measurements as a function of time. However, having this in chromatography is exceedingly rare, so we are left with phenomenological descriptions of peak shape that we relate to chemical species and concentrations through calibration curves and control experiments. This is what
+<code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> excels at–phenomenological quantitative description of signals in a chromatogram. It is important to note that <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> does <strong>not</strong> provide a model of the components of the chromatogram but rather fits the parameters of a minimal number of convolved signals that can capture the observed data in the chromatogram. In this notebook, we outline how this fitting procedure is executed and how the total chromatographic signal is reconstructed.</p>
+<section id="The-Skew-Normal-Distribution">
+<h2>The Skew-Normal Distribution<a class="headerlink" href="#The-Skew-Normal-Distribution" title="Link to this heading"></a></h2>
+<p>In <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code>, we consider that each detected maximum in a chromatogram results from a single compound <span class="math notranslate nohighlight">\(i\)</span> whose time-dependent signal intensity <span class="math notranslate nohighlight">\(S_i\)</span> can be phenomenologically well described by an amplitude-weighted <a class="reference external" href="https://en.wikipedia.org/wiki/Skew_normal_distribution">skew normal</a> distribution. Mathematically, this is defined as</p>
+<div class="math notranslate nohighlight">
+\[S_i(t) = \frac{A}{\sqrt{2\pi\sigma_i^2}} \exp\left[\frac{(t - \tau_i)^2}{2\sigma_i^2}\right]\left[1 + \text{erf}\left(\frac{\alpha_i (t - \tau_i)}{\sqrt{2\sigma^2}}\right)\right], \tag{1}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\text{erf}\)</span> is the <a class="reference external" href="https://en.wikipedia.org/wiki/Error_function">error function</a>, <span class="math notranslate nohighlight">\(A\)</span> is the amplitude, <span class="math notranslate nohighlight">\(\tau\)</span> is the retention time, <span class="math notranslate nohighlight">\(\sigma^2\)</span> is the signal variance, and <span class="math notranslate nohighlight">\(\alpha\)</span> is the skew parameter. The skew normal distribution is used because the skew parameter <span class="math notranslate nohighlight">\(\alpha\)</span> can break symmetry, allowing for heavily tailed signals. When the distribution is unskewed, meaning <span class="math notranslate nohighlight">\(\alpha = 0\)</span>, Eq. 1 simplifies to a Normal distribution symmetric
+about <span class="math notranslate nohighlight">\(\tau\)</span>. To get a sense of how <span class="math notranslate nohighlight">\(\alpha\)</span> impacts the resulting signal, we can use <code class="docutils literal notranslate"><span class="pre">scipy.stats.skewnormal</span></code> to examine the amplitude-weighted output,</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.stats</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+<span class="c1"># Set a range of skew parameters to demonstrate the signal as a function of time</span>
+<span class="n">alpha_range</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mf">0.01</span> <span class="p">)</span>
+
+<span class="c1"># Set constants for each signal</span>
+<span class="n">A</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">tau</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="k">for</span> <span class="n">alpha</span> <span class="ow">in</span> <span class="n">alpha_range</span><span class="p">:</span>
+    <span class="c1"># Compute the skew normal distribution and plot the resulting signal.</span>
+    <span class="n">signal</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">skewnorm</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">tau</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Add necessary labels</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;$S$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x16b72b940&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_fitting_3_1.png" src="../_images/methodology_fitting_3_1.png" />
+</div>
+</div>
+<p>When the skew parameter <span class="math notranslate nohighlight">\(\alpha\)</span> is large and negative, the signal is heavily skewed towards shorter retention times. Even though all signals in this plot have different heights and locations of the maxima, they all have identical values for <span class="math notranslate nohighlight">\(A\)</span>, <span class="math notranslate nohighlight">\(\tau\)</span>, and <span class="math notranslate nohighlight">\(\sigma\)</span>. The flexibility of <span class="math notranslate nohighlight">\(\alpha\)</span> in defining the signal trace allows for a broad array of peak shapes to be well described by this distribution.</p>
+</section>
+<section id="Fitting-Peak-Windows">
+<h2>Fitting Peak Windows<a class="headerlink" href="#Fitting-Peak-Windows" title="Link to this heading"></a></h2>
+<p>As described in the notebook for Step 2, a chromatogram is broken down into multiple “peak windows” which likely contain overlapping analyte signals. Each window is fitted independently, which assumes that distant peaks have no influence on each other. As an example, let’s look at a real peak window from a sample chromatogram.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">hplc.quant</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chromatogram</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Load an example chromatogram and correct the baseline</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;data/sample_chromatogram.txt&#39;</span><span class="p">)</span>
+<span class="n">chrom</span>  <span class="o">=</span> <span class="n">Chromatogram</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span><span class="s1">&#39;time_min&#39;</span><span class="p">,</span> <span class="s1">&#39;signal&#39;</span><span class="p">:</span><span class="s1">&#39;intensity_mV&#39;</span><span class="p">},</span>
+                      <span class="n">time_window</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+<span class="n">chrom</span><span class="o">.</span><span class="n">correct_baseline</span><span class="p">()</span>
+
+<span class="c1"># Assign the peak windows with a modified buffer and prominence filter</span>
+<span class="n">windows</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">_assign_windows</span><span class="p">(</span><span class="n">buffer</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">prominence</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+
+<span class="c1"># Get the first peak window and plot</span>
+<span class="n">first_peak</span> <span class="o">=</span> <span class="n">windows</span><span class="p">[(</span><span class="n">windows</span><span class="p">[</span><span class="s1">&#39;window_type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;peak&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">windows</span><span class="p">[</span><span class="s1">&#39;window_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">)]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;intensity_mV_corrected&#39;</span><span class="p">],</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;window 1&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [min]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal [mV]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Performing baseline correction: 100%|██████████| 299/299 [00:00&lt;00:00, 2725.64it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x16b8d2380&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_fitting_6_2.png" src="../_images/methodology_fitting_6_2.png" />
+</div>
+</div>
+<p>To determine the properties of this peak (including its area which is proportional to concentration), we will find the best-fit parameters using a non-linear least squares <a class="reference external" href="https://en.wikipedia.org/wiki/Trust_region">trust region</a> fitting method as is implemented in <code class="docutils literal notranslate"><span class="pre">scipy.optimize.curve_fit</span></code> which is a robust estimation algorithm for bounded problems.</p>
+<p>To do so, we must provide i) initial guesses for the parameters <span class="math notranslate nohighlight">\([A, \tau, \sigma, \alpha]\)</span> and ii) reasonable bounds on their values.</p>
+<section id="Default-settings-for-initial-guesses-of-parameters">
+<h3>Default settings for initial guesses of parameters<a class="headerlink" href="#Default-settings-for-initial-guesses-of-parameters" title="Link to this heading"></a></h3>
+<p>In <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code>, initial guesses are set given the properties of the observed chromatogram. These default parameter guesses are:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(A_0 \rightarrow\)</span> the observed value of the chromatogram at the location of the maxima</p></li>
+<li><p><span class="math notranslate nohighlight">\(\tau_0 \rightarrow\)</span> the observed time-location of the maxima</p></li>
+<li><p><span class="math notranslate nohighlight">\(\sigma_0 \rightarrow\)</span> one-half of the observed peak width at its half-maximal value</p></li>
+<li><p><span class="math notranslate nohighlight">\(\alpha_0 \rightarrow\)</span> 0, which guesses that the peak is approximately Gaussian.</p></li>
+</ul>
+<p>These values are determined using peak measurements returned by <code class="docutils literal notranslate"><span class="pre">scipy.signal.find_peaks</span></code> and <code class="docutils literal notranslate"><span class="pre">scipy.signal.peak_widths</span></code>. These properties are accessible via the chromatogram attribute <code class="docutils literal notranslate"><span class="pre">.window_props</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the initial guesses from the window properties</span>
+<span class="n">props</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">window_props</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">p0</span> <span class="o">=</span> <span class="p">[</span><span class="n">props</span><span class="p">[</span><span class="s1">&#39;amplitude&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+     <span class="n">props</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+     <span class="n">props</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+     <span class="mi">0</span><span class="p">]</span>
+<span class="n">p0</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[65992.999952423, 10.98, 0.16630057317687066, 0]
+</pre></div></div>
+</div>
+</section>
+<section id="Default-bounds-for-parameters">
+<h3>Default bounds for parameters<a class="headerlink" href="#Default-bounds-for-parameters" title="Link to this heading"></a></h3>
+<p>By default, <code class="docutils literal notranslate"><span class="pre">hplc-py</span></code> applies broad, permissive bounds on these parameters given information of the chromatogram. The default bounds given to each parameter are</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(A \in [0.01 \times A_0, 100 \times A_0]\)</span> where <span class="math notranslate nohighlight">\(A_0\)</span> is the initial guess for the amplitude.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\tau \in [t_{min}, t_{max}]\)</span> where <span class="math notranslate nohighlight">\(t_{min}\)</span> and <span class="math notranslate nohighlight">\(t_{max}\)</span> correspond to the minimum and maximum times in the peak window.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\sigma_{bounds} \in [dt, \frac{t_{max} - t_{min}}{2}]\)</span> where <span class="math notranslate nohighlight">\(dt\)</span> corresponds to the time sampling interval of the chromatogram.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\alpha \in (-\inf, +\inf)\)</span>.</p></li>
+</ul>
+<p>These bounds can be overridden for all peak inferences by providing a dictionary of their values, as is specified in the documentation for <code class="docutils literal notranslate"><span class="pre">hplc.quant.Chromatogram.fit_peaks</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Give initial bounds for the parameters (lower, upper)</span>
+<span class="n">bounds</span> <span class="o">=</span> <span class="p">[[],</span> <span class="p">[]]</span>
+<span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">p0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">chrom</span><span class="o">.</span><span class="n">_dt</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
+<span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">p0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span> <span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Optimization-of-parameters">
+<h3>Optimization of parameters<a class="headerlink" href="#Optimization-of-parameters" title="Link to this heading"></a></h3>
+<p>Given initial guesses and parameter bounds, the best-fit parameters are estimated by calling <code class="docutils literal notranslate"><span class="pre">scipy.optimize.curve_fit</span></code> on the observed data in the peak widow. The cost function is defined as a method <code class="docutils literal notranslate"><span class="pre">_fit_skewnorms</span></code> of a <code class="docutils literal notranslate"><span class="pre">Chromatogram</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">scipy.optimize</span>
+
+<span class="c1"># Perform the fit</span>
+<span class="n">param_opt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">curve_fit</span><span class="p">(</span><span class="n">chrom</span><span class="o">.</span><span class="n">_fit_skewnorms</span><span class="p">,</span> <span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span>
+                                        <span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;intensity_mV_corrected&#39;</span><span class="p">],</span>
+                                        <span class="n">p0</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Optimal parameters (amplitude, location, scale, skew) : </span><span class="si">{</span><span class="n">param_opt</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Optimal parameters (amplitude, location, scale, skew) : [2.33773945e+04 1.09020036e+01 1.59217385e-01 7.03685471e-01]
+</pre></div></div>
+</div>
+<p>With the optimal parameters estimated, we can compare the inferred signal to the observed chromatogram</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute the amplitude-weighted skewnorm with the inferred parameters</span>
+<span class="n">fit</span> <span class="o">=</span> <span class="n">param_opt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">skewnorm</span><span class="p">(</span><span class="n">param_opt</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="n">param_opt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">param_opt</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">])</span>
+
+<span class="c1"># Plot the data and the observed peak</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;intensity_mV_corrected&#39;</span><span class="p">],</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;window 1&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">first_peak</span><span class="p">[</span><span class="s1">&#39;time_min&#39;</span><span class="p">],</span> <span class="n">fit</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;dodgerblue&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;inferred signal&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [min]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal [mV]&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x1739eab90&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/methodology_fitting_14_1.png" src="../_images/methodology_fitting_14_1.png" />
+</div>
+</div>
+<p>With an adequate reconstruction of the observed peak, the signal area is computed by integrating the signal over the entire time range of the peak window, and the procedure is repeated for the next peak window.</p>
+<hr class="docutils" />
+<p>© Griffin Chure, 2024. This notebook and the code within are released under a <a class="reference external" href="https://creativecommons.org/licenses/by/4.0/">Creative-Commons CC-BY 4.0</a> and <a class="reference external" href="https://www.gnu.org/licenses/gpl-3.0">GPLv3</a> license, respectively.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="peak_detection.html" class="btn btn-neutral float-left" title="Step 2: Detecting Peaks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="scoring.html" class="btn btn-neutral float-right" title="Step 4: Scoring the Reconstruction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Griffin Chure &amp; Jonas Cremer.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
