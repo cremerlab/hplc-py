@@ -304,6 +304,34 @@ def test_map_peaks():
         peaks = chrom.map_peaks(params)
 
 
+def test_map_peaks_missing_compound_not_last():
+    """
+    Regression test for GitHub issue #23: a compound with no matching peak must
+    not abort mapping of the remaining (present) compounds. Previously the loop
+    `break`ed on the first unmapped compound, so any compound listed after it was
+    silently skipped, and a leading miss raised "No peaks could be properly
+    mapped!" even though every other peak was present.
+    """
+    data = pd.read_csv('./tests/test_data/test_assessment_chrom.csv')
+    chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
+    peaks = chrom.fit_peaks()
+
+    # Build a params dict whose FIRST entry has no matching peak, followed by the
+    # real, present peaks. Insertion order is preserved by Python dicts.
+    params = {'absent': {'retention_time': peaks['retention_time'].min() - 5}}
+    for g, d in peaks.groupby('peak_id'):
+        params[f'compound_{g}'] = {'retention_time': d['retention_time'].values[0]}
+
+    with pytest.warns():
+        mapped = chrom.map_peaks(params)
+
+    # All present compounds are mapped despite the leading miss.
+    assert len(mapped) == len(peaks)
+    assert sorted(mapped['compound'].values) == [
+        f'compound_{g}' for g in peaks['peak_id'].values]
+    assert 'absent' not in mapped['compound'].values
+
+
 def test_many_peaks():
     """
     Ensures that a warning is raised if there are 10 or more peaks in a given window. 

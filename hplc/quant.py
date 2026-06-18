@@ -1056,7 +1056,7 @@ check if the subtraction is acceptable!
 
             if np.sum(peak_id) == 0:
                 unmapped[k] = v["retention_time"]
-                break
+                continue
             peak_id = peak_df.peak_id.values[np.argmax(peak_id)]
             peak_df.loc[peak_df["peak_id"] == peak_id, "compound"] = k
             mapper[peak_id] = k
