@@ -622,3 +622,27 @@ def test_peak_adjacent_to_start_assigns_interpeak():
     # The trailing background between the two peaks is captured as interpeak.
     assert (chrom.window_df['window_type'] == 'interpeak').any()
     assert (scores['window_type'] == 'interpeak').any()
+
+
+def test_degenerate_bounds_raise_clear_error():
+    """
+    The pre-fit bounds validation (the safety net added for bug H) must surface
+    degenerate or infeasible parameter bounds as a clear, actionable ValueError
+    instead of scipy's opaque message. Issue #22 is exactly the degenerate
+    amplitude-bound case.
+    """
+    t = np.arange(0, 20, 0.01)
+    sig = _skewnorm_signal(t, [(1000, 10.0, 0.3, 0)])
+    df = pd.DataFrame({'time': t, 'signal': sig})
+
+    # Degenerate amplitude bound [0, 0]: lower bound not strictly less than upper.
+    chrom = hplc.quant.Chromatogram(df)
+    with pytest.raises(ValueError, match='Invalid bounds'):
+        chrom.fit_peaks(param_bounds={'amplitude': [0, 0]},
+                        correct_baseline=False, verbose=False)
+
+    # Amplitude bound [2x, 3x] the peak value excludes the initial guess (1x).
+    chrom = hplc.quant.Chromatogram(df)
+    with pytest.raises(ValueError, match='lies outside its bounds'):
+        chrom.fit_peaks(param_bounds={'amplitude': [2, 3]},
+                        correct_baseline=False, verbose=False)
