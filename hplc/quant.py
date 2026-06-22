@@ -130,9 +130,10 @@ class Chromatogram:
 
         Parameters
         ----------
-        time_window : `list` [start, end], optional
-            The retention time window of the chromatogram to consider for analysis.
-            If None, the entire time range of the chromatogram will be considered.
+        time_window : `list` [start, end]
+            The retention time window of the chromatogram to consider for
+            analysis. This is required; a `ValueError` is raised if it is not
+            provided.
         return_df : `bool`
             If `True`, the cropped DataFrame is
 
