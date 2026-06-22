@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import pytest
+import scipy.stats
 
 
 def compare(a, b, tol):
@@ -66,14 +67,10 @@ def test_peak_fitting():
     chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv')
     chrom = hplc.quant.Chromatogram(
         chrom_df, cols={'time': 'x', 'signal': 'y'})
-    try:
+    with pytest.raises(ValueError):
         chrom._assign_windows(rel_height=-1)
-    except ValueError:
-        assert True
-    try:
+    with pytest.raises(ValueError):
         chrom._assign_windows(rel_height=2)
-    except ValueError:
-        assert True
 
     chrom_df = pd.read_csv('./tests/test_data/test_fitting_chrom.csv')
     chrom = hplc.quant.Chromatogram(chrom_df[chrom_df['iter'] == 1], cols={
@@ -204,16 +201,15 @@ def test_crop():
     """
     data = pd.read_csv('./tests/test_data/test_assessment_chrom.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
-    try:
+    with pytest.raises(ValueError):
         chrom.crop([1, 2, 3])
-        assert False
-    except ValueError:
-        assert True
-    try:
+    with pytest.raises(RuntimeError):
         chrom.crop([2, 1])
-        assert False
-    except RuntimeError:
-        assert True
+    # A missing/None time window should give a clear ValueError, not a TypeError.
+    with pytest.raises(ValueError, match='must be provided as a list'):
+        chrom.crop(None)
+    with pytest.raises(ValueError, match='must be provided as a list'):
+        chrom.crop()
 
     # Test that a dataframe is returned only if specified.
     no_returned_df = chrom.crop([10, 20], return_df=False)
@@ -246,10 +242,8 @@ def test_deconvolve_peaks():
     """
     data = pd.read_csv('./tests/test_data/test_assessment_chrom.csv')
     chrom = hplc.quant.Chromatogram(data, cols={'time': 'x', 'signal': 'y'})
-    try:
+    with pytest.raises(RuntimeError):
         chrom.deconvolve_peaks()
-    except RuntimeError:
-        assert True
 
 
 def test_map_peaks():
@@ -543,3 +537,32 @@ def test_generic_param_bounding():
         assert False
     except ValueError:
         assert True
+
+
+def test_multipeak_param_bounds_validated_per_peak():
+    """
+    Regression test for bug B: when a global `param_bounds` is applied to a
+    window containing more than one peak, the initial-guess-vs-bounds check must
+    use *each* peak's own guess. Previously it always inspected the first peak's
+    guess, so a bound that excluded a later peak's guess was silently accepted
+    (and later surfaced as an opaque scipy error rather than the informative one).
+    """
+    # Two overlapping peaks with clearly different widths that share one window.
+    t = np.arange(0, 30, 0.01)
+    sig = (200 * scipy.stats.norm(14.0, 0.2).pdf(t)
+           + 200 * scipy.stats.norm(15.0, 0.6).pdf(t))
+    df = pd.DataFrame({'time': t, 'signal': sig})
+
+    # Inspect the per-peak scale initial guesses (scale guess = width / 2).
+    probe = hplc.quant.Chromatogram(df)
+    probe._assign_windows(buffer=200)
+    multi = [v for v in probe.window_props.values() if v['num_peaks'] == 2]
+    assert len(multi) == 1, "expected the two peaks to share a single window"
+    guesses = sorted(w / 2 for w in multi[0]['width'])
+    # Bound contains the smaller guess (first peak) but excludes the larger one.
+    bound = [0, 0.5 * (guesses[0] + guesses[1])]
+
+    chrom = hplc.quant.Chromatogram(df)
+    with pytest.raises(ValueError, match='exclusive of initial guess'):
+        chrom.fit_peaks(correct_baseline=False, buffer=200,
+                        param_bounds={'scale': bound}, verbose=False)
