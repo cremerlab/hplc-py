@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import pytest
+import scipy.stats
 
 
 def compare(a, b, tol):
@@ -205,9 +206,9 @@ def test_crop():
     with pytest.raises(RuntimeError):
         chrom.crop([2, 1])
     # A missing/None time window should give a clear ValueError, not a TypeError.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be provided as a list'):
         chrom.crop(None)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='must be provided as a list'):
         chrom.crop()
 
     # Test that a dataframe is returned only if specified.
@@ -518,8 +519,6 @@ def test_multipeak_param_bounds_validated_per_peak():
     guess, so a bound that excluded a later peak's guess was silently accepted
     (and later surfaced as an opaque scipy error rather than the informative one).
     """
-    import scipy.stats
-
     # Two overlapping peaks with clearly different widths that share one window.
     t = np.arange(0, 30, 0.01)
     sig = (200 * scipy.stats.norm(14.0, 0.2).pdf(t)
