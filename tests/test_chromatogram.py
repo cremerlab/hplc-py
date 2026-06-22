@@ -573,34 +573,40 @@ def test_unmixed_columns_match_peak_id():
 
 def test_infeasible_location_guess_does_not_crash():
     """
-    Regression test for bug H: with a small time step the location initial guess
-    (rounded to `_time_precision`) can fall just outside the window's raw time
-    range, which scipy rejects as "`x0` is infeasible". The fixture
-    (`test_infeasible_bounds_chrom.csv`, the data from issue #15) reproduces this;
-    clamping the guess into its bounds must let fitting proceed past the bounds
-    check. The data is sliced to an early offending window so the failure (on the
-    unfixed code) surfaces quickly.
+    Regression test for bug H: the location initial guess is the peak time
+    *rounded* to `_time_precision`, while its bounds are the window's *raw*
+    (unrounded) time range. When `_time_precision = |ceil(log10(dt))|` is coarser
+    than the actual sample spacing, rounding can push the guess just past the
+    window's max, which scipy rejects as "`x0` is infeasible". The clamp must pull
+    the guess back inside its bounds so fitting proceeds.
+
+    This is purely a function of `dt` vs `_time_precision`, so it is reproduced
+    synthetically rather than from recorded data: a step of `dt = 0.011` gives
+    `_time_precision = |ceil(log10(0.011))| = 1`, so a peak near the end of the
+    record (here ~2.985) rounds *up* to 3.0 — past its window's raw max (~2.98).
+    On the unfixed code this raises before any optimizer iteration; with the clamp
+    the fit completes. (Verified: removing the clamp makes this signal raise
+    "Initial guess for 'location' ... lies outside its bounds".)
     """
-    df = pd.read_csv('./tests/test_data/test_infeasible_bounds_chrom.csv')
-    if 'Unnamed: 0' in df.columns:
-        df = df.drop(columns=['Unnamed: 0'])
-    df = df[df['time'] <= 0.7]
-    chrom = hplc.quant.Chromatogram(df, cols={'time': 'time', 'signal': 'signal'})
+    t = np.arange(0, 3.0, 0.011)
+    sig = _skewnorm_signal(t, [(6000, 1.0, 0.03, 0), (6000, 2.985, 0.03, 0)])
+    df = pd.DataFrame({'time': t, 'signal': sig})
+    assert int(np.abs(np.ceil(np.log10(np.mean(np.diff(t)))))) == 1, (
+        'fixture must keep `_time_precision == 1` for the rounding excursion')
+
+    chrom = hplc.quant.Chromatogram(df)
     try:
-        # Baseline correction (the default) shapes the windows that trigger the
-        # rounding mismatch, matching the original report in issue #15. `max_iter`
-        # is capped only to bound runtime on this undersampled slice; the
-        # infeasible-bounds error (on the unfixed code) is raised before any
-        # optimizer iterations, so the cap does not mask it.
-        chrom.fit_peaks(verbose=False, max_iter=2000)
+        peaks = chrom.fit_peaks(correct_baseline=False, verbose=False,
+                                max_iter=5000)
     except ValueError as e:
-        # The clamp removes the bounds/feasibility crash entirely.
+        # The clamp removes the bounds/feasibility crash entirely; if a ValueError
+        # still surfaces it must not be the infeasible-bounds one under test.
         assert 'infeasible' not in str(e).lower()
+        assert 'outside its bounds' not in str(e).lower()
         assert 'lower bound' not in str(e).lower()
-    except RuntimeError:
-        # A genuine optimizer non-convergence on this undersampled data is fine;
-        # it is not the bounds bug under test.
-        pass
+        raise
+    # The fit proceeds past the bounds check and recovers both peaks.
+    assert len(peaks) == 2
 
 
 def test_peak_adjacent_to_start_assigns_interpeak():
