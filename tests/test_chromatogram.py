@@ -322,13 +322,13 @@ def test_map_peaks_missing_compound_not_last():
     for g, d in peaks.groupby('peak_id'):
         params[f'compound_{g}'] = {'retention_time': d['retention_time'].values[0]}
 
-    with pytest.warns():
+    with pytest.warns(match='No peak found for absent'):
         mapped = chrom.map_peaks(params)
 
     # All present compounds are mapped despite the leading miss.
     assert len(mapped) == len(peaks)
-    assert sorted(mapped['compound'].values) == [
-        f'compound_{g}' for g in peaks['peak_id'].values]
+    assert set(mapped['compound'].values) == {
+        f'compound_{g}' for g in peaks['peak_id'].values}
     assert 'absent' not in mapped['compound'].values
 
 
