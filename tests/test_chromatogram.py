@@ -539,6 +539,142 @@ def test_generic_param_bounding():
         assert True
 
 
+def _skewnorm_signal(t, params):
+    """Build a signal as a sum of amplitude-weighted (skew)normal peaks."""
+    sig = np.zeros_like(t, dtype=float)
+    for amp, loc, scale, alpha in params:
+        sig += amp * scipy.stats.skewnorm(alpha, loc, scale).pdf(t)
+    return sig
+
+
+def test_known_peaks_nonzero_start_time():
+    """
+    Regression test for bug E: enforced (`known_peaks`) locations are mapped to
+    array indices relative to the chromatogram's start time, not by assuming the
+    time axis begins at t = 0. On a chromatogram whose time starts at t != 0, a
+    shallow peak that is not auto-detected must still be enforced at the correct
+    retention time.
+    """
+    t = np.arange(10, 30, 0.01)
+    # A tall auto-detected peak and a shallow peak that prominence filtering skips.
+    sig = _skewnorm_signal(t, [(1000, 16.0, 0.3, 0), (80, 22.0, 0.3, 0)])
+    df = pd.DataFrame({'time': t, 'signal': sig})
+    chrom = hplc.quant.Chromatogram(df)
+    peaks = chrom.fit_peaks(known_peaks={22.0: {'width': 1}},
+                            prominence=0.5, correct_baseline=False, verbose=False)
+    # The enforced peak is placed at ~22 (would land out-of-range on the t0=0 bug).
+    assert np.any(np.abs(peaks['retention_time'].values - 22.0) < 0.5)
+    assert np.any(np.abs(peaks['retention_time'].values - 16.0) < 0.5)
+
+
+def test_unmixed_columns_match_peak_id():
+    """
+    Regression test for bug F: `unmixed_chromatograms[:, peak_id - 1]` must hold
+    the trace for that `peak_id`. When detection order differs from
+    retention-time order (here forced by enforcing an early peak in a window that
+    also contains a later auto-detected peak), the columns were previously left
+    in detection order and disagreed with the sorted `peak_id`.
+    """
+    t = np.arange(0, 30, 0.01)
+    # Auto-detected tall peak at 16.0; shallow enforced peak earlier at 15.0.
+    sig = _skewnorm_signal(t, [(1000, 16.0, 0.2, 0), (90, 15.0, 0.2, 0)])
+    df = pd.DataFrame({'time': t, 'signal': sig})
+    chrom = hplc.quant.Chromatogram(df)
+    peaks = chrom.fit_peaks(known_peaks={15.0: {'width': 1}}, prominence=0.5,
+                            correct_baseline=False, buffer=200, verbose=False)
+
+    time = chrom.df['time'].values
+    for _, row in peaks.iterrows():
+        col = chrom.unmixed_chromatograms[:, int(row['peak_id']) - 1]
+        t_at_max = time[np.argmax(col)]
+        assert np.abs(t_at_max - row['retention_time']) < 0.5, (
+            f"column for peak_id {row['peak_id']} peaks at {t_at_max}, "
+            f"expected near {row['retention_time']}")
+
+
+def test_infeasible_location_guess_does_not_crash():
+    """
+    Regression test for bug H: the location initial guess is the peak time
+    *rounded* to `_time_precision`, while its bounds are the window's *raw*
+    (unrounded) time range. When `_time_precision = |ceil(log10(dt))|` is coarser
+    than the actual sample spacing, rounding can push the guess just past the
+    window's max, which scipy rejects as "`x0` is infeasible". The clamp must pull
+    the guess back inside its bounds so fitting proceeds.
+
+    This is purely a function of `dt` vs `_time_precision`, so it is reproduced
+    synthetically rather than from recorded data: a step of `dt = 0.011` gives
+    `_time_precision = |ceil(log10(0.011))| = 1`, so a peak near the end of the
+    record (here ~2.985) rounds *up* to 3.0 — past its window's raw max (~2.98).
+    On the unfixed code this raises before any optimizer iteration; with the clamp
+    the fit completes. (Verified: removing the clamp makes this signal raise
+    "Initial guess for 'location' ... lies outside its bounds".)
+    """
+    t = np.arange(0, 3.0, 0.011)
+    sig = _skewnorm_signal(t, [(6000, 1.0, 0.03, 0), (6000, 2.985, 0.03, 0)])
+    df = pd.DataFrame({'time': t, 'signal': sig})
+    assert int(np.abs(np.ceil(np.log10(np.mean(np.diff(t)))))) == 1, (
+        'fixture must keep `_time_precision == 1` for the rounding excursion')
+
+    chrom = hplc.quant.Chromatogram(df)
+    try:
+        peaks = chrom.fit_peaks(correct_baseline=False, verbose=False,
+                                max_iter=5000)
+    except ValueError as e:
+        # The clamp removes the bounds/feasibility crash entirely; if a ValueError
+        # still surfaces it must not be the infeasible-bounds one under test.
+        assert 'infeasible' not in str(e).lower()
+        assert 'outside its bounds' not in str(e).lower()
+        assert 'lower bound' not in str(e).lower()
+        raise
+    # The fit proceeds past the bounds check and recovers both peaks.
+    assert len(peaks) == 2
+
+
+def test_peak_adjacent_to_start_assigns_interpeak():
+    """
+    Smoke test for bug G: a chromatogram with a peak right at the start and a
+    long trailing background must run end-to-end and assign interpeak windows
+    over the background. The G fix corrects background-window splitting when a
+    gap lands at the first sample (`split_inds[0] == 0`). That exact branch is
+    hard to trigger deterministically without depending on `scipy.peak_widths`
+    internals, so this guards the surrounding behavior rather than isolating the
+    branch.
+    """
+    t = np.arange(0, 30, 0.01)
+    sig = _skewnorm_signal(t, [(400, 0.4, 0.15, 0), (600, 18.0, 0.4, 0)])
+    df = pd.DataFrame({'time': t, 'signal': sig})
+    chrom = hplc.quant.Chromatogram(df)
+    chrom.fit_peaks(correct_baseline=False, verbose=False, max_iter=5000)
+    scores = chrom.assess_fit(verbose=False)
+    # The trailing background between the two peaks is captured as interpeak.
+    assert (chrom.window_df['window_type'] == 'interpeak').any()
+    assert (scores['window_type'] == 'interpeak').any()
+
+
+def test_degenerate_bounds_raise_clear_error():
+    """
+    The pre-fit bounds validation (the safety net added for bug H) must surface
+    degenerate or infeasible parameter bounds as a clear, actionable ValueError
+    instead of scipy's opaque message. Issue #22 is exactly the degenerate
+    amplitude-bound case.
+    """
+    t = np.arange(0, 20, 0.01)
+    sig = _skewnorm_signal(t, [(1000, 10.0, 0.3, 0)])
+    df = pd.DataFrame({'time': t, 'signal': sig})
+
+    # Degenerate amplitude bound [0, 0]: lower bound not strictly less than upper.
+    chrom = hplc.quant.Chromatogram(df)
+    with pytest.raises(ValueError, match='Invalid bounds'):
+        chrom.fit_peaks(param_bounds={'amplitude': [0, 0]},
+                        correct_baseline=False, verbose=False)
+
+    # Amplitude bound [2x, 3x] the peak value excludes the initial guess (1x).
+    chrom = hplc.quant.Chromatogram(df)
+    with pytest.raises(ValueError, match='lies outside its bounds'):
+        chrom.fit_peaks(param_bounds={'amplitude': [2, 3]},
+                        correct_baseline=False, verbose=False)
+
+
 def test_multipeak_param_bounds_validated_per_peak():
     """
     Regression test for bug B: when a global `param_bounds` is applied to a

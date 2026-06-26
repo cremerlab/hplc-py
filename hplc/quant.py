@@ -261,6 +261,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
 
         # Determine if peaks should be added.
         if len(known_peaks) > 0:
+            # Anchor the index math to the first time value of the (possibly
+            # cropped) chromatogram. `find_peaks` returns positional indices into
+            # this array, so converting a user-specified time to an index must be
+            # measured relative to the start time rather than assuming t = 0.
+            t0 = self.df[self.time_col].values[0]
+
             # Get the enforced peak positions
             if type(known_peaks) == dict:
                 _known_peaks = list(known_peaks.keys())
@@ -268,13 +274,13 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 _known_peaks = known_peaks
 
             # Find the nearest location in the time array given the user-specified time
-            enforced_location_inds = (
-                np.int_(np.array(_known_peaks) / self._dt) - self._crop_offset
+            enforced_location_inds = np.int_(
+                (np.array(_known_peaks) - t0) / self._dt
             )
 
             # Update the user specified times with the nearest location
             updated_loc = np.round(
-                self._dt * (enforced_location_inds + self._crop_offset),
+                t0 + self._dt * enforced_location_inds,
                 decimals=self._time_precision,
             )
             if type(known_peaks) == dict:
@@ -309,7 +315,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                 self._peak_indices = np.append(self._peak_indices, loc)
                 if self._added_peaks is None:
                     self._added_peaks = []
-                self._added_peaks.append((loc + self._crop_offset) * self._dt)
+                self._added_peaks.append(t0 + loc * self._dt)
                 if type(known_peaks) == dict:
                     _sel_loc = updated_known_peaks[_known_peaks[i]]
                     if "width" in _sel_loc.keys():
@@ -373,9 +379,12 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     "window_type",
                 ] = "interpeak"
 
-            # If more than one split ind, set up all ranges.
-            elif split_inds[0] != 0:
-                split_inds += 1
+            # Otherwise, build the boundaries for every background segment. This
+            # must run for all multi-segment cases; a gap at the first sample
+            # (split_inds[0] == 0) was previously skipped, which dropped the final
+            # background segment and mislabeled interpeak windows.
+            else:
+                split_inds = split_inds + 1
                 split_inds = np.insert(split_inds, 0, 0)
                 split_inds = np.append(split_inds, len(tidx))
 
@@ -693,10 +702,42 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                     raise ValueError(
                                         f"Could not adjust bounds for peak at {v['location'][i]} because bound keys do not contain at least one of the following: `location`, `amplitude`, `scale`, `skew`. "
                                     )
+                # Clamp the location initial guess into its bounds. The guess is
+                # the peak time rounded to `_time_precision`, while the bounds are
+                # the window's raw (unrounded) time range; rounding can push the
+                # guess just outside that range, which scipy rejects as
+                # "`x0` is infeasible". The true (unrounded) peak time always lies
+                # inside the window, so clamping only undoes the rounding excursion.
+                _loc_lo, _loc_hi = _param_bounds["location"]
+                p0[paridx["location"]] = min(
+                    max(p0[paridx["location"]], _loc_lo), _loc_hi
+                )
+
                 for _, val in _param_bounds.items():
                     bounds[0].append(val[0])
                     bounds[1].append(val[1])
             self._param_bounds.append(_param_bounds)
+
+            # Safety net: ensure every parameter's bounds are valid and contain
+            # the initial guess before calling the optimizer, so a degenerate or
+            # inverted bound surfaces as an actionable message instead of scipy's
+            # opaque "`x0` is infeasible" / "lower bound ... strictly less ...".
+            for _j, (_g, _lo, _hi) in enumerate(zip(p0, bounds[0], bounds[1])):
+                _name = parorder[_j % 4]
+                _pk = v["location"][_j // 4]
+                if _lo >= _hi:
+                    raise ValueError(
+                        f"Invalid bounds for '{_name}' of the peak near retention "
+                        f"time {_pk}: lower bound ({_lo:.4g}) is not less than upper "
+                        f"bound ({_hi:.4g}). Try adjusting `param_bounds` or cropping "
+                        f"the chromatogram to exclude edge artifacts."
+                    )
+                if not (_lo <= _g <= _hi):
+                    raise ValueError(
+                        f"Initial guess for '{_name}' of the peak near retention "
+                        f"time {_pk} ({_g:.4g}) lies outside its bounds "
+                        f"[{_lo:.4g}, {_hi:.4g}]. Try adjusting `param_bounds`."
+                    )
 
             # Perform the inference
             popt, _ = scipy.optimize.curve_fit(
@@ -875,16 +916,18 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         peak_df["peak_id"] = peak_df["peak_id"].astype(int)
         self.peaks = peak_df
 
-        # Compute the mixture
+        # Compute the mixture. Build the columns directly from the sorted peak
+        # table so that column `i` always corresponds to `peak_id == i + 1`. The
+        # previous implementation filled columns in window/detection order, which
+        # could disagree with the retention-time-sorted `peak_id` (e.g. when a
+        # large skew shifts a fitted retention time across a neighbor) and
+        # mislabel per-peak traces in `show`.
         time = self.df[self.time_col].values
         out = np.zeros((len(time), len(peak_df)))
-        iter = 0
-        for _, _v in self._peak_props.items():
-            for _, v in _v.items():
-                params = [v["amplitude"], v["retention_time"],
-                          v["scale"], v["alpha"]]
-                out[:, iter] = self._compute_skewnorm(time, *params)
-                iter += 1
+        for i, (_, row) in enumerate(peak_df.iterrows()):
+            params = [row["amplitude"], row["retention_time"],
+                      row["scale"], row["skew"]]
+            out[:, i] = self._compute_skewnorm(time, *params)
         self.unmixed_chromatograms = np.round(out, decimals=precision)
         if return_peaks:
             return peak_df
