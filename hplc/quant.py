@@ -130,9 +130,10 @@ class Chromatogram:
 
         Parameters
         ----------
-        time_window : `list` [start, end], optional
-            The retention time window of the chromatogram to consider for analysis.
-            If None, the entire time range of the chromatogram will be considered.
+        time_window : `list` [start, end]
+            The retention time window of the chromatogram to consider for
+            analysis. This is required; a `ValueError` is raised if it is not
+            provided.
         return_df : `bool`
             If `True`, the cropped DataFrame is
 
@@ -147,6 +148,9 @@ class Chromatogram:
 You are trying to crop a chromatogram after it has been fit. Make sure that you
 do this before calling `fit_peaks()` or provide the argument `time_window` to the `fit_peaks()`."""
             )
+        if time_window is None:
+            raise ValueError(
+                "`time_window` must be provided as a list of [start, end].")
         if len(time_window) != 2:
             raise ValueError(
                 f"`time_window` must be of length 2 (corresponding to start and end points). Provided list is of length {len(time_window)}."
@@ -330,7 +334,7 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
         ranges = []
         for l, r in zip(_left, _right):
             _range = np.arange(int(l - buffer), int(r + buffer), 1)
-            _range = _range[(_range >= 0) & (_range <= len(norm_int))]
+            _range = _range[(_range >= 0) & (_range < len(norm_int))]
             ranges.append(_range)
 
         # Identiy subset ranges and remove
@@ -653,7 +657,6 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     "skew": [-np.inf, np.inf],
                 }
                 # Modify the parameter bounds given arguments
-                key_inds = {k: i for i, k in enumerate(_param_bounds.keys())}
                 if len(param_bounds) != 0:
                     for p in parorder:
                         if p in param_bounds.keys():
@@ -666,13 +669,16 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                                     v["location"][i] + p for p in param_bounds[p]
                                 ]
                             else:
-                                if (p0[key_inds[p]] >= param_bounds[p][0]) & (
-                                    p0[key_inds[p]] <= param_bounds[p][1]
+                                # `paridx` indexes from the end of `p0`, which
+                                # accumulates 4 entries per peak, so it always
+                                # refers to the peak currently being set up.
+                                if (p0[paridx[p]] >= param_bounds[p][0]) & (
+                                    p0[paridx[p]] <= param_bounds[p][1]
                                 ):
                                     _param_bounds[p] = param_bounds[p]
                                 else:
                                     raise ValueError(
-                                        f"Bounds for parameter '{p}' [{param_bounds[p]}] is exclusive of initial guess {p0[key_inds[p]]:0.3f} for peak at retention time {p0[1]}."
+                                        f"Bounds for parameter '{p}' [{param_bounds[p]}] is exclusive of initial guess {p0[paridx[p]]:0.3f} for peak at retention time {p0[paridx['location']]}."
                                     )
 
                 # Add peak-specific bounds if provided
@@ -1099,7 +1105,7 @@ check if the subtraction is acceptable!
 
             if np.sum(peak_id) == 0:
                 unmapped[k] = v["retention_time"]
-                break
+                continue
             peak_id = peak_df.peak_id.values[np.argmax(peak_id)]
             peak_df.loc[peak_df["peak_id"] == peak_id, "compound"] = k
             mapper[peak_id] = k
