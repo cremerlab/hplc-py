@@ -1028,11 +1028,19 @@ check if the subtraction is acceptable!
             self._bg_correction_progress_state = 0
             iter = range(1, n_iter + 1)
 
+        n_points = len(tform)
         for i in iter:
+            # Matches the original `for j in range(i, n_points - i)` loop,
+            # including its implicit no-op when that range is empty
+            # (i.e. 2*i >= n_points) -- negative-stop slicing below would
+            # otherwise silently wrap and corrupt the result in that case.
+            if 2 * i >= n_points:
+                continue
             tform_new = tform.copy()
-            for j in range(i, len(tform) - i):
-                tform_new[j] = min(
-                    tform[j], 0.5 * (tform[j + i] + tform[j - i]))
+            tform_new[i:n_points - i] = np.minimum(
+                tform[i:n_points - i],
+                0.5 * (tform[2 * i:n_points] + tform[0:n_points - 2 * i]),
+            )
             tform = tform_new
 
         # Perform the inverse of the LLS transformation and subtract
