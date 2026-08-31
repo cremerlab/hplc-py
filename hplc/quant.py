@@ -713,6 +713,17 @@ do this before calling `fit_peaks()` or provide the argument `time_window` to th
                     max(p0[paridx["location"]], _loc_lo), _loc_hi
                 )
 
+                # Clamp the scale initial guess into its bounds. The guess is the
+                # peak's half-width, while the upper scale bound is half the
+                # window's time range; a very narrow peak whose window collapses to
+                # roughly its own footprint (e.g. a noise spike passing a low
+                # `prominence`) makes the guess meet or exceed that bound. Without
+                # this, the safety net below rejects an otherwise-fittable window.
+                _scale_lo, _scale_hi = _param_bounds["scale"]
+                p0[paridx["scale"]] = min(
+                    max(p0[paridx["scale"]], _scale_lo), _scale_hi
+                )
+
                 for _, val in _param_bounds.items():
                     bounds[0].append(val[0])
                     bounds[1].append(val[1])

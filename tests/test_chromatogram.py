@@ -702,3 +702,22 @@ def test_multipeak_param_bounds_validated_per_peak():
     with pytest.raises(ValueError, match='exclusive of initial guess'):
         chrom.fit_peaks(correct_baseline=False, buffer=200,
                         param_bounds={'scale': bound}, verbose=False)
+
+
+def test_narrow_peak_scale_guess_clamped():
+    """
+    Regression test: a very narrow peak (e.g. a noise spike passing a low
+    `prominence`) collapses its fitting window to roughly its own footprint, so
+    the scale initial guess (half-width) can slightly exceed the upper scale
+    bound (half the window's time range). Like the location guess, the scale
+    guess must be clamped into its bounds so the window is deconvolved instead of
+    raising "Initial guess for 'scale' ... lies outside its bounds".
+    """
+    t = np.arange(60) * 0.1
+    sig = np.full(60, 0.01)
+    sig[30] = 1.0  # single-sample spike -> window collapses to the peak footprint
+    chrom = hplc.quant.Chromatogram(pd.DataFrame({'time': t, 'signal': sig}))
+    # Must not raise, and must recover the single peak near t = 3.0.
+    peaks = chrom.fit_peaks(prominence=0.05, buffer=0,
+                            correct_baseline=False, verbose=False)
+    assert np.isclose(peaks['retention_time'].values, 3.0, atol=0.3).any()
