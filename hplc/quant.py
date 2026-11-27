@@ -1528,19 +1528,19 @@ to `fit_peaks()`."""
                         d = self.quantified_peaks[
                             self.quantified_peaks["compound"] == self._mapped_peaks[g]
                         ]
+                        label = f"{self._mapped_peaks[g]}"
+                        self._viz_unit_display = "unit" in d.keys()
                         if "concentration" in d.keys():
                             self._viz_min_one_concentration = True
-                            label = f"{self._mapped_peaks[g]}\n[{d.concentration.values[0]:0.3g}"
-                        else:
-                            if self._viz_min_one_concentration is None:
-                                self._viz_min_one_concentration = False
-                            label = f"{self._mapped_peaks[g]}"
-                        if "unit" in d.keys():
-                            self._viz_unit_display = True
-                            label += f" {d['unit'].values[0]}]"
-                        else:
-                            self._viz_unit_display = False
+                            # Only open (and close) the bracket when there is a
+                            # concentration to show, so compounds mapped without
+                            # a calibration don't get a stray "]".
+                            label += f"\n[{d.concentration.values[0]:0.3g}"
+                            if self._viz_unit_display:
+                                label += f" {d['unit'].values[0]}"
                             label += "]"
+                        elif self._viz_min_one_concentration is None:
+                            self._viz_min_one_concentration = False
                     else:
                         self._viz_mapped_peaks = False
                         label = f"peak {int(g)}"
