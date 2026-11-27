@@ -503,6 +503,38 @@ def test_show():
     assert chrom._viz_unit_display == True
 
 
+def test_show_mapped_peak_labels():
+    """
+    Ensures legend labels for mapped peaks have balanced brackets, and that
+    the concentration/unit bracket only appears when a concentration exists.
+    """
+    df = pd.read_csv('./tests/test_data/test_integration_window_chrom.csv')
+    chrom = hplc.quant.Chromatogram(df)
+    _ = chrom.fit_peaks(verbose=False)
+
+    cases = [
+        ({'retention_time': 10}, 'test'),
+        ({'retention_time': 10, 'unit': 'mM'}, 'test'),
+        ({'retention_time': 10, 'slope': 1, 'intercept': 1}, 'test\n['),
+        ({'retention_time': 10, 'slope': 1, 'intercept': 1, 'unit': 'mM'},
+         'test\n['),
+    ]
+    for params, prefix in cases:
+        _ = chrom.map_peaks({'test': params})
+        _, ax = chrom.show()
+        labels = [l for l in ax.get_legend_handles_labels()[1]
+                  if l.startswith('test')]
+        plt.close()
+        assert len(labels) == 1
+        label = labels[0]
+        assert label.startswith(prefix)
+        assert label.count('[') == label.count(']')
+        if 'slope' not in params:
+            assert label == 'test'
+        elif 'unit' in params:
+            assert label.endswith(' mM]')
+
+
 def test_generic_param_bounding():
     """
     Tests that global parameter bounds can be maniupulated. 
